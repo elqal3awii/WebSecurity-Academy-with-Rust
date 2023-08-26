@@ -4,7 +4,7 @@
 *
 * Date: 26/8/2023
 *
-* PortSwigger LAB: Username enumeration via different responses
+* PortSwigger LAB: 2FA simple bypass
 *
 * Steps: 1. Login as carlos
 *        2. Extract the session from the Set-Cookie header
@@ -29,6 +29,10 @@ use std::{
     time::{self, Duration, Instant},
 };
 use text_colorizer::Colorize;
+
+/******************
+* Main Function
+*******************/
 fn main() {
     let url = "https://0aa7007704f85c4e83f0191a00ec00ce.web-security-academy.net"; // change this URL to your lab
     let client = build_client(); // build the client 

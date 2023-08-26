@@ -58,7 +58,7 @@ fn main() {
 
     let start_time = time::Instant::now(); // capture the time before enumeration
 
-    let valid_user = enum_usernames(start_time, url, &client, usernames); // try to get a valid username
+    let valid_user = get_valid_username(start_time, url, &client, usernames); // try to get a valid username
     let mut valid_password = Some(String::new());
     if let Some(user) = valid_user {
         // if you found a valid one
@@ -103,7 +103,7 @@ fn build_client() -> Client {
     - client: the client we build using the build_client() function
     - usernames: the list of gathered usernames
 ************************************************************************/
-fn enum_usernames(
+fn get_valid_username(
     start_time: Instant,
     url: &str,
     client: &Client,
@@ -248,9 +248,9 @@ fn print_progress(
     io::stdout().flush().unwrap();
 }
 
-/****************************************************
+/********************************************************
 * Function used to print the valid username and password
-*****************************************************/
+*********************************************************/
 #[inline(always)]
 fn print_valid_credentials(valid_user: &str, valid_password: &str) {
     println!(

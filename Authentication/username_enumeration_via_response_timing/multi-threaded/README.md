@@ -1,5 +1,5 @@
 # # Hack Steps
-1. Enumerate a valid username via different error messages
+1. Enumerate a valid username via response timing
 2. Brute force password of that valid username
 
 # Run Script
@@ -25,8 +25,8 @@ Restults was saved to: results
 
 ✅ Finished in: : 0 minutes
 
-[!] Failed users count: 0
-[!] Failed passwords: []
+[!] Failed users count: 0 
+[!] Failed users: []
 
 [!] Failed passwords count: 0
 [!] Failed passwords: []

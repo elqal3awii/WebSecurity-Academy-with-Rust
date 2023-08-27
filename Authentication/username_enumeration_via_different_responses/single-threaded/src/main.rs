@@ -6,8 +6,8 @@
 *
 * PortSwigger LAB: Username enumeration via different responses
 *
-* Steps: 1. enum usernames to get a valid one
-*        2. brute force the valid username password
+* Steps: 1. Enum usernames to get a valid one
+*        2. Brute force the valid username password
 *
 *****************************************************************/
 #![allow(unused)]
@@ -67,16 +67,17 @@ fn main() {
             // if you found a valid password
             Some(password) => {
                 print_valid_credentials(&user, &password); // print valid credential
-                save_results(start_time, "lol", &user, &password);
+                save_results(start_time, "results", &user, &password);
                 // save resultes to a file in the current working directory
+                // you can change this name to what you want
             }
             None => {
-                save_results(start_time, "lol", &user, ""); // save resultes to a file in the current working directory
+                save_results(start_time, "results", &user, ""); // save resultes to a file in the current working directory
                 println!("{}", "[!] Couldn't find valid password".red());
             }
         }
     } else {
-        save_results(start_time, "lol", "", ""); // save resultes to a file in the current working directory
+        save_results(start_time, "results", "", ""); // save resultes to a file in the current working directory
         println!("{}", "[!] Couldn't find valid username".red());
     }
     print_finish_message(start_time); // print the total elapsed time
@@ -176,7 +177,7 @@ fn brute_force_password(
     println!("[#] Brute forcing password..");
     println!(
         "{}: {}",
-        "✅ Valid user: ".white().bold(),
+        "✅ Valid user".white().bold(),
         valid_user.green().bold()
     );
     let total_counts = passwords.lines().count(); // total number of passwords to try
@@ -254,7 +255,7 @@ fn print_progress(
 #[inline(always)]
 fn print_valid_credentials(valid_user: &str, valid_password: &str) {
     println!(
-        "\n{}: username: {},password: {}",
+        "\n{}: username: {}, password: {}",
         "✅ Login successfully".white(),
         valid_user.green().bold(),
         valid_password.green().bold()
@@ -268,7 +269,7 @@ fn print_valid_credentials(valid_user: &str, valid_password: &str) {
 fn print_finish_message(start_time: Instant) {
     println!(
         "\n{}: {:?} minutes",
-        "✅ Finished in: ".green().bold(),
+        "✅ Finished in".green().bold(),
         start_time.elapsed().as_secs() / 60
     );
 }
@@ -279,16 +280,22 @@ fn print_finish_message(start_time: Instant) {
 *****************************************************/
 #[inline(always)]
 fn print_failed_requests() {
+    let failed_users = FAILED_USERS.lock().unwrap();
     println!(
-        "\n{}: {:?}",
+        "\n\n{}: {} \n{}: {:?}",
+        "[!] Failed users count".red().bold(),
+        failed_users.len().to_string().yellow().bold(),
         "[!] Failed users".red().bold(),
-        FAILED_USERS.lock().unwrap()
+        failed_users
     );
+    let failed_passwords = FAILED_PASSWORDS.lock().unwrap();
     println!(
-        "\n{}: {:?}",
-        "[!] Failed passwords".red().bold(),
-        FAILED_PASSWORDS.lock().unwrap()
-    );
+        "\n\n{}: {} \n{}: {:?}",
+        "[!] Failed password count".red().bold(),
+        failed_passwords.len().to_string().yellow().bold(),
+        "[!] Failed password".red().bold(),
+        failed_passwords
+    )
 }
 
 /*********************************************
@@ -300,9 +307,9 @@ fn save_results(start_time: Instant, file_name: &str, valid_user: &str, valid_pa
     let to_save = format!(
         "✅ Finished in: {elapsed_time:?} minutes \n\n\
     Username: {user}, Password: {pass} \n\n\
-    [!] Failed users count: {fusers_count} \n\n\
+    [!] Failed users count: {fusers_count} \n\
     [!] Failed users: {fusers:?} \n\n\
-    [!] Failed passwords count: {fpasswords_count} \n\n\
+    [!] Failed passwords count: {fpasswords_count} \n\
     [!] Failed passwords: {fpasswords:?} \n\n",
         elapsed_time = start_time.elapsed().as_secs() / 60,
         fusers_count = failed_users.len(),

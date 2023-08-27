@@ -16,18 +16,20 @@
 [#] Enumerate usernames..
 Elapsed:   0 minutes || Failed:   0 || Trying (36/101): ae                                                
 [#] Brute forcing password..
-✅ Valid user: : ae
+✅ Valid user: ae
 Elapsed:   0 minutes || Failed:   0 || Trying (47/102): robert                                            
 
-✅ Login successfully: username: ae,password: robert
+✅ Login successfully: username: ae, password: robert
 
 Restults was saved to: results
 
 ✅ Finished in: : 0 minutes
 
+[!] Failed users count: 0
 [!] Failed users: []
 
-[!] Failed passwords: []
+[!] Failed password count: 0 
+[!] Failed password : []
 ```
 
 # Test Samples

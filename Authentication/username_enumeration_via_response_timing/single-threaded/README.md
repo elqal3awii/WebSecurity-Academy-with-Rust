@@ -1,5 +1,5 @@
 # # Hack Steps
-1. Enumerate a valid username via different error messages
+1. Enumerate a valid username via response timing
 2. Brute force password of that valid username
 
 # Run Script
@@ -26,7 +26,7 @@ Restults was saved to: results
 ✅ Finished in: : 0 minutes
 
 [!] Failed users count: 0
-[!] Failed passwords: []
+[!] Failed users: []
 
 [!] Failed passwords count: 0
 [!] Failed passwords: []
@@ -40,13 +40,20 @@ See how much time the script will take to find a valid credentials
 1. Obtain a valid username & password using Burp Suite or by runnig this script with the username & passwords lists provided on the Burp Suite Academy.
 2. put the valid credentials at the bottom of both lists (simulating the worst case).
 
-### Run tests
+#### Run tests
 When running this script on a Core i7, 4th generation laptop with 16G RAM, I obtain the following results:
 #### 1K users & 1K password
-It toke approximately only **2** minutes!
+It toke approximately **13.6** minutes. 
+
+With mutli-threaded rust script you can reduce the time to only **2** minutes!
+
 
 #### 10K users & 10K passwords
-It toke approximately only **13** minutes!
+It toke approximately **135** minutes. 
 
-#### 100K users & 100K passwords
-It toke approximately only **2.5** hours!
+With mutli-threaded rust script you can reduce the time to only **13** minutes!
+
+### 100K users & 100K passwords
+From the above test, we infere that it should take about **22.5** hours. Of course no one will even think to try it.
+
+With multi-threaded version, I made the test and it toke approximately only **2.5** hours!

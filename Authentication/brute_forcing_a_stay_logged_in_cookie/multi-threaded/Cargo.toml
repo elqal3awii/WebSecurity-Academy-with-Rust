@@ -1,0 +1,15 @@
+[package]
+name = "auth_brute_force_cookie_multithread"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.21.2"
+md5 = "0.7.0"
+rayon = "1.7.0"
+regex = "1.9.3"
+reqwest = { version = "0.11.18", features = ["blocking"] }
+text-colorizer = "1.0.0"
+tokio = { version = "1.32.0", features = ["full"] }

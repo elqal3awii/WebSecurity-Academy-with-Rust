@@ -12,6 +12,9 @@
 *
 ***********************************************************/
 #![allow(unused)]
+/***********
+* Imports
+***********/
 use rayon::prelude::*;
 use regex::Regex;
 use reqwest::{
@@ -31,8 +34,11 @@ use std::{
 };
 use text_colorizer::Colorize;
 
+/******************
+* Main Function
+*******************/
 fn main() {
-    let url = "https://0aa400ea04d8ba59834a1ae6003a003e.web-security-academy.net";
+    let url = "https://0aa400ea04d8ba59834a1ae6003a003e.web-security-academy.net"; // change this url to your lab
     let client = build_client(); // This client will be used in every request
     let session = get_valid_session(&client, url, "wiener", "peter"); // This session will be used to valid our requests to the server
     println!("{}", "1. Obtaining a valid session ..☑️".white().bold());

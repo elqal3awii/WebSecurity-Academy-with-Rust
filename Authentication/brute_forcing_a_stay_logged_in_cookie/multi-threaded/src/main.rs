@@ -71,7 +71,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                     // if you successfully logged in
                     println!(
                         "\n{}: {}",
-                        "✅ Correct pass: ".white().bold(),
+                        "✅ Correct pass".white().bold(),
                         password.green().bold()
                     );
                     print_finish_message(start_time);

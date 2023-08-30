@@ -1,0 +1,13 @@
+[package]
+name = "password_reset_poisoning_via_middleware"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.21.3"
+lazy_static = "1.4.0"
+regex = "1.9.3"
+reqwest = { version = "0.11.19", features = ["blocking"] }
+text-colorizer = "1.0.0"

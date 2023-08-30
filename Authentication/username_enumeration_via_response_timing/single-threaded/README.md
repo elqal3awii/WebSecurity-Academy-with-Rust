@@ -33,27 +33,7 @@ Restults was saved to: results
 ```
 
 # Test Samples
-### Objective
-See how much time the script will take to find a valid credentials
+This test is done using only 100 users & 100 passwods. What about 10K users & 10K passwords?
+Or what about 100K users & 100K passwords?
 
-### How to test?
-1. Obtain a valid username & password using Burp Suite or by runnig this script with the username & passwords lists provided on the Burp Suite Academy.
-2. put the valid credentials at the bottom of both lists (simulating the worst case).
-
-#### Run tests
-When running this script on a Core i7, 4th generation laptop with 16G RAM, I obtain the following results:
-#### 1K users & 1K password
-It toke approximately **13.6** minutes. 
-
-With mutli-threaded rust script you can reduce the time to only **2** minutes!
-
-
-#### 10K users & 10K passwords
-It toke approximately **135** minutes. 
-
-With mutli-threaded rust script you can reduce the time to only **13** minutes!
-
-### 100K users & 100K passwords
-From the above test, we infere that it should take about **22.5** hours. Of course no one will even think to try it.
-
-With multi-threaded version, I made the test and it toke approximately only **2.5** hours!
+You can see the comparison I made with these numbers when solving the [Lab: Username enumeration via different responses](https://github.com/elqalawii/portswigger_labs_with_rust/tree/main/Authentication/username_enumeration_via_different_responses) to see the big difference in speed between Rust and Python and also between single-threaded and multi-threaded approaches in Rust.

@@ -6,9 +6,9 @@
 *
 * PortSwigger LAB: 2FA Broken Logic
 *
-* Steps: 1. Get a valid session using valid creds
+* Steps: 1. Get a valid session using valid credentials
 *        2. GET /login2 page
-*        3. Brute force the mfa-codes
+*        3. Brute force the mfa-code
 *
 ***********************************************************/
 #![allow(unused)]
@@ -179,7 +179,7 @@ fn post_code(
 }
 
 /*******************************************************************
-* Reusable Function to extract session field from the cookie header
+* Function to extract session field from the cookie header
 ********************************************************************/
 fn extract_session_cookie(headers: &HeaderMap) -> String {
     let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
@@ -187,7 +187,7 @@ fn extract_session_cookie(headers: &HeaderMap) -> String {
 }
 
 /****************************************************
-* Reusable function to extract a pattern form a text
+* Function to extract a pattern form a text
 *****************************************************/
 fn extract_pattern(pattern: &str, text: &str) -> String {
     Regex::new(pattern)

@@ -1,15 +1,15 @@
-/****************************************************************
+/***************************************************************************
 *
 * Author: Ahmed Elqalawii
 *
 * Date: 26/8/2023
 *
-* PortSwigger LAB: Username enumeration via different responses
+* PortSwigger LAB: Username enumeration via subtly different responses
 *
-* Steps: 1. Enum usernames to get a valid one
-*        2. Brute force the valid username password
+* Steps: 1. Enumerate a valid username via subtly different error messages
+*        2. Brute force password of that valid username
 *
-*****************************************************************/
+****************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -339,7 +339,7 @@ fn save_results(start_time: Instant, file_name: &str, valid_user: &str, valid_pa
 }
 
 /****************************************************
-* Reusable function to check a pattern in a text
+* Function to check a pattern in a text
 *****************************************************/
 fn check_pattern(pattern: &str, text: &str) -> bool {
     if let Some(result) = Regex::new(pattern).unwrap().find(text) {

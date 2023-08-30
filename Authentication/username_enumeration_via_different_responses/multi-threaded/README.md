@@ -6,7 +6,8 @@
 1. change the URL of the lab
 2. change the PATH for your usernames list
 3. change the PATH for you passwords list
-4. Start script
+4. Change the the list splitter to \r\n instead of \n if you still a windows user
+5. Start script
 ```
 ~$ cargo run
 ```

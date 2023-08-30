@@ -1,4 +1,4 @@
-/****************************************************************
+/********************************************************************
 *
 * Author: Ahmed Elqalawii
 *
@@ -6,10 +6,10 @@
 *
 * PortSwigger LAB: Username enumeration via different responses
 *
-* Steps: 1. Enum usernames to get a valid one
-*        2. Brute force the valid username password
+* Steps: 1. Enumerate a valid username via different error messages
+*        2. Brute force password of that valid username
 *
-*****************************************************************/
+*********************************************************************/
 #![allow(unused)]
 /***********
 * Imports

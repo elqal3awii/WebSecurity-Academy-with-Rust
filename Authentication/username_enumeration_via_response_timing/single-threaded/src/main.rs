@@ -6,8 +6,8 @@
 *
 * PortSwigger LAB: Username enumeration via response timing
 *
-* Steps: 1. Enum usernames to get a valid one
-*        2. Brute force the valid username password
+* Steps: 1. Enumerate a valid username via response timing
+*        2. Brute force password of that valid username
 *
 *****************************************************************/
 #![allow(unused)]

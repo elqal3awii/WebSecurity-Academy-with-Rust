@@ -89,7 +89,7 @@ fn build_client() -> Client {
 }
 
 /*******************************************************************
-* Reusable Function to extract session field from the cookie header
+* Function to extract session field from the cookie header
 ********************************************************************/
 fn extract_session_cookie(headers: &HeaderMap) -> String {
     let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
@@ -97,7 +97,7 @@ fn extract_session_cookie(headers: &HeaderMap) -> String {
 }
 
 /****************************************************
-* Reusable function to extract a pattern form a text
+* Function to extract a pattern form a text
 *****************************************************/
 fn extract_pattern(pattern: &str, text: &str) -> String {
     Regex::new(pattern)

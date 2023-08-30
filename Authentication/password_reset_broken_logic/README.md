@@ -8,15 +8,12 @@
 2. Set the new password to what you want
 3. Start script
 ```
-~$ python password_reset_broken_logic.py
-```
+~$ cargo run
 
 # Expected Output
 ```
 1. Send forgot-password request as wiener.. ☑️
 2. Extract the token from the email client.. ☑️
 3. Send change-password request as carlos.. ☑️
-Carlos password changed succussfully to: Hola!
+Carlos password changed succussfully to: Hacked
 ```
-
-### Happy Hacking 👾

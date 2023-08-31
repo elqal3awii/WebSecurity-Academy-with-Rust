@@ -5,7 +5,7 @@
 
 This repository is for educational purposes only, and I am not responsible for using any of the techniques described here for illegal usage.
 
-# Burp Suite for Labs
+# Using Burp Suite for Labs
 
 You can, of course, solve the labs using Burp Suite, but this repository is for those who want to take their scripting skills up to a higher level.
 
@@ -35,7 +35,7 @@ After you master easy tasks, you will notice that your language skills are much 
 Rust is a relativly new language compared to Python and it's not involved as much as Python in penetration testing yet.
 
 Due to its power and speed, it evolved rapidly in much areas. Big companies now are migrating to Rust ( If they are not alreay did).
-We, penetration testers, will also make it evolves in our fields leveraging its power and making our tests more efficient than ever. That's why I created this repositroy.
+We, penetration testers, will also make it evolves in our field leveraging its power and making our tests more efficient than ever. That's why I created this repositroy.
 
 If you are not interested in speeding up automation as much as possible, then this repository is not for you.
 

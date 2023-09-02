@@ -22,22 +22,14 @@ use reqwest::{
     header::HeaderMap,
     redirect::Policy,
 };
-use std::{
-    collections::HashMap,
-    error::Error,
-    io,
-    io::Write,
-    process,
-    time::{self, Duration, Instant},
-};
+use std::{collections::HashMap, time::Duration};
 use text_colorizer::Colorize;
 
 /******************
 * Main Function
 *******************/
 fn main() {
-    let start_time = time::Instant::now();
-    let url = "https://0a1e00a7047eb65480bec6ee002e009f.web-security-academy.net"; // change this to your lab URL
+    let url = "https://0a170025047f17ab80dbe9fc002d00c6.web-security-academy.net"; // change this to your lab URL
     let client = build_client(); // build the client used in all subsequent requests
 
     println!(

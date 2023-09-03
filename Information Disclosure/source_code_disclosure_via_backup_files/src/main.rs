@@ -30,7 +30,7 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a5e00b60469bbe383797390002000d5.web-security-academy.net"; // change this to your lab URL
+    let url = "https://0a4100010351bbad839d0563003e00d5.web-security-academy.net"; // change this to your lab URL
     let client = build_client(); // build the client used in all subsequent requests
 
     println!(
@@ -98,6 +98,13 @@ fn main() {
                                     "{} {}",
                                     "7. Submitting the answer..".white(),
                                     "OK".green()
+                                );
+                                println!(
+                                    "{} {}",
+                                    "[#] Check your browser, it should be marked now as"
+                                        .white()
+                                        .bold(),
+                                    "solved".green().bold()
                                 )
                             } else {
                                 println!("{}", "[!] Failed to submit the answer".red())

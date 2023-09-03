@@ -28,7 +28,7 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a0900800328a616874fc9d0004e009e.web-security-academy.net"; // change this to your lab URL
+    let url = "https://0a1b00cf038136a280122b85009c0079.web-security-academy.net"; // change this to your lab URL
     let client = build_client(); // build the client used in all subsequent requests
 
     println!("{} {}", "1. Injecting the payload..".white(), "OK".green());
@@ -50,7 +50,14 @@ fn main() {
                 .form(&HashMap::from([("answer", text)]))
                 .send(); // submit the answer
             if let Ok(res) = submit_answer {
-                println!("{} {}", "3. Submitting the answer..".white(), "OK".green())
+                println!("{} {}", "3. Submitting the answer..".white(), "OK".green());
+                println!(
+                    "{} {}",
+                    "[#] Check your browser, it should be marked now as"
+                        .white()
+                        .bold(),
+                    "solved".green().bold()
+                )
             } else {
                 println!("{}", "[!] Failed to submit the answer".red())
             }

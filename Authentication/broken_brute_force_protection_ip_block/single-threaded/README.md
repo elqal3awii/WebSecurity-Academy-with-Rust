@@ -3,8 +3,8 @@
 2. After every try, login in with correct credentials to bypass blocking
 
 # Run Script
-1. change the URL of the lab
-2. change the PATH for you passwords list
+1. Change the URL of the lab
+2. Change the PATH for you passwords list
 3. Start script
 ```
 ~$ cargo run

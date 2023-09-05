@@ -28,7 +28,7 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a1b00cf038136a280122b85009c0079.web-security-academy.net"; // change this to your lab URL
+    let url = "https://0a3600d603f62f3580f894800013003a.web-security-academy.net"; // change this to your lab URL
     let client = build_client(); // build the client used in all subsequent requests
 
     println!("{} {}", "1. Injecting the payload..".white(), "OK".green());

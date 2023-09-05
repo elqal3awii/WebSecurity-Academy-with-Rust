@@ -30,7 +30,7 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a4100010351bbad839d0563003e00d5.web-security-academy.net"; // change this to your lab URL
+    let url = "https://0adf007f03dd1eb884b46ae100220011.web-security-academy.net"; // change this to your lab URL
     let client = build_client(); // build the client used in all subsequent requests
 
     println!(

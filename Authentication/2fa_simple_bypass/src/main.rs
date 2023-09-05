@@ -43,7 +43,7 @@ fn main() {
         ("password", "montoya"),
         ]))
         .send(); // try to login as as carlos
-    if let Ok(res) = login { // if login in succeeded
+    if let Ok(res) = login { // if login succeeded
         println!("{}", "1. Logged in as carlos.. ☑️".white().bold()); 
         let session = extract_session_cookie(&res.headers()); // extract session from cookie header
         let login2 = client

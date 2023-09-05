@@ -155,7 +155,7 @@ fn enum_usernames(
                 let data = HashMap::from([("username", user), ("password", &"not important now")]); // the data sent in the POST login request
                 let mut login = client.post(url).form(&data).send(); // try to login
                 if let Ok(res) = login {
-                    // if login in OK
+                    // if login OK
                     let body = res.text().unwrap(); // get the body of the response
                                                     // search for these 2 patterns in the body
                     let pattern1 = check_pattern("<!-- -->", &body);

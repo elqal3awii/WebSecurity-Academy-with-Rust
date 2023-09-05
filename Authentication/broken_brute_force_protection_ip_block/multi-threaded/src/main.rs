@@ -7,7 +7,7 @@
 * PortSwigger LAB: Broken brute-force protection, IP block
 *
 * Steps: 1. Brute force carlos password
-*        2. After every try, login in with correct 
+*        2. After every try, login with correct 
 *           credentials to bypass blocking
 *
 *****************************************************************/

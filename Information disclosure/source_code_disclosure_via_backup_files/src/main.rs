@@ -10,7 +10,7 @@
 *        2. List the hidden directory
 *        3. Fetch the hidden backup file
 *        4. Extract the key
-*        5. Submit the answer
+*        5. Submit solution
 *
 ***************************************************************/
 #![allow(unused)]
@@ -92,11 +92,11 @@ fn main() {
                             let submit_answer = client
                                 .post(format!("{url}/submitSolution"))
                                 .form(&HashMap::from([("answer", text)]))
-                                .send(); // submit the answer
+                                .send(); // submit solution
                             if let Ok(res) = submit_answer {
                                 println!(
                                     "{} {}",
-                                    "7. Submitting the answer..".white(),
+                                    "7. Submitting solution..".white(),
                                     "OK".green()
                                 );
                                 println!(
@@ -107,7 +107,7 @@ fn main() {
                                     "solved".green().bold()
                                 )
                             } else {
-                                println!("{}", "[!] Failed to submit the answer".red())
+                                println!("{}", "[!] Failed to submit solution".red())
                             }
                         } else {
                             println!("{}", "[!] Failed to find any keys".red())

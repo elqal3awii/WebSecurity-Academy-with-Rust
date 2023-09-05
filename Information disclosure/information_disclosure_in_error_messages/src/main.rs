@@ -8,7 +8,7 @@
 *
 * Steps: 1. Inject a single queot in the product ID parameter to cause an error
 *        2. Extract the framework name
-*        3. Submit the answer
+*        3. Submit solution
 *
 ********************************************************************************/
 #![allow(unused)]
@@ -48,9 +48,9 @@ fn main() {
             let submit_answer = client
                 .post(format!("{url}/submitSolution"))
                 .form(&HashMap::from([("answer", text)]))
-                .send(); // submit the answer
+                .send(); // submit solution
             if let Ok(res) = submit_answer {
-                println!("{} {}", "3. Submitting the answer..".white(), "OK".green());
+                println!("{} {}", "3. Submitting solution..".white(), "OK".green());
                 println!(
                     "{} {}",
                     "[#] Check your browser, it should be marked now as"
@@ -59,7 +59,7 @@ fn main() {
                     "solved".green().bold()
                 )
             } else {
-                println!("{}", "[!] Failed to submit the answer".red())
+                println!("{}", "[!] Failed to submit solution".red())
             }
         } else {
             println!("{}", "[!] No framework names was found".red())

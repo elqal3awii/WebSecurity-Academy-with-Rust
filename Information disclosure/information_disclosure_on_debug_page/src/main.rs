@@ -9,7 +9,7 @@
 * Steps: 1. Check the source code of a product page
 *        2. GET the href of the commented a tag named "Debug"
 *        3. Extract the secret key
-*        4. submit the answer
+*        4. submit solution
 *
 ***************************************************************/
 #![allow(unused)]
@@ -71,9 +71,9 @@ fn main() {
                     let submit_answer = client
                         .post(format!("{url}/submitSolution"))
                         .form(&HashMap::from([("answer", text)]))
-                        .send(); // submit the answer
+                        .send(); // submit solution
                     if let Ok(res) = submit_answer {
-                        println!("{} {}", "5. Submitting the answer..".white(), "OK".green());
+                        println!("{} {}", "5. Submitting solution..".white(), "OK".green());
                         println!(
                             "{} {}",
                             "[#] Check your browser, it should be marked now as"
@@ -82,7 +82,7 @@ fn main() {
                             "solved".green().bold()
                         )
                     } else {
-                        println!("{}", "[!] Failed to submit the answer".red())
+                        println!("{}", "[!] Failed to submit solution".red())
                     }
                 } else {
                     println!("{}", "[!] No secret key was found".red())

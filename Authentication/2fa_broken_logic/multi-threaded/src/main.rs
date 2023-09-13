@@ -4,7 +4,7 @@
 *
 * Date: 28/8/2023
 *
-* PortSwigger LAB: 2FA Broken Logic
+* Lab: 2FA Broken Logic
 *
 * Steps: 1. Get a valid session using valid credentials
 *        2. GET /login2 page

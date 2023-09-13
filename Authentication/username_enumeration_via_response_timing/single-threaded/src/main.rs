@@ -4,7 +4,7 @@
 *
 * Date: 27/8/2023
 *
-* PortSwigger LAB: Username enumeration via response timing
+* Lab: Username enumeration via response timing
 *
 * Steps: 1. Enumerate a valid username via response timing
 *        2. Brute force password of that valid username

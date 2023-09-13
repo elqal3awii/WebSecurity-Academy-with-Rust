@@ -4,7 +4,7 @@
 *
 * Date: 28/8/2023
 *
-* PortSwigger LAB: Username enumeration via account lock
+* Lab: Username enumeration via account lock
 *
 * Steps: 1. Try all users multiple times until on account is locked
 *        2. Brute force password of that valid username

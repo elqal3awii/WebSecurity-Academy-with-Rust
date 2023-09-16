@@ -1,6 +1,6 @@
 # Hack Steps
 
-1. Inject payload in 'category' query parameter to retrieve the name of users table
+1. Inject payload into 'category' query parameter to retrieve the name of users table
 2. Adjust the payload to retrieve the names of username and password columns
 3. Adjust the payload to retrieve the administrator password
 4. Fetch the login page

@@ -6,7 +6,7 @@
 *
 * Lab: SQL injection attack, listing the database contents on Oracle
 *
-* Steps: 1. Inject payload in 'category' query parameter to retrieve the name of
+* Steps: 1. Inject payload into 'category' query parameter to retrieve the name of
 *           users table
 *        2. Adjust the payload to retrieve the names of username and password columns
 *        3. Adjust the payload to retrieve the administrator password

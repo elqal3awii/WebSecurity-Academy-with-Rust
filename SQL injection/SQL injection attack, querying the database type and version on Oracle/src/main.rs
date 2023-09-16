@@ -6,7 +6,7 @@
 *
 * Lab: SQL injection attack, querying the database type and version on Oracle
 *
-* Steps: 1. Inject payload in 'category' query parameter
+* Steps: 1. Inject payload into 'category' query parameter
 *        2. Retrieve database banner in the response
 *
 ********************************************************************************/
@@ -37,7 +37,7 @@ fn main() {
 
     print!(
         "{}",
-        "1. Injecting payload in 'category' query parameter.. ".white(),
+        "1. Injecting payload into 'category' query parameter.. ".white(),
     );
     io::stdout().flush();
     // the payload to inject in the query parameter

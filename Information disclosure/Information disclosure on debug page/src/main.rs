@@ -95,9 +95,9 @@ fn main() {
 }
 
 /*******************************************************************
- * Function used to build the client
- * Return a client that will be used in all subsequent requests
- ********************************************************************/
+* Function used to build the client
+* Return a client that will be used in all subsequent requests
+********************************************************************/
 fn build_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())

@@ -115,9 +115,9 @@ fn main() {
 }
 
 /*******************************************************************
- * Function used to build the client
- * Return a client that will be used in all subsequent requests
- ********************************************************************/
+* Function used to build the client
+* Return a client that will be used in all subsequent requests
+********************************************************************/
 fn build_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
@@ -151,8 +151,8 @@ fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
 }
 
 /*************************************************
- * Function to extract csrf from the response body
- **************************************************/
+* Function to extract csrf from the response body
+**************************************************/
 fn extract_csrf(res: Response) -> Option<String> {
     if let Some(csrf) = Document::from(res.text().unwrap().as_str())
         .find(Attr("name", "csrf"))

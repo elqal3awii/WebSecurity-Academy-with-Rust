@@ -177,9 +177,9 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str) {
 }
 
 /*******************************************************************
- * Function used to build the client
- * Return a client that will be used in all subsequent requests
- ********************************************************************/
+* Function used to build the client
+* Return a client that will be used in all subsequent requests
+********************************************************************/
 fn build_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
@@ -203,8 +203,8 @@ fn build_ranges() -> Vec<Vec<i32>> {
 }
 
 /*************************************************
- * Function to extract csrf from the response body
- **************************************************/
+* Function to extract csrf from the response body
+**************************************************/
 fn extract_csrf(res: Response) -> String {
     Document::from(res.text().unwrap().as_str())
         .find(Attr("name", "csrf"))

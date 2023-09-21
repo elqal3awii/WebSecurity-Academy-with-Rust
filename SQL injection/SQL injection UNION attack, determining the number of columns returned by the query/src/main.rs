@@ -16,8 +16,8 @@
 ************************************************************************************/
 #![allow(unused)]
 /***********
- * Imports
- ***********/
+* Imports
+***********/
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},

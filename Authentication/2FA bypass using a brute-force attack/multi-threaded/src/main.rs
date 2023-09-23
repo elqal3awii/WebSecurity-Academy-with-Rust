@@ -62,7 +62,7 @@ lazy_static! {
 fn main() {
     let start_time = time::Instant::now();
     let url = "https://0a2800260408bd5d8776e031006500e2.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client used in all subsequent requests
+    let client = build_client(); // build the client that will be used for all subsequent requests
     let ranges = build_ranges(); // make the ranges ready to run them in multiple threads
     brute_force_2fa(start_time, &client, url, ranges); // start brute forcing the mfa-code
 

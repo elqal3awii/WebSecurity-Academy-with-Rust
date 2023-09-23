@@ -61,7 +61,7 @@ lazy_static! {
 fn main() {
     let start_time = time::Instant::now();
     let url = "https://0a2800260408bd5d8776e031006500e2.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client used in all subsequent requests
+    let client = build_client(); // build the client that will be used for all subsequent requests
     brute_force_2fa(start_time, &client, url); // start brute forcing the mfa-code
     println!("\n{}", "[!] No valid code is found".red().bold()); // if this line is reached, it means that no valid code is found
     print_finish_message(start_time);

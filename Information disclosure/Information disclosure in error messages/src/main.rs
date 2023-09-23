@@ -29,7 +29,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     let url = "https://0a3600d603f62f3580f894800013003a.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client used in all subsequent requests
+    let client = build_client(); // build the client that will be used for all subsequent requests
 
     println!("{} {}", "1. Injecting the payload..".white(), "OK".green());
     let product_req = client.get(format!("{url}/product?productId=4'")).send(); // inject the payload

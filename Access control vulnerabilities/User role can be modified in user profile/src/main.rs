@@ -35,7 +35,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0ab900a30369a2de802f3f6b00e9009e.web-security-academy.net";
-    // build the client used in all subsequent requests
+    // build the client that will be used for all subsequent requests
     let client = build_client();
 
     // login as wiener

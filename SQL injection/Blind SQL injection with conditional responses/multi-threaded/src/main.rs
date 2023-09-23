@@ -54,7 +54,7 @@ lazy_static! {
 fn main() {
     // change this to your lab URL
     let url = "https://0afa007403020b238475c2c400240048.web-security-academy.net";
-    // build the client used in all subsequent requests
+    // build the client that will be used for all subsequent requests
     let client = build_client();
     // build the ranges; every range will be executed in different thread
     // ranges here are hardcoded from 0 to 20 which is the password length

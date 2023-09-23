@@ -13,7 +13,7 @@
 2. Start script
 
 ```
-~$ python blind_sql_injection_with_conditional_responses.py
+~$ cargo run
 ```
 
 # Expected Output

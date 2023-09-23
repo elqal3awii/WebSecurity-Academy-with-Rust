@@ -43,7 +43,7 @@ If you are not interested in speeding up automation as much as possible, then th
 
 Mutli-threaded programming is very easy in Rust. There are ready crates for you to use although writing one from scratch is straightforward.
 
-You can leverage multi-threading to achieve significantly higher speed in your tests. In fact, you can write a script that is **10** times faster than a single-threaded one. That is why I have written a multi-threaded version for each lab.
+You can leverage multi-threading to achieve significantly higher speed in your tests. In fact, you can write a script that is **10** times faster than a single-threaded one. That is why I have written a multi-threaded version for the labs that require the use of brute force technique to solve them.
 
 If you find the scripts too hard, it is advisable to stick with single-threaded ones. Even with a single thread, they will still be faster than using Python.
 

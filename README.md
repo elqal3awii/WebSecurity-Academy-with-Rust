@@ -1,6 +1,8 @@
 ![Static Badge](https://img.shields.io/badge/Developed%20on-GNU%20Linux-red)
-![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-green)
-![Static Badge](https://img.shields.io/badge/License-GNU%20GPLv3-blue)
+![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-bright)
+![Static Badge](https://img.shields.io/badge/License-GPLv3-blue)
+![Static Badge](https://img.shields.io/badge/Single--threaded%20labs-50-green)
+![Static Badge](https://img.shields.io/badge/Multi--threaded%20labs-12-yellow)
 
 ![WebScurity Academy](./web-security-rust.png)
 
@@ -63,7 +65,7 @@ If you go through all the scripts, you may notice that they utilize different cr
 
 At the begining, you may find that it so difficult to write Rust code and you will want to get back to python. Don't give up easly!
 
-If you insist and don't get comfrotable with Rust, you can check out [PortSwigger Labs with Python](https://github.com/elqalawii/portswigger_labs_with_python) repository in which I have solved the same labs using Python.
+If you insist and don't get comfrotable with Rust, you can check out [WebSecurity Academy with Python](https://github.com/elqal3awii/WebSecurity-Academy-with-Python) repository in which I have solved the same labs using Python.
 
 # Support & Star ✨
 

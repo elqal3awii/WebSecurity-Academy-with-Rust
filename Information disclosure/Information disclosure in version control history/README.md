@@ -27,5 +27,5 @@
 6. Fetching login page to get a valid session and csrf token.. OK
 7. Logging in as administrator.. OK
 8. Deleting carlos.. OK
-[#] Check your browser, it should be marked now as solved
+🗹 Check your browser, it should be marked now as solved
 ```

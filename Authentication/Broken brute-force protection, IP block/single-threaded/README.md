@@ -4,7 +4,7 @@
 
 # Run Script
 1. Change the URL of the lab
-2. Change the PATH for you passwords list
+2. Change the file path of the password list
 3. Start script
 ```
 ~$ cargo run

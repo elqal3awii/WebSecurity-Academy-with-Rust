@@ -146,7 +146,7 @@ fn main() {
 
     println!(
         "{} {}",
-        "[#] Check your browser, it should be marked now as"
+        "🗹 Check your browser, it should be marked now as"
             .white()
             .bold(),
         "solved".green().bold()

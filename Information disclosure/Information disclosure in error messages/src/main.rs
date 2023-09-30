@@ -53,7 +53,7 @@ fn main() {
                 println!("{} {}", "3. Submitting solution..".white(), "OK".green());
                 println!(
                     "{} {}",
-                    "[#] Check your browser, it should be marked now as"
+                    "🗹 Check your browser, it should be marked now as"
                         .white()
                         .bold(),
                     "solved".green().bold()

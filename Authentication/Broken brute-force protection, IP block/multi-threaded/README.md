@@ -4,8 +4,9 @@
 
 # Run Script
 1. Change the URL of the lab
-2. Change the PATH for you passwords list
-3. Start script
+2. Change the file path of the password list
+3. Change the separator in the split function to \r\n instead of \n if you are still a windows user
+4. Start script
 ```
 ~$ cargo run
 ```

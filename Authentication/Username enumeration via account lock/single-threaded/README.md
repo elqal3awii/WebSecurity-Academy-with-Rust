@@ -5,8 +5,8 @@
 
 # Run Script
 1. Change the URL of the lab
-2. Change the PATH for your usernames list
-3. Change the PATH for you passwords list
+2. Change the file path of the username list
+3. Change the file path of the password list
 4. Start script
 ```
 ~$ cargo run

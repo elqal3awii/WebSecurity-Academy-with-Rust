@@ -98,7 +98,7 @@ fn main() {
                 );
                 println!(
                     "{}: {}",
-                    "Carlos password changed succussfully to".green().bold(),
+                    "Carlos's password is changed successfully to".green().bold(),
                     new_password.green().bold()
                 )
             } else {

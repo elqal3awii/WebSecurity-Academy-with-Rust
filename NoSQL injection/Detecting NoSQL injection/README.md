@@ -6,7 +6,7 @@
 # Run Script
 
 1. Change the URL of the lab
-3. Start script
+2. Start script
 
 ```
 ~$ cargo run

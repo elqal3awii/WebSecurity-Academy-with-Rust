@@ -24,10 +24,10 @@
 1. Checking if password length = 15
                     .........
 1. Checking if password length = 20 [ Correct length: 20 ]
-2. Brute forcing password (30%):   0 c    a f  e    c
-2. Brute forcing password (50%):   0 cw t avf  e   pc
+2. Brute forcing password.. (30%):   0 c    a f  e    c
+2. Brute forcing password.. (50%):   0 cw t avf  e   pc
                     .........
-2. Brute forcing password (100%): fd0rcwutjavfb5e28vpc
+2. Brute forcing password.. (100%): fd0rcwutjavfb5e28vpc
 3. Fetching login page.. OK
 4. Extracting csrf token and session cookie.. OK
 5. Logging in as the administrator.. OK

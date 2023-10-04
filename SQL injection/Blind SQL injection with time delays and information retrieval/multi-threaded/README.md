@@ -20,14 +20,11 @@
 
 ```
 [#] Injection point: TrackingId
-1. Checking if password length = 10 
-1. Checking if password length = 15
-                    .........
 1. Checking if password length = 20 [ Correct length: 20 ]
-2. Checking if char at position 5   =  9 [ Correct password: 37z59 ]
-2. Checking if char at position 12  =  i [ Correct password: 37z59ib4bm7i ]
-                    ..........
-2. Checking if char at position 20  =  2 [ Correct password: 37z59ib4bm7ifm6fuxo2 ]
+2. Brute forcing password.. (60%): wf c v6 s 2g or n2  
+2. Brute forcing password.. (85%): wf0c v6 s 2gior6n28i
+                   ................
+2. Brute forcing password.. (100%): wf0chv6vs82gior6n28i
 3. Fetching login page.. OK
 4. Extracting csrf token and session cookie.. OK
 5. Logging in as the administrator.. OK

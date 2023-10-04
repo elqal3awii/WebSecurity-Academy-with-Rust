@@ -32,6 +32,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0ac400ff046ccd62821c426700b700aa.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -51,6 +52,7 @@ fn main() {
     );
     print!("{}", "2. Waiting for the response.. ".white());
     io::stdout().flush();
+
     // fetch the page with the injected payload
     let make_delay = client
         .get(format!("{url}/filter?category=Pets"))
@@ -60,8 +62,8 @@ fn main() {
             "{}",
             "[!] Failed to make a delay with the injected payload".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"

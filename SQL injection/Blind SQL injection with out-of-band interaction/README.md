@@ -18,6 +18,6 @@
 ```
 [#] Injection point: TrackingId
 [*] Injecting payload to make a DNS lookup.. OK
-[#] Check the DNS lookup in your burp collaborator
+🗹 Check the DNS lookup in your burp collaborator
 🗹 Check your browser, it should be marked now as solved
 ```

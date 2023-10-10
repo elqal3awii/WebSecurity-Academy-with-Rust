@@ -22,7 +22,7 @@
 ⟪#⟫ Injection parameter: name
 ⦗1⦘ Fetching the feedback page.. OK
 ⦗2⦘ Extracting csrf token and session cookie.. OK
-⦗3⦘ Injecting payload to issue a DNS lookup to burp ollaborator.. OK
+⦗3⦘ Injecting payload to issue a DNS lookup to burp collaborator.. OK
 🗹 Check your burp collaborator for the DNS lookup
 🗹 Check your browser, it should be marked now as solved
 ```

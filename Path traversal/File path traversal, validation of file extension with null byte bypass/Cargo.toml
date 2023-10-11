@@ -1,0 +1,10 @@
+[package]
+name = "file_path_traversal_validation_of_file_extension_with_null_byte_bypass"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+regex = "1.10.0"
+reqwest = { version = "0.11.20", features = ["blocking"] }
+text-colorizer = "1.0.0"

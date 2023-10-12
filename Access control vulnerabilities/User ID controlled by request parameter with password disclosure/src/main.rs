@@ -110,7 +110,7 @@ fn main() {
     io::stdout().flush();
 
     // delete carlos
-    let delete_carlos = client
+    client
         .get(format!("{url}/admin/delete?username=carlos"))
         .header("Cookie", format!("session={new_session}"))
         .send()

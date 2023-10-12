@@ -86,7 +86,7 @@ fn main() {
     io::stdout().flush();
 
     // delete carlos
-    let delete_carlos = client
+    client
         .get(format!("{url}{admin_panel_path}/delete?username=carlos"))
         .header("Cookie", format!("session={session}"))
         .send()

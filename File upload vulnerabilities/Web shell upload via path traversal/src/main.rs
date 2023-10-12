@@ -12,7 +12,7 @@
 *        4. Fetch wiener profile
 *        5. Upload the shell file via path traversal
 *        6. Fetch the uploaded shell file to read the secret
-*        7. Submit solution
+*        7. Submit the solution
 *
 **************************************************************************/
 #![allow(unused)]
@@ -160,15 +160,15 @@ fn main() {
 
     println!("{}", "OK".green());
     println!("❯ {} {}", "Secret:".blue(), secret.yellow());
-    print!("{} ", "⦗7⦘ Submitting solution..".white());
+    print!("{} ", "⦗7⦘ Submitting the solution..".white());
     io::stdout().flush();
 
-    // submit solution
+    // submit the solution
     client
         .post(format!("{url}/submitSolution"))
         .form(&HashMap::from([("answer", secret)]))
         .send()
-        .expect(&format!("{}", "[!] Failed to submit solution".red()));
+        .expect(&format!("{}", "[!] Failed to submit the solution".red()));
 
     println!("{}", "OK".green());
     println!(

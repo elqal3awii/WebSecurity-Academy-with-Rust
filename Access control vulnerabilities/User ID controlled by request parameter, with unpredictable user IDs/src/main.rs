@@ -10,7 +10,7 @@
 *        2. Extract carlos GUID from source code
 *        3. Fetch carlos profile using his GUID
 *        4. Extract the API key
-*        5. Submit solution
+*        5. Submit the solution
 *
 *******************************************************************************/
 #![allow(unused)]
@@ -86,15 +86,15 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract the API key".red()));
 
     println!("{}", "OK".green());
-    print!("{} ", "5. Submitting solution..".white());
+    print!("{} ", "5. Submitting the solution..".white());
     io::stdout().flush();
 
-    // submit solution
+    // submit the solution
     client
         .post(format!("{url}/submitSolution"))
         .form(&HashMap::from([("answer", api_key)]))
         .send()
-        .expect(&format!("{}", "[!] Failed to submit solution".red()));
+        .expect(&format!("{}", "[!] Failed to submit the solution".red()));
 
     println!("{}", "OK".green());
     println!(

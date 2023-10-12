@@ -19,11 +19,11 @@
 # Expected Output
 
 ```
-1. Fetching /login page.. OK
-2. Getting session and csrf token.. OK
-3. Logging in as wiener.. OK
-4. Getting a new session as wiener .. OK
-5. Bypassing admin access using custom header.. OK
-6. Deleting carlos.. OK
+⦗1⦘ Fetching /login page.. OK
+⦗2⦘ Getting session and csrf token.. OK
+⦗3⦘ Logging in as wiener.. OK
+⦗4⦘ Getting a new session as wiener .. OK
+⦗5⦘ Bypassing admin access using custom header.. OK
+⦗6⦘ Deleting carlos.. OK
 🗹 Check your browser, it should be marked now as solved
 ```

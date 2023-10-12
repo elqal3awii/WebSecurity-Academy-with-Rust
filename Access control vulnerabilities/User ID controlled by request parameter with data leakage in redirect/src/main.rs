@@ -9,7 +9,7 @@
 * Steps: 1. Fetch carlos profile
 *        2. Extract the API key from response body before
 *           redirecting to login page
-*        3. Submit solution
+*        3. Submit the solution
 *
 *******************************************************************************/
 #![allow(unused)]
@@ -61,15 +61,15 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract the API key".red()));
 
     println!("{}", "OK".green());
-    print!("{} ", "3. Submitting solution..".white());
+    print!("{} ", "3. Submitting the solution..".white());
     io::stdout().flush();
 
-    // submit solution
+    // submit the solution
     client
         .post(format!("{url}/submitSolution"))
         .form(&HashMap::from([("answer", api_key)]))
         .send()
-        .expect(&format!("{}", "[!] Failed to submit solution".red()));
+        .expect(&format!("{}", "[!] Failed to submit the solution".red()));
 
     println!("{}", "OK".green());
     println!(

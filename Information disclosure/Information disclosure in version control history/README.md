@@ -19,13 +19,13 @@
 # Expected Output
 
 ```
-1. Fetching .git directory (wait 1 minute).. OK
-2. Changing current working directory.. OK
-3. Resetting to the previous commit.. OK
-4. Reading admin.conf file.. OK
-5. Extracting the administrator password.. OK => rip9q0tdout2mduxi2og
-6. Fetching login page to get a valid session and csrf token.. OK
-7. Logging in as administrator.. OK
-8. Deleting carlos.. OK
+⦗1⦘ Fetching .git directory (wait a minute).. OK
+⦗2⦘ Changing current working directory.. OK
+⦗3⦘ Resetting to the previous commit.. OK
+⦗4⦘ Reading admin.conf file.. OK
+⦗5⦘ Extracting the administrator password.. OK => rip9q0tdout2mduxi2og
+⦗6⦘ Fetching login page to get a valid session and csrf token.. OK
+⦗7⦘ Logging in as administrator.. OK
+⦗8⦘ Deleting carlos.. OK
 🗹 Check your browser, it should be marked now as solved
 ```

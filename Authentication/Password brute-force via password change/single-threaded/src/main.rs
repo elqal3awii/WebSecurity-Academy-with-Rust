@@ -196,7 +196,7 @@ fn change_password(
 }
 
 /****************************************************
-* Function used to to print finish time
+* Function used to print finish time
 *****************************************************/
 #[inline(always)]
 fn print_finish_message(start_time: Instant) {

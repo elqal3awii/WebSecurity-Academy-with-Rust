@@ -42,7 +42,7 @@ fn main() {
     // string that will hold the payload
     let mut payload = String::new();
 
-    // loop over all possible numbers
+    // iterate over all possible numbers
     for x in 0..255 {
         // payload to scan the internal network
         payload = format!("http://192.168.0.{x}:8080/admin");

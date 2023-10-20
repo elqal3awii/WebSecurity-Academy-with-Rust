@@ -1,0 +1,11 @@
+[package]
+name = "csrf_where_token_is_not_tied_to_user_session"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+reqwest = { version = "0.11.20", features = ["blocking"] }
+text-colorizer = "1.0.0"
+select = "0.6.0"
+regex = "1.10.0"

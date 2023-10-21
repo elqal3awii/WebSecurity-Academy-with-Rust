@@ -1,4 +1,4 @@
-/********************************************************************************
+/************************************************************************************
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
@@ -6,12 +6,12 @@
 *
 * Lab: CSRF where token validation depends on token being present
 *
-* Steps: 1. Craft an HTML form for changing the email address that includes an 
-*           auto-submit script and doesn't contain the csrf token
+* Steps: 1. Craft an HTML form for changing the email address with an auto-submit 
+*           script and doesn't include the csrf token in the form
 *        2. Deliver the exploit to the victim
 *        3. The victim's email will be changed after he trigger the exploit
 *
-*********************************************************************************/
+*************************************************************************************/
 #![allow(unused)]
 /***********
 * Imports

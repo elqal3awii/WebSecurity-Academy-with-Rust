@@ -15,7 +15,7 @@
 *           the extracted csrf token and an img tag which is used to set the csrf
 *           cookie via its src and submit the form via its error handler
 *        7. Deliver the exploit to the victim
-*        8. The victim's email will be changed after he trigger the exploit
+*        8. The victim's email will be changed after they trigger the exploit
 *
 *****************************************************************************************/
 #![allow(unused)]
@@ -166,7 +166,7 @@ fn main() {
     println!("{}", "OK".green());
     println!(
         "{}",
-        "🗹 The victim's email will be changed after he trigger the exploit".white()
+        "🗹 The victim's email will be changed after they trigger the exploit".white()
     );
     println!(
         "{} {}",

@@ -10,7 +10,7 @@
 *        2. Craft an HTML form for changing the email address with an auto-submit 
 *           script that changes the Referer header value using the history.pushState() method
 *        3. Deliver the exploit to the victim
-*        4. The victim's email will be changed after he trigger the exploit
+*        4. The victim's email will be changed after they trigger the exploit
 *
 ***********************************************************************************************/
 #![allow(unused)]
@@ -34,10 +34,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0acf002f03d8047180534e6800ff00d5.web-security-academy.net";
+    let lab_url = "https://0ad200df0310680483dcaf1100af004b.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0ab500b203b2040f804c4de0010c0099.exploit-server.net";
+    let exploit_server_url = "https://exploit-0ab800a103c568578367ae740103005a.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -88,7 +88,7 @@ fn main() {
     println!("{}", "OK".green());
     println!(
         "{}",
-        "🗹 The victim's email will be changed after he trigger the exploit".white()
+        "🗹 The victim's email will be changed after they trigger the exploit".white()
     );
     println!(
         "{} {}",

@@ -1,5 +1,5 @@
 [package]
-name = "csrf_with_broken_referer_validation"
+name = "samesite_lax_bypass_via_method_override"
 version = "0.1.0"
 edition = "2021"
 

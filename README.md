@@ -1,8 +1,8 @@
 ![Static Badge](https://img.shields.io/badge/Developed%20on-GNU%20Linux-red)
 ![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-bright)
 ![Static Badge](https://img.shields.io/badge/License-GPLv3-green)
-![Static Badge](https://img.shields.io/badge/Topics-12-red)
-![Static Badge](https://img.shields.io/badge/Single--threaded%20labs-102-blue)
+![Static Badge](https://img.shields.io/badge/Topics-13-red)
+![Static Badge](https://img.shields.io/badge/Single--threaded%20labs-103-blue)
 ![Static Badge](https://img.shields.io/badge/Multi--threaded%20labs-14-yellow)
 
 ![WebScurity Academy](./web-security-rust.png)

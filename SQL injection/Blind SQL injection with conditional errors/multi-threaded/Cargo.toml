@@ -1,5 +1,5 @@
 [package]
-name = "blind_sql_injection_with_conditional_errors"
+name = "blind_sql_injection_with_conditional_errors_multithreaded"
 version = "0.1.0"
 edition = "2021"
 

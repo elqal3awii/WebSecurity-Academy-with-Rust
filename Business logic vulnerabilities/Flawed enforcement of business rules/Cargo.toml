@@ -1,13 +1,11 @@
 [package]
-name = "password_brute_force_via_password_change_multithreaded"
+name = "flawed_enforcement_of_business_rules"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-lazy_static = "1.4.0"
-rayon = "1.7.0"
-regex = "1.9.3"
-reqwest = { version = "0.11.18", features = ["blocking"] }
+reqwest = { version = "0.11.20", features = ["blocking"] }
 text-colorizer = "1.0.0"
+regex = "1.10.0"
+select = "0.6.0"

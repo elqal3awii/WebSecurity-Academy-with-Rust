@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    'Basic SSRF against another back-end system',
+    'Basic SSRF against the local server',
+    'Blind SSRF with out-of-band detection',
+    'Blind SSRF with Shellshock exploitation',
+    'SSRF with blacklist-based filter',
+    'SSRF with filter bypass via open redirection vulnerability',
+    'SSRF with whitelist-based input filter',
+]

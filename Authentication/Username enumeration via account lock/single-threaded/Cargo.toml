@@ -1,5 +1,5 @@
 [package]
-name = "username_enumeration_via_different_responses"
+name = "username_enumeration_via_account_lock"
 version = "0.1.0"
 edition = "2021"
 

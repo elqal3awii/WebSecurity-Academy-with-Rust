@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    'Authentication bypass via information disclosure',
+    'Information disclosure in error messages',
+    'Information disclosure in version control history',
+    'Information disclosure on debug page',
+    'Source code disclosure via backup files',
+]

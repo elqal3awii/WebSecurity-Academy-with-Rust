@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    'Blind OS command injection with out-of-band data exfiltration',
+    'Blind OS command injection with out-of-band interaction',
+    'Blind OS command injection with output redirection',
+    'Blind OS command injection with time delays',
+    'OS command injection, simple case',
+]

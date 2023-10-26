@@ -44,10 +44,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a00007403bdb02e8324101800c40032.web-security-academy.net";
+    let url = "https://0a9c00af03f383ae82d47ac400b300ee.web-security-academy.net";
 
     // change this to your exploit domain
-    let exploit_domain = "exploit-0a26004b030ab0a6831a0ffd01320052.exploit-server.net";
+    let exploit_domain = "exploit-0a80005603d28348825f793a016f0091.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();

@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    'Insecure direct object references',
+    'Method-based access control can be circumvented',
+    'Multi-step process with no access control on one step',
+    'Referer-based access control',
+    'Unprotected admin functionality',
+    'Unprotected admin functionality with unpredictable URL',
+    'URL-based access control can be circumvented',
+    'User ID controlled by request parameter',
+    'User ID controlled by request parameter with data leakage in redirect',
+    'User ID controlled by request parameter with password disclosure',
+    'User ID controlled by request parameter, with unpredictable user IDs',
+    'User role can be modified in user profile',
+    'User role controlled by request parameter',
+]

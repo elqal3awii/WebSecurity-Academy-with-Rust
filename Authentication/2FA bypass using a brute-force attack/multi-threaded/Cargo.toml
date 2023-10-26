@@ -1,5 +1,5 @@
 [package]
-name = "two_fa_bypass_using_a_brute_force_attack_multi"
+name = "two_fa_bypass_using_a_brute_force_attack_multithreaded"
 version = "0.1.0"
 edition = "2021"
 

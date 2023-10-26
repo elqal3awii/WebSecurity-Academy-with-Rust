@@ -1,5 +1,5 @@
 [package]
-name = "username_enumeration_via_different_responses_multithreaded"
+name = "username_enumeration_via_response_timing_multithreaded"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,0 +1,26 @@
+[workspace]
+members = [
+    '2FA broken logic/single-threaded',
+    '2FA broken logic/multi-threaded',
+    '2FA bypass using a brute-force attack/single-threaded',
+    '2FA bypass using a brute-force attack/multi-threaded',
+    '2FA simple bypass',
+    'Broken brute-force protection, IP block/single-threaded',
+    'Broken brute-force protection, IP block/multi-threaded',
+    'Broken brute-force protection, multiple credentials per request',
+    'Brute-forcing a stay-logged-in cookie/single-threaded',
+    'Brute-forcing a stay-logged-in cookie/multi-threaded',
+    'Offline password cracking',
+    'Password brute-force via password change/single-threaded',
+    'Password brute-force via password change/multi-threaded',
+    'Password reset broken logic',
+    'Password reset poisoning via middleware',
+    'Username enumeration via account lock/single-threaded',
+    'Username enumeration via account lock/multi-threaded',
+    'Username enumeration via different responses/single-threaded',
+    'Username enumeration via different responses/multi-threaded',
+    'Username enumeration via response timing/single-threaded',
+    'Username enumeration via response timing/multi-threaded',
+    'Username enumeration via subtly different responses/single-threaded',
+    'Username enumeration via subtly different responses/multi-threaded'
+]

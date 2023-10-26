@@ -1,5 +1,5 @@
 [package]
-name = "auth_2fa_broken_logic_mutltithread"
+name = "auth_2fa_broken_logic_mutltithreaded"
 version = "0.1.0"
 edition = "2021"
 

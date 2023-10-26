@@ -1,5 +1,5 @@
 [package]
-name = "auth_brute_force_cookie_multithread"
+name = "auth_brute_force_cookie_multithreaded"
 version = "0.1.0"
 edition = "2021"
 

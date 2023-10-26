@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    'Detecting NoSQL injection',
+    'Exploiting NoSQL injection to extract data/single-threaded',
+    'Exploiting NoSQL injection to extract data/multi-threaded',
+    'Exploiting NoSQL operator injection to bypass authentication',
+    'Exploiting NoSQL operator injection to extract unknown fields/single-threaded',
+    'Exploiting NoSQL operator injection to extract unknown fields/multi-threaded',
+]

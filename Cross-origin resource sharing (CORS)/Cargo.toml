@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    'CORS vulnerability with basic origin reflection',
+    'CORS vulnerability with trusted insecure protocols',
+    'CORS vulnerability with trusted null origin',
+]

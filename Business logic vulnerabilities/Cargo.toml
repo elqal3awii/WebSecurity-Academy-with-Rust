@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    'Excessive trust in client-side controls',
+    'Flawed enforcement of business rules',
+    'High-level logic vulnerability',
+    'Inconsistent security controls',
+]

@@ -4,4 +4,5 @@ members = [
     'Flawed enforcement of business rules',
     'High-level logic vulnerability',
     'Inconsistent security controls',
+    'Inconsistent handling of exceptional input'
 ]

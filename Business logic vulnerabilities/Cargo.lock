@@ -421,6 +421,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "inconsistent_handling_of_exceptional_input"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "reqwest",
+ "select",
+ "text-colorizer",
+]
+
+[[package]]
 name = "inconsistent_security_controls"
 version = "0.1.0"
 dependencies = [

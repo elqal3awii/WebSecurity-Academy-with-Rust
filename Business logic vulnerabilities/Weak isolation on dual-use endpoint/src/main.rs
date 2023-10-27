@@ -7,14 +7,14 @@
 * Lab: Weak isolation on dual-use endpoint
 *
 * Steps: 1. Fetch the login page
-*        2. Extract csrf token and session cookie to login
+*        2. Extract the csrf token and session cookie to login
 *        3. Login as wiener
 *        4. Fetch wiener's profle
-*        5. Extract csrf token needed for changing password
+*        5. Extract the csrf token needed for changing password
 *        6. Change the administrato's password by removing the current-password parameter 
 *           from the request to skip the validation
 *        7. Fetch the login page
-*        8. Extract csrf token and session cookie to login
+*        8. Extract the csrf token and session cookie to login
 *        9. Login as administrator
 *        10. Delete carlos from the admin panel
 *
@@ -59,7 +59,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting csrf token and session cookie to login.. ".white(),
+        "⦗2⦘ Extracting the csrf token and session cookie to login.. ".white(),
     );
     io::stdout().flush();
 
@@ -105,7 +105,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗5⦘ Extracting csrf token needed for changing password.. ".white(),
+        "⦗5⦘ Extracting the csrf token needed for changing password.. ".white(),
     );
     io::stdout().flush();
 
@@ -156,7 +156,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗8⦘ Extracting csrf token and session cookie to login.. ".white(),
+        "⦗8⦘ Extracting the csrf token and session cookie to login.. ".white(),
     );
     io::stdout().flush();
 

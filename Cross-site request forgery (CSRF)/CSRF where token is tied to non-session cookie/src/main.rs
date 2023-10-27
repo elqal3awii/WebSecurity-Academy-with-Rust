@@ -7,7 +7,7 @@
 * Lab: CSRF where token is tied to non-session cookie
 *
 * Steps: 1. Fetch the login page
-*        2. Extract csrf token, session cookie and csrf key cookie
+*        2. Extract the csrf token, session cookie and csrf key cookie
 *        3. Login as wiener
 *        4. Fetch wiener profile
 *        5. Extract the csrf token that is needed for email update
@@ -64,7 +64,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting csrf token, session cookie and csrf key cookie.. ".white(),
+        "⦗2⦘ Extracting the csrf token, session cookie and csrf key cookie.. ".white(),
     );
     io::stdout().flush();
 

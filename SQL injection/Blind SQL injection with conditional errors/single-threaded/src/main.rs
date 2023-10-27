@@ -10,7 +10,7 @@
 *           administrator's password based on conditional errors
 *        2. Modify the payload to brute force the administrator's password
 *        3. Fetch the login page
-*        4. Extract csrf token and session cookie
+*        4. Extract the csrf token and session cookie
 *        5. Login as the administrator
 *        6. Fetch the administrator profile
 *
@@ -67,7 +67,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "4. Extracting csrf token and session cookie.. ".white()
+        "4. Extracting the csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
 

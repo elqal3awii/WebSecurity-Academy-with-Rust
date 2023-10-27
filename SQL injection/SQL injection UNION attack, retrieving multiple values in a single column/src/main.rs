@@ -9,7 +9,7 @@
 * Steps: 1. Inject payload into 'category' query parameter to retrieve administrator
 *           password from users table using concatenation method
 *        2. Fetch the login page
-*        3. Extract csrf token and session cookie
+*        3. Extract the csrf token and session cookie
 *        4. Login as the administrator
 *        5. Fetch the administrator profile
 *
@@ -89,7 +89,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "3. Extracting csrf token and session cookie.. ".white()
+        "3. Extracting the csrf token and session cookie.. ".white()
     );
     io::stdout().flush();
 

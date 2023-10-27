@@ -451,6 +451,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "insufficient_workflow_validation"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "reqwest",
+ "select",
+ "text-colorizer",
+]
+
+[[package]]
 name = "ipnet"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

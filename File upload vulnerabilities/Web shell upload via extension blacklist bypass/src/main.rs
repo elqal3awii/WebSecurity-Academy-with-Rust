@@ -7,7 +7,7 @@
 * Lab: Web shell upload via extension blacklist bypass
 *
 * Steps: 1. Fetch login page
-*        2. Extract csrf token and session cookie
+*        2. Extract the csrf token and session cookie
 *        3. Login as wiener
 *        4. Fetch wiener profile
 *        5. Upload a .htaccess file containing a mapping rule to a custom extension
@@ -59,7 +59,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting csrf token and session cookie.. ".white(),
+        "⦗2⦘ Extracting the csrf token and session cookie.. ".white(),
     );
     io::stdout().flush();
 

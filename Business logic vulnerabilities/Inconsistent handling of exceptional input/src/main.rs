@@ -7,14 +7,14 @@
 * Lab: Inconsistent handling of exceptional input
 *
 * Steps: 1. Fetch the register page
-*        2. Extract csrf token and session cookie to register a new account
+*        2. Extract the csrf token and session cookie to register a new account
 *        3. Register a new account Register a new account with a suitable offset
 *           and dontwannacry.com before the real domain
 *        4. Fetch the email client
 *        5. Extract the link of account registration
 *        6. Complete the account registration by following the link
 *        7. Fetch the login page
-*        8. Extract csrf token and session cookie to login
+*        8. Extract the csrf token and session cookie to login
 *        9. Login to the new account
 *        10. Delete carlos from the admin panel
 *
@@ -65,7 +65,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting csrf token and session cookie to register a new account.. ".white(),
+        "⦗2⦘ Extracting the csrf token and session cookie to register a new account.. ".white(),
     );
     io::stdout().flush();
 
@@ -168,7 +168,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗8⦘ Extracting csrf token and session cookie to login.. ".white(),
+        "⦗8⦘ Extracting the csrf token and session cookie to login.. ".white(),
     );
     io::stdout().flush();
 

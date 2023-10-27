@@ -7,11 +7,11 @@
 * Lab: Flawed enforcement of business rules
 *
 * Steps: 1. Fetch the login page
-*        2. Extract csrf token and session cookie
+*        2. Extract the csrf token and session cookie
 *        3. Login as wiener
 *        4. Add the leather jacket to the cart
 *        5. Fetch wiener's cart
-*        6. Extract csrf token needed for applying coupons and placing order
+*        6. Extract the csrf token needed for applying coupons and placing order
 *        7. Apply the coupons one after another repeatedly for a few times
 *        8. Place order
 *        9. Confirm order
@@ -57,7 +57,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting csrf token and session cookie.. ".white(),
+        "⦗2⦘ Extracting the csrf token and session cookie.. ".white(),
     );
     io::stdout().flush();
 
@@ -122,7 +122,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗6⦘ Extracting csrf token needed for applying coupons and placing order.. ".white(),
+        "⦗6⦘ Extracting the csrf token needed for applying coupons and placing order.. ".white(),
     );
     io::stdout().flush();
 

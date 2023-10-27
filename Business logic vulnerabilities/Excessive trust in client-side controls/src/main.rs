@@ -7,11 +7,11 @@
 * Lab: Excessive trust in client-side controls
 *
 * Steps: 1. Fetch login page
-*        2. Extract csrf token and session cookie
+*        2. Extract the csrf token and session cookie
 *        3. Login as wiener
 *        4. Add the leather jacket to the cart with a modified price
 *        5. Fetch wiener's cart
-*        6. Extract csrf token needed for placing order
+*        6. Extract the csrf token needed for placing order
 *        7. Place order
 *        8. Confirm order
 *
@@ -56,7 +56,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting csrf token and session cookie.. ".white(),
+        "⦗2⦘ Extracting the csrf token and session cookie.. ".white(),
     );
     io::stdout().flush();
 
@@ -125,7 +125,7 @@ fn main() {
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗6⦘ Extracting csrf token needed for placing order.. ".white(),
+        "⦗6⦘ Extracting the csrf token needed for placing order.. ".white(),
     );
     io::stdout().flush();
 

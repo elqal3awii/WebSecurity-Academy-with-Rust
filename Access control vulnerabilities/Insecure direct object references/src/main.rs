@@ -66,11 +66,11 @@ fn main() {
     );
     io::stdout().flush();
 
-    // fetch login page to get valid session csrf token
+    // fetch the login page to get valid session csrf token
     let get_login = client
         .get(format!("{url}/login"))
         .send()
-        .expect(&format!("{}", "[!] Failed to fetch login page".red()));
+        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
 
     // extract session cookie
     let session = extract_session_cookie(get_login.headers())

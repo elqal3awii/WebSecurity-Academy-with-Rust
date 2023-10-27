@@ -55,7 +55,7 @@ fn main() {
     print!("{}", "⦗1⦘ Fetching the login page.. ".white());
     io::stdout().flush();
 
-    // fetch login page
+    // fetch the login page
     let login_page = client
         .get(format!("{lab_url}/login"))
         .send()

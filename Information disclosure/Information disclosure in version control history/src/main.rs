@@ -109,7 +109,7 @@ fn main() {
     );
     io::stdout().flush();
 
-    // fetch login page
+    // fetch the login page
     let get_login = client
         .get(format!("https://{domain}/login"))
         .send()

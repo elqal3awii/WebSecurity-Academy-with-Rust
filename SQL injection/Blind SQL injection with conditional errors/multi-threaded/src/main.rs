@@ -83,7 +83,7 @@ fn main() {
     let fetch_login = client
         .get(format!("{url}/login"))
         .send()
-        .expect(&format!("{}", "[!] Failed to fetch login page".red()));
+        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
 
     println!("{}", "OK".green());
     print!(

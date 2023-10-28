@@ -7,5 +7,6 @@ members = [
     'Inconsistent handling of exceptional input',
     'Weak isolation on dual-use endpoint',
     'Insufficient workflow validation',
-    'Authentication bypass via flawed state machine'
+    'Authentication bypass via flawed state machine',
+    'Infinite money logic flaw'
 ]

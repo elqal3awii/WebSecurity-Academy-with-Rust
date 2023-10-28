@@ -1,6 +1,6 @@
 /*************************************************************************************
 *
-* Author: Ahmed Elqalawy (@elqal3awii)
+* Author: Ahmed Elqalaawy (@elqal3awii)
 *
 * Date: 21/10/2023
 *
@@ -64,7 +64,7 @@ fn main() {
     print!("{}", "⦗2⦘ Extracting the csrf token to login.. ".white(),);
     io::stdout().flush();
 
-    // extract csrf token to login
+    // extract the csrf token to login
     let mut csrf = extract_csrf(login_page)
         .expect(&format!("{}", "[!] Failed to extract csrf to login".red()));
 

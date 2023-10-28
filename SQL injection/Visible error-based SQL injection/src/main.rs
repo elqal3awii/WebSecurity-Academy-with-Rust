@@ -1,6 +1,6 @@
 /***************************************************************************************
 *
-* Author: Ahmed Elqalawy (@elqal3awii)
+* Author: Ahmed Elqalaawy (@elqal3awii)
 *
 * Date: 24/9/2023
 *
@@ -105,9 +105,9 @@ fn main() {
     let session = extract_session_multiple_cookies(fetch_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract csrf token
+    // extract the csrf token
     let csrf =
-        extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract csrf token".red()));
+        extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract the csrf token".red()));
 
     println!("{}", "OK".green());
     print!("{}", "5. Logging in as the administrator.. ".white(),);

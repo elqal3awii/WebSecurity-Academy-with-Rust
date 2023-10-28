@@ -461,6 +461,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "infinite_money_logic_flaw"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "reqwest",
+ "select",
+ "text-colorizer",
+]
+
+[[package]]
 name = "insufficient_workflow_validation"
 version = "0.1.0"
 dependencies = [

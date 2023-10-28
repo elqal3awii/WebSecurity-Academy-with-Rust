@@ -1,6 +1,6 @@
 /****************************************************************************************
 *
-* Author: Ahmed Elqalawy (@elqal3awii)
+* Author: Ahmed Elqalaawy (@elqal3awii)
 *
 * Date: 21/10/2023
 *
@@ -76,7 +76,7 @@ fn main() {
     let mut csrf_key = extract_from_multiple_cookies(login_page.headers(), "csrfKey")
         .expect(&format!("{}", "[!] Failed to extract csrfKey cookie".red()));
 
-    // extract csrf token to login
+    // extract the csrf token to login
     let mut csrf_token = extract_csrf(login_page)
         .expect(&format!("{}", "[!] Failed to extract csrf to login".red()));
 
@@ -125,7 +125,7 @@ fn main() {
     // extract the csrf token that is needed for email update
     csrf_token = extract_csrf(wiener).expect(&format!(
         "{}",
-        "[!] Failed to extract csrf token that is needed for email update".red()
+        "[!] Failed to extract the csrf token that is needed for email update".red()
     ));
 
     // the new email

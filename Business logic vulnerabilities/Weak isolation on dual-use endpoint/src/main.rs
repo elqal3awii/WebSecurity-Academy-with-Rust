@@ -1,6 +1,6 @@
 /*********************************************************************************************
 *
-* Author: Ahmed Elqalawy (@elqal3awii)
+* Author: Ahmed Elqalaawy (@elqal3awii)
 *
 * Date: 27/10/2023
 *
@@ -67,7 +67,7 @@ fn main() {
     let mut session = extract_session_cookie(login_page.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract csrf token
+    // extract the csrf token
     let mut csrf =
         extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
@@ -109,7 +109,7 @@ fn main() {
     );
     io::stdout().flush();
 
-    // extract csrf token needed for changing password
+    // extract the csrf token needed for changing password
     csrf = extract_csrf(wiener_cart).expect(&format!(
         "{}",
         "[!] Failed to extract the csrf token needed for changing password".red()
@@ -164,7 +164,7 @@ fn main() {
     let mut session = extract_session_cookie(login_page.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract csrf token
+    // extract the csrf token
     let mut csrf =
         extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 

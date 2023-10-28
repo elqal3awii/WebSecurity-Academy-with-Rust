@@ -1,6 +1,6 @@
 /***************************************************************************
 *
-* Author: Ahmed Elqalawy (@elqal3awii)
+* Author: Ahmed Elqalaawy (@elqal3awii)
 *
 * Date: 5/9/2023
 *
@@ -80,7 +80,7 @@ fn main() {
     let session = extract_session_cookie(get_login.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract csrf token
+    // extract the csrf token
     let csrf = extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
 
     println!("{}", "OK".green());

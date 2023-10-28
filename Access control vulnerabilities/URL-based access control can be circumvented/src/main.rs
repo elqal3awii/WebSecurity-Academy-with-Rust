@@ -40,7 +40,7 @@ fn main() {
     print!("{} ", "1. Fetching admin panel..".white());
     io::stdout().flush();
 
-    // fetch admin panel
+    // fetch the admin panel
     // this step in not necessary in the script, you can do step 2 directly
     // it's only a must when solving the lab using the browser
     let admin_panel = client

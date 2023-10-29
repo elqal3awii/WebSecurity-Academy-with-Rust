@@ -8,5 +8,6 @@ members = [
     'Weak isolation on dual-use endpoint',
     'Insufficient workflow validation',
     'Authentication bypass via flawed state machine',
-    'Infinite money logic flaw'
+    'Infinite money logic flaw',
+    'Authentication bypass via encryption oracle'
 ]

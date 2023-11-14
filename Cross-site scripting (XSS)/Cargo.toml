@@ -1,5 +1,6 @@
 [workspace]
 members = [
     'Reflected XSS into HTML context with nothing encoded',
-    'Stored XSS into HTML context with nothing encoded'
+    'Stored XSS into HTML context with nothing encoded',
+    'DOM XSS in document.write sink using source location.search'
 ]

@@ -2,13 +2,13 @@
 ![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-bright)
 ![Static Badge](https://img.shields.io/badge/License-GPLv3-green)
 ![Static Badge](https://img.shields.io/badge/Topics-13-red)
-![Static Badge](https://img.shields.io/badge/Single--threaded%20labs-114-blue)
+![Static Badge](https://img.shields.io/badge/Single--threaded%20labs-115-blue)
 ![Static Badge](https://img.shields.io/badge/Multi--threaded%20labs-14-yellow)
 
 ![WebScurity Academy](./web-security-rust.png)
 
 
-# Responsibility Disclaimer
+# Disclaimer
 
 This repository is for educational purposes only, and I am not responsible for using any of the techniques described here for illegal usage.
 
@@ -16,8 +16,8 @@ This repository is for educational purposes only, and I am not responsible for u
 
 You can, of course, solve the labs using Burp Suite, but this repository is for those who want to take their scripting skills up to a higher level.
 
-**NOTE:** This repository assumes that you already know how to solve the labs and want to solve them using scripts, rather than relying on Burp Suite, in order to practice writing robust scripts.
-You will not find a detailed description of how the lab should be solved; instead, you will find a detailed description of how the scripts were written.
+This repository assumes that you already know how to solve the labs and want to solve them using scripts in order to practice writing robust ones.
+You may not find a detailed description of how the labs should be solved but you will find a detailed description of how the scripts were written.
 
 # Why Rust? 🦂
 

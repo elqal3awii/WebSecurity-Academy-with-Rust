@@ -36,7 +36,7 @@ fn main() {
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    // payload to call the alert function.
+    // payload to call the alert function
     let payload = "<script>alert(1)</script>";
 
     print!(

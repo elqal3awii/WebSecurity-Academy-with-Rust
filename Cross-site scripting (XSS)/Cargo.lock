@@ -151,6 +151,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dom_xss_in_jquery_anchor_href_attribute_sink_using_location_search_source"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"

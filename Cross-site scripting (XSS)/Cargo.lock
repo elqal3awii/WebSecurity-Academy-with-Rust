@@ -143,6 +143,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dom_xss_in_document_write_sink_using_source_location_search_inside_a_select_element"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "dom_xss_in_innerhtml_sink_using_source_location_search"
 version = "0.1.0"
 dependencies = [

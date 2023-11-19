@@ -135,6 +135,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e496a50fda8aacccc86d7529e2c1e0892dbd0f898a6b5645b5561b89c3210efa"
 
 [[package]]
+name = "dom_xss_in_angularjs_expression_with_angle_brackets_and_double_quotes_html_encoded"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "dom_xss_in_document_write_sink_using_source_location_search"
 version = "0.1.0"
 dependencies = [

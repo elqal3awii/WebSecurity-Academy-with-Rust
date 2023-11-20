@@ -159,7 +159,7 @@ fn main() {
     println!("{}", "OK".green());
     println!(
         "{} {}",
-        "🗹 Check your browser, it should be marked now as"
+        "🗹 The lab should be marked now as"
             .white()
             .bold(),
         "solved".green().bold()

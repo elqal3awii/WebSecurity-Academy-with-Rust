@@ -1083,6 +1083,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "stored_dom_xss"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "reqwest",
+ "select",
+ "text-colorizer",
+]
+
+[[package]]
 name = "stored_xss_into_anchor_href_attribute_with_double_quotes_html_encoded"
 version = "0.1.0"
 dependencies = [

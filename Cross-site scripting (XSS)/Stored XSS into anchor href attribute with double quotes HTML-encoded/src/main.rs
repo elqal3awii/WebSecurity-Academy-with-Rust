@@ -34,7 +34,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0aaf006803aa3672800b17ef00e200be.web-security-academy.net";
+    let url = "https://0af2008a0401c0468389746300960050.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -96,7 +96,7 @@ fn main() {
     println!("{}", "OK".green());
     println!(
         "{} {}",
-        "🗹 Check your browser, it should be marked now as".white(),
+        "🗹 The lab should be marked now as".white(),
         "solved".green()
     )
 }

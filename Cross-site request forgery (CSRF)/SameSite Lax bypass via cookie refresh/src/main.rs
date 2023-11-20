@@ -96,7 +96,7 @@ fn main() {
     );
     println!(
         "{} {}",
-        "🗹 Check your browser, it should be marked now as".white(),
+        "🗹 The lab should be marked now as".white(),
         "solved".green()
     )
 }

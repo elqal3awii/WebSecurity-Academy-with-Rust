@@ -25,5 +25,5 @@
 ⦗4⦘ Getting a new session as wiener .. OK
 ⦗5⦘ Bypassing admin access using custom header.. OK
 ⦗6⦘ Deleting carlos.. OK
-🗹 Check your browser, it should be marked now as solved
+🗹 The lab should be marked now as solved
 ```

@@ -826,6 +826,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflected_dom_xss"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "reflected_xss_into_a_javascript_string_with_angle_brackets_html_encoded"
 version = "0.1.0"
 dependencies = [

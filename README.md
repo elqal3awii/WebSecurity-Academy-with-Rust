@@ -2,7 +2,7 @@
 ![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-bright)
 ![Static Badge](https://img.shields.io/badge/License-GPLv3-green)
 ![Static Badge](https://img.shields.io/badge/Topics-14-red)
-![Static Badge](https://img.shields.io/badge/Single--threaded%20labs-123-blue)
+![Static Badge](https://img.shields.io/badge/Single--threaded%20labs-124-blue)
 ![Static Badge](https://img.shields.io/badge/Multi--threaded%20labs-14-yellow)
 
 ![WebScurity Academy](./web-security-rust.png)
@@ -74,6 +74,6 @@ If you appreciate the work and find it valuable, please consider giving this rep
 
 ## Resources
 
-- ["The Rust Programming Language" Book](https://doc.rust-lang.org/book/title-page.html)
-- ["Programming Rust" Book](https://www.goodreads.com/book/show/25550614-programming-rust?ref=nav_sb_ss_2_16)
+- [Jim Blandy, Jason Orendorﬀ, and Leonora F.S. Tindall. (2021). *Programming Rust*. O’Reilly.](https://www.goodreads.com/book/show/25550614-programming-rust?ref=nav_sb_ss_2_16)
+- [Steve Klabnik, Carol Nichols. (2018). *The Rust Programming Language*. no strach press.](https://doc.rust-lang.org/book/title-page.html)
 - [Rust Documentation](https://doc.rust-lang.org/beta/)

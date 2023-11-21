@@ -1,6 +1,6 @@
 # Hack Steps
 
-1. Craft an iframe that, when loaded, will append an img element to the hash part of the URL
+1. Craft an iframe that, when loaded, will change the body width, causing the onresize event handler to be invoked
 2. Deliver the exploit to the victim
 3. The print() function will be called after they trigger the exploit
 

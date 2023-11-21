@@ -850,6 +850,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflected_xss_into_html_context_with_most_tags_and_attributes_blocked"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "reflected_xss_into_html_context_with_nothing_encoded"
 version = "0.1.0"
 dependencies = [

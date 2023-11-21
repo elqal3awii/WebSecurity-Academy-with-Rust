@@ -12,5 +12,6 @@ members = [
     'DOM XSS in document.write sink using source location.search inside a select element',
     'DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded',
     'Reflected DOM XSS',
-    'Stored DOM XSS'
+    'Stored DOM XSS',
+    'Reflected XSS into HTML context with most tags and attributes blocked'
 ]

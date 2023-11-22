@@ -874,6 +874,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflected_xss_with_some_svg_markup_allowed"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "regex"
 version = "1.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -2,7 +2,7 @@
 ![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-bright)
 ![Static Badge](https://img.shields.io/badge/License-GPLv3-green)
 ![Static Badge](https://img.shields.io/badge/Topics-14-red)
-![Static Badge](https://img.shields.io/badge/Single--threaded%20Labs-135-blue)
+![Static Badge](https://img.shields.io/badge/Single--threaded%20Labs-136-blue)
 ![Static Badge](https://img.shields.io/badge/Multi--threaded%20Labs-14-yellow)
 
 ![WebScurity Academy](./web-security-rust.png)

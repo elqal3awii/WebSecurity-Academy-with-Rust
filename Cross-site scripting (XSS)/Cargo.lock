@@ -866,6 +866,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflected_xss_into_a_template_literal_with_angle_brackets_single_double_quotes_backslash_and_backticks_unicode_escaped"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "reflected_xss_into_attribute_with_angle_brackets_html_encoded"
 version = "0.1.0"
 dependencies = [

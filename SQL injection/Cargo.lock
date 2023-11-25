@@ -6,6 +6,7 @@ version = 3
 name = " sql_injection_vulnerability_allowing_login_bypass"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -16,6 +17,7 @@ dependencies = [
 name = " sql_injection_vulnerability_in_where_clause_allowing_retrieval_of_hidden_data"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "reqwest",
  "text-colorizer",
 ]
@@ -102,6 +104,7 @@ checksum = "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07"
 name = "blind_sql_injection_with_conditional_errors"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -124,6 +127,7 @@ dependencies = [
 name = "blind_sql_injection_with_conditional_responses"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -154,6 +158,7 @@ dependencies = [
 name = "blind_sql_injection_with_out_of_band_interaction"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "reqwest",
  "text-colorizer",
 ]
@@ -162,6 +167,7 @@ dependencies = [
 name = "blind_sql_injection_with_time_delays"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "reqwest",
  "text-colorizer",
 ]
@@ -170,6 +176,7 @@ dependencies = [
 name = "blind_sql_injection_with_time_delays_and_information_retrieval"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "rayon",
  "regex",
  "reqwest",
@@ -1192,6 +1199,7 @@ dependencies = [
 name = "sql_injection_attack_listing_the_database_contents_on_non_oracle_databases"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1202,6 +1210,7 @@ dependencies = [
 name = "sql_injection_attack_listing_the_database_contents_on_oracle"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1220,6 +1229,7 @@ dependencies = [
 name = "sql_injection_attack_querying_the_database_type_and_version_on_oracle"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "reqwest",
  "text-colorizer",
 ]
@@ -1230,7 +1240,6 @@ version = "0.1.0"
 dependencies = [
  "regex",
  "reqwest",
- "select",
  "text-colorizer",
 ]
 
@@ -1240,7 +1249,6 @@ version = "0.1.0"
 dependencies = [
  "regex",
  "reqwest",
- "select",
  "text-colorizer",
 ]
 
@@ -1248,6 +1256,7 @@ dependencies = [
 name = "sql_injection_union_attack_retrieving_data_from_other_tables"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1258,6 +1267,7 @@ dependencies = [
 name = "sql_injection_union_attack_retrieving_multiple_values_in_a_single_column"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1268,6 +1278,7 @@ dependencies = [
 name = "sql_injection_with_filter_bypass_via_xml_encoding"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1510,6 +1521,7 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 name = "visible_error_based_sql_injection"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",

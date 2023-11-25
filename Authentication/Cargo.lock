@@ -37,7 +37,7 @@ name = "auth_2fa_broken_logic"
 version = "0.1.0"
 dependencies = [
  "cookie",
- "rayon",
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",
@@ -48,6 +48,7 @@ name = "auth_2fa_broken_logic_mutltithreaded"
 version = "0.1.0"
 dependencies = [
  "cookie",
+ "lazy_static",
  "rayon",
  "regex",
  "reqwest",
@@ -59,11 +60,10 @@ name = "auth_brute_force_cookie"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "lazy_static",
  "md5",
- "regex",
  "reqwest",
  "text-colorizer",
- "tokio",
 ]
 
 [[package]]
@@ -71,12 +71,12 @@ name = "auth_brute_force_cookie_multithreaded"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "lazy_static",
  "md5",
  "rayon",
  "regex",
  "reqwest",
  "text-colorizer",
- "tokio",
 ]
 
 [[package]]
@@ -138,17 +138,7 @@ name = "broken_brute_force_protection_ip_block"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
- "reqwest",
- "text-colorizer",
-]
-
-[[package]]
-name = "broken_brute_force_protection_ip_block_multithreaded"
-version = "0.1.0"
-dependencies = [
- "atomic-counter",
- "lazy_static",
- "rayon",
+ "regex",
  "reqwest",
  "text-colorizer",
 ]
@@ -829,6 +819,7 @@ dependencies = [
 name = "password_brute_force_via_password_change"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "rayon",
  "regex",
  "reqwest",
@@ -850,6 +841,7 @@ dependencies = [
 name = "password_reset_broken_logic"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",
@@ -1287,15 +1279,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "signal-hook-registry"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8229b473baa5980ac72ef434c4415e70c4b5e71b423043adb4ba059f89c99a1"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "siphasher"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1504,23 +1487,9 @@ dependencies = [
  "libc",
  "mio",
  "num_cpus",
- "parking_lot",
  "pin-project-lite",
- "signal-hook-registry",
  "socket2 0.5.5",
- "tokio-macros",
  "windows-sys",
-]
-
-[[package]]
-name = "tokio-macros"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "630bdcf245f78637c13ec01ffae6187cca34625e8c63150d424b59e55af2675e"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.38",
 ]
 
 [[package]]
@@ -1606,6 +1575,7 @@ dependencies = [
 name = "two_fa_simple_bypass"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",
@@ -1693,6 +1663,7 @@ version = "0.1.0"
 dependencies = [
  "lazy_static",
  "rand 0.8.5",
+ "regex",
  "reqwest",
  "text-colorizer",
 ]

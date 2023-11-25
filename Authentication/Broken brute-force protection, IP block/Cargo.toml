@@ -1,12 +1,12 @@
 [package]
-name = "broken_brute_force_protection_ip_block_multithreaded"
+name = "broken_brute_force_protection_ip_block"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [dependencies]
-atomic-counter = "1.0.1"
-lazy_static = "1.4.0"
-rayon = "1.7.0"
+regex = "1.9.3"
 reqwest = { version = "0.11.20", features = ["blocking"] }
 text-colorizer = "1.0.0"
+lazy_static = "1.4.0"

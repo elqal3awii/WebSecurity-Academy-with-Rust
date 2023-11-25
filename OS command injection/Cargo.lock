@@ -84,6 +84,7 @@ checksum = "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07"
 name = "blind_os_command_injection_with_out_of_band_data_exfiltration"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -94,6 +95,7 @@ dependencies = [
 name = "blind_os_command_injection_with_out_of_band_interaction"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -104,6 +106,7 @@ dependencies = [
 name = "blind_os_command_injection_with_output_redirection"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -114,6 +117,7 @@ dependencies = [
 name = "blind_os_command_injection_with_time_delays"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",

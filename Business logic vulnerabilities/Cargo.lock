@@ -31,6 +31,7 @@ name = "authentication_bypass_via_encryption_oracle"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "lazy_static",
  "percent-encoding",
  "regex",
  "reqwest",
@@ -42,6 +43,7 @@ dependencies = [
 name = "authentication_bypass_via_flawed_state_machine"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -179,6 +181,7 @@ dependencies = [
 name = "excessive_trust_in_client_side_controls"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -195,6 +198,7 @@ checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
 name = "flawed_enforcement_of_business_rules"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -341,6 +345,7 @@ checksum = "d77f7ec81a6d05a3abb01ab6eb7590f6083d08449fe5a1c8b1e620283546ccb7"
 name = "high_level_logic_vulnerability"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -446,6 +451,7 @@ dependencies = [
 name = "inconsistent_handling_of_exceptional_input"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -456,6 +462,7 @@ dependencies = [
 name = "inconsistent_security_controls"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -476,6 +483,7 @@ dependencies = [
 name = "infinite_money_logic_flaw"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -486,6 +494,7 @@ dependencies = [
 name = "insufficient_workflow_validation"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1420,6 +1429,7 @@ checksum = "ca6ad05a4870b2bf5fe995117d3728437bd27d7cd5f06f13c17443ef369775a1"
 name = "weak_isolation_on_dual_use_endpoint"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",

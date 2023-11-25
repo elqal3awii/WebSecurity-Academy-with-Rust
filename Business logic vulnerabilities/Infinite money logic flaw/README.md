@@ -1,4 +1,4 @@
-# Hack Steps
+## Hack Steps
 
 1. Fetch the login page
 2. Extract the csrf token and session cookie
@@ -11,12 +11,12 @@
 9. Fetch the email client
 10. Collect the received gift card codes
 11. Redeem the codes one by one
-12. Repeat the stpes from 6 to 11 multiple times (after 43 times you will have the price of the leather jacket and a little more)
+12. Repeat the stpes from 6 to 11 multiple times (after 43 times, you will have the price of the leather jacket and a little more)
 13. Add the leather jacket the cart
 14. Plac order
 15. Confirm order
 
-# Run Script
+## Run Script
 
 1. Change the URL of the lab
 2. Change the domain of the exploit server
@@ -26,7 +26,7 @@
 ~$ cargo run
 ```
 
-# Expected Output
+## Expected Output
 
 ```
 ⦗1⦘ Fetching the login page.. OK

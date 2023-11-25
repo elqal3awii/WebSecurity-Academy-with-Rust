@@ -1,4 +1,4 @@
-# Hack Steps
+## Hack Steps
 
 1. Fetch the login page
 2. Extract the csrf token and session cookie
@@ -10,7 +10,7 @@
 8. Place order
 9. Confirm order
 
-# Run Script
+## Run Script
 
 1. Change the URL of the lab
 2. Start script
@@ -19,7 +19,7 @@
 ~$ cargo run
 ```
 
-# Expected Output
+## Expected Output
 
 ```
 ⦗1⦘ Fetching the login page.. OK

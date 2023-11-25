@@ -6,6 +6,7 @@ version = 3
 name = " insecure_direct_object_references"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -16,6 +17,7 @@ dependencies = [
 name = " method_based_access_control_can_be_circumvented"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",
@@ -53,6 +55,7 @@ dependencies = [
 name = " unprotected_admin_functionality_with_unpredictable_url"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -72,6 +75,7 @@ dependencies = [
 name = " user_id_controlled_by_request_parameter"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -82,6 +86,7 @@ dependencies = [
 name = " user_id_controlled_by_request_parameter_with_data_leakage_in_redirect"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -92,6 +97,7 @@ dependencies = [
 name = " user_id_controlled_by_request_parameter_with_password_disclosure"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -102,6 +108,7 @@ dependencies = [
 name = " user_id_controlled_by_request_parameter_with_unpredictable_user_ids"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -112,6 +119,7 @@ dependencies = [
 name = " user_role_can_be_modified_in_user_profile"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -122,9 +130,7 @@ dependencies = [
 name = " user_role_controlled_by_request_parameter"
 version = "0.1.0"
 dependencies = [
- "regex",
  "reqwest",
- "select",
  "text-colorizer",
 ]
 

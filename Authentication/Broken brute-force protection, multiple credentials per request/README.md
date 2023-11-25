@@ -1,21 +1,26 @@
-# Hack Steps
-1. Send multiple passwords in the same login request
-2. Obtain the new session from cookie header
-3. Login as carlos with the new session
+## Hack Steps
 
-# Run Script
+1. Read password list
+2. Send multiple passwords in the same request
+3. Get the session cookie of carlos
+4. Fetch carlos profile
+
+## Run Script
+
 1. Change the URL of the lab
-2. Change the file path of the password list
-3. Change the separator in the split function to \r\n instead of \n if you are still a windows user
-4. Start script
+2. Make sure the passwords file exists in the root directory (Authentication directory) or change its path accordingly
+3. Start script
+
 ```
 ~$ cargo run
 ```
 
-# Expected Output
-```
-[*] Sending multiple passwords in the same request..OK
-✅ Successfully logged in as carlos
-[#] Use this 2aQWuvvBd0vzGRtC4UE3YSTzFzJDPx7Z session in your browser to login as carlos
-```
+## Expected Output
 
+```
+⦗1⦘ Reading password list.. OK
+⦗2⦘ Sending multiple passwords in the same request.. OK
+⦗3⦘ Getting the session cookie of carlos.. OK
+⦗4⦘ Fetching carlos profile.. OK
+🗹 The lab should be marked now as solved
+```

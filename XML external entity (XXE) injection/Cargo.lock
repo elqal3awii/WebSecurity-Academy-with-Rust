@@ -173,6 +173,7 @@ dependencies = [
 name = "exploiting_blind_xxe_to_exfiltrate_data_using_a_malicious_external_dtd"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "reqwest",
  "text-colorizer",
 ]
@@ -181,6 +182,7 @@ dependencies = [
 name = "exploiting_blind_xxe_to_retrieve_data_via_error_messages"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",
@@ -226,6 +228,7 @@ dependencies = [
 name = "exploiting_xxe_via_image_file_upload"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",

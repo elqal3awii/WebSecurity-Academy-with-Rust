@@ -155,6 +155,7 @@ dependencies = [
 name = "csrf_where_token_is_duplicated_in_cookie"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -165,6 +166,7 @@ dependencies = [
 name = "csrf_where_token_is_not_tied_to_user_session"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -175,6 +177,7 @@ dependencies = [
 name = "csrf_where_token_is_tied_to_non_session_cookie"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",

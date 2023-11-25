@@ -6,6 +6,7 @@ version = 3
 name = " authentication_bypass_via_information_disclosure"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -16,6 +17,7 @@ dependencies = [
 name = " information_disclosure_in_error_messages"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",
@@ -25,6 +27,7 @@ dependencies = [
 name = " information_disclosure_in_version_control_history"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -35,6 +38,7 @@ dependencies = [
 name = " information_disclosure_on_debug_page"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",
@@ -44,6 +48,7 @@ dependencies = [
 name = " source_code_disclosure_via_backup_files"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "text-colorizer",

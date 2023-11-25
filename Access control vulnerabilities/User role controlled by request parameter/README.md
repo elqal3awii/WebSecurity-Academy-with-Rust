@@ -1,10 +1,9 @@
-# Hack Steps
+## Hack Steps
 
-1. Change the cookie 'Admin' to 'true'
-2. Fetch the admin panel
-3. Delete carlos
+1. Add the cookie 'Admin' and set it to 'true'
+2. Delete carlos from the admin panel
 
-# Run Script
+## Run Script
 
 1. Change the URL of the lab
 2. Start script
@@ -13,11 +12,9 @@
 ~$ cargo run
 ```
 
-# Expected Output
+## Expected Output
 
 ```
-1. Changing the cookie 'Admin' to 'true'.. OK
-2. Fetching the admin panel.. OK
-3. Deleting carlos.. OK
+❯❯ Deleting carlos from the admin panel after setting the 'Admin' cookie to true.. OK
 🗹 The lab should be marked now as solved
 ```

@@ -829,6 +829,7 @@ checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 name = "remote_code_execution_via_polyglot_web_shell_upload"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -839,6 +840,7 @@ dependencies = [
 name = "remote_code_execution_via_web_shell_upload"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1384,6 +1386,7 @@ dependencies = [
 name = "web_shell_upload_via_content_type_restriction_bypass"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1394,6 +1397,7 @@ dependencies = [
 name = "web_shell_upload_via_extension_blacklist_bypass"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1404,6 +1408,7 @@ dependencies = [
 name = "web_shell_upload_via_obfuscated_file_extension"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1414,6 +1419,7 @@ dependencies = [
 name = "web_shell_upload_via_path_traversal"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",
@@ -1424,6 +1430,7 @@ dependencies = [
 name = "web_shell_upload_via_race_condition"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "regex",
  "reqwest",
  "select",

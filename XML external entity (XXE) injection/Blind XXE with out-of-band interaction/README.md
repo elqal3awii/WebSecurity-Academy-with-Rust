@@ -1,9 +1,9 @@
-# Hack Steps
+## Hack Steps
 
-1. Inject payload into 'productId' XML element to issue a DNS lookup to burp collaborator using an external entity
+1. Use an external entity to issue a DNS lookup to burp collaborator
 2. Check your burp collaborator for the DNS lookup
 
-# Run Script
+## Run Script
 
 1. Change the URL of the lab
 2. Change the domain of the burp collaborator
@@ -13,11 +13,11 @@
 ~$ cargo run
 ```
 
-# Expected Output
+## Expected Output
 
 ```
-⟪#⟫ Injection point: productId
-❯ Injecting payload to issue a DNS lookup to burp collaborator using an external entity.. OK
+⦗#⦘ Injection point: productId
+❯❯ Using an external entity to issue a DNS lookup to burp collaborator.. OK
 🗹 Check your burp collaborator for the DNS lookup
 🗹 The lab should be marked now as solved
 ```

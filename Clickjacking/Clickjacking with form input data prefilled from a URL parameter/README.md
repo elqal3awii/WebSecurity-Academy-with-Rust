@@ -18,6 +18,6 @@
 
 ```
 ❯❯ Delivering the exploit to the victim.. OK
-🗹 The victim's account will be deleted after clicking on the decoy button
+🗹 The victim's email will be changed after clicking on the decoy button
 🗹 The lab should be marked now as solved
 ```

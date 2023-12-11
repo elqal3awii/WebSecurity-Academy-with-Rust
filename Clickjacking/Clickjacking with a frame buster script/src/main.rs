@@ -64,7 +64,7 @@ fn main() {
     deliver_exploit_to_victim(&payload);
 
     println!("{}", "OK".green());
-    println!("🗹 The victim's account will be deleted after clicking on the decoy button");
+    println!("🗹 The victim's email will be changed after clicking on the decoy button");
     println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 

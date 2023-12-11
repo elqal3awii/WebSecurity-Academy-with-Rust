@@ -1,0 +1,4 @@
+[workspace]
+members = [
+    'Basic clickjacking with CSRF token protection'
+]

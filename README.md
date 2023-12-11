@@ -1,8 +1,8 @@
 ![Static Badge](https://img.shields.io/badge/Developed%20on-GNU%20Linux-red)
 ![Static Badge](https://img.shields.io/badge/rustc-v1.73.0--nightly-bright)
 ![Static Badge](https://img.shields.io/badge/License-GPLv3-green)
-![Static Badge](https://img.shields.io/badge/Topics-14-red)
-![Static Badge](https://img.shields.io/badge/Single--threaded%20Labs-136-blue)
+![Static Badge](https://img.shields.io/badge/Topics-15-red)
+![Static Badge](https://img.shields.io/badge/Single--threaded%20Labs-137-blue)
 ![Static Badge](https://img.shields.io/badge/Multi--threaded%20Labs-13-yellow)
 
 ![WebScurity Academy](./web-security-rust.png)
@@ -56,6 +56,10 @@ If you find the scripts too hard, it is advisable to stick with single-threaded 
 ## Error Handling
 
 Since this repository is intended for educational purposes and not for production, I have omitted some error handling, which I believe will not significantly impact your testing of the script. This decision represents a trade-off between addressing every possible scenario and prioritizing simplicity.
+
+## Trivial Labs
+
+There are some labs that you may find trivial in their solutions and don't necessarily require a script. In fact, solving them without a script might be faster and easier. I have only written scripts for these labs for the completeness of this repository. Feel free to skip them if you prefer.
 
 ## Reporting Issues
 

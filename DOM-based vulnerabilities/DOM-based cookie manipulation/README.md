@@ -1,6 +1,6 @@
 ## Hack Steps
 
-1. Craft an iframe that, upon loading, will send an XSS payload using the postMessage API
+1. Craft an iframe with the XSS payload in its src attribute and make its onload handler redirect the victim to the main page, triggering the XSS payload.
 2. Deliver the exploit to the victim
 
 ## Run Script

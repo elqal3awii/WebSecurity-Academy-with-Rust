@@ -3,7 +3,7 @@
 * Lab: DOM XSS using web messages
 *
 * Hack Steps:
-*      1. Create an iframe that, upon loading, will send an XSS
+*      1. Craft an iframe that, upon loading, will send an XSS
 *         payload using the postMessage API
 *      2. Deliver the exploit to the victim
 *

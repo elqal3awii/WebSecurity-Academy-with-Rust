@@ -1,0 +1,9 @@
+[package]
+name = "dom_xss_using_web_messages_and_json_parse"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+reqwest = { version = "0.11.20", features = ["blocking"] }
+text-colorizer = "1.0.0"

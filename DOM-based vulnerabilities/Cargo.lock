@@ -126,6 +126,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dom_xss_using_web_messages_and_json_parse"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -975,6 +975,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "server_side_template_injection_in-an-unknown_language_with_a_documented_exploit"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "server_side_template_injection_using_documentation"
 version = "0.1.0"
 dependencies = [

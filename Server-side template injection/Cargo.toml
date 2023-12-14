@@ -1,5 +1,6 @@
 [workspace]
 members = [
     'Basic server-side template injection',
-    'Basic server-side template injection (code context)'
+    'Basic server-side template injection (code context)',
+    'Server-side template injection using documentation'
 ]

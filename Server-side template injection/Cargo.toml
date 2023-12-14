@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    'Basic server-side template injection',
+
+]

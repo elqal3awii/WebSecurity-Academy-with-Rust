@@ -3,5 +3,6 @@ members = [
     'Basic server-side template injection',
     'Basic server-side template injection (code context)',
     'Server-side template injection using documentation',
-    'Server-side template injection in an unknown language with a documented exploit'
+    'Server-side template injection in an unknown language with a documented exploit',
+    'Server-side template injection with information disclosure via user-supplied objects'
 ]

@@ -1,5 +1,6 @@
 [workspace]
 members = [
     'Web cache poisoning with an unkeyed header',
-    'Web cache poisoning with an unkeyed cookie'
+    'Web cache poisoning with an unkeyed cookie',
+    'Web cache poisoning with multiple headers'
 ]

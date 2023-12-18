@@ -998,6 +998,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "web_cache_poisoning_with_an_unkeyed_cookie"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "web_cache_poisoning_with_an_unkeyed_header"
 version = "0.1.0"
 dependencies = [

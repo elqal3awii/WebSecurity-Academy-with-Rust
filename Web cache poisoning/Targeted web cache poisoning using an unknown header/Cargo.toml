@@ -1,0 +1,12 @@
+[package]
+name = "targeted_web_cache_poisoning_using_an_unknown_header"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+reqwest = { version = "0.11.20", features = ["blocking"] }
+text-colorizer = "1.0.0"
+lazy_static = "1.4.0"
+regex = "1.10.0"
+select = "0.6.0"

@@ -21,10 +21,10 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a640090035c48a480993524009200cf.web-security-academy.net";
+const LAB_URL: &str = "https://0aff000303d5e8e281218f39004f00f6.web-security-academy.net";
 
 // Change this to your exploit server DOMAIN
-const EXPLOIT_SERVER_DOMAIN: &str = "exploit-0a3a0062033e488e800f3456010e0047.exploit-server.net";
+const EXPLOIT_SERVER_DOMAIN: &str = "exploit-0aac001d0333e8b481998e040197009b.exploit-server.net";
 
 lazy_static! {
     static ref WEB_CLIENT: Client = build_web_client();

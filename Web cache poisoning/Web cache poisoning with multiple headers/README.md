@@ -18,8 +18,8 @@
 
 ```
 ⦗1⦘ Storing the malicious javascript file on your exploit server.. OK
-⦗2⦘ Poisoning the tracking.js file with multiple headers (3/5)..
-⦗2⦘ Poisoning the tracking.js file with multiple headers (5/5).. OK
+⦗2⦘ Poisoning the tracking.js file with multiple headers (3/30)..
+⦗2⦘ Poisoning the tracking.js file with multiple headers (17/30).. OK
 🗹 The main page is poisoned successfully as it request the tracking.js file
 🗹 The lab should be marked now as solved
 ```

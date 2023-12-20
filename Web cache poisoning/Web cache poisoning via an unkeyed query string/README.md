@@ -15,8 +15,8 @@
 ## Expected Output
 
 ```
-❯❯ Poisoning the main page with the payload as a query string (3/10)..
-❯❯ Poisoning the main page with the payload as a query string (10/10).. OK
+❯❯ Poisoning the main page with the payload as a query string (3/35)..
+❯❯ Poisoning the main page with the payload as a query string (15/35).. OK
 🗹 The main page is poisoned successfully
 🗹 The lab should be marked now as solved
 ```

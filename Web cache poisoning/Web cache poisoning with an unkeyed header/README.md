@@ -17,8 +17,8 @@
 
 ```
 ⦗1⦘ Storing the malicious javascript file on your exploit server.. OK
-⦗2⦘ Poisoning the main page with an unkeyed header (3/5)..
-⦗2⦘ Poisoning the main page with an unkeyed header (5/5).. OK
+⦗2⦘ Poisoning the main page with an unkeyed header (3/30)..
+⦗2⦘ Poisoning the main page with an unkeyed header (17/30).. OK
 🗹 The main page is poisoned successfully
 🗹 The lab should be marked now as solved
 ```

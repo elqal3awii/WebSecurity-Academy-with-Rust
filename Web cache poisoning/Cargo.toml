@@ -5,5 +5,6 @@ members = [
     'Web cache poisoning with multiple headers',
     'Targeted web cache poisoning using an unknown header',
     'Web cache poisoning via an unkeyed query string',
-    'Web cache poisoning via an unkeyed query parameter'
+    'Web cache poisoning via an unkeyed query parameter',
+    'Parameter cloaking'
 ]

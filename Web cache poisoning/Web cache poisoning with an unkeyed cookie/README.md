@@ -15,8 +15,8 @@
 ## Expected Output
 
 ```
-❯❯ Poisoning the main page with an unkeyed cookie (3/5).. OK
-❯❯ Poisoning the main page with an unkeyed cookie (5/5).. OK
+❯❯ Poisoning the main page with an unkeyed cookie (3/30)..
+❯❯ Poisoning the main page with an unkeyed cookie (17/30).. OK
 🗹 The main page is poisoned successfully
 🗹 The lab should be marked now as solved
 ```

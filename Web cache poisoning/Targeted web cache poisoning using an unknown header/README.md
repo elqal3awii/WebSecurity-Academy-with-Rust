@@ -26,8 +26,8 @@
 ⦗4⦘ Waiting until the victim view comments to extract their User-Agent from server logs.. OK
 ⦗5⦘ Storing the malicious javascript file on your exploit server.. OK
 ❯❯ Victim's User-Agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36
-⦗6⦘ Poisoning the main page for specific subset of users (3/5)..
-⦗6⦘ Poisoning the main page for specific subset of users (5/5).. OK
+⦗6⦘ Poisoning the main page for specific subset of users (3/10)..
+⦗6⦘ Poisoning the main page for specific subset of users (10/10).. OK
 🗹 The main page is poisoned successfully
 🗹 The lab may not be marked as solved automatically for unknown reasons
 🗹 Use the User-Agent string with burp if so

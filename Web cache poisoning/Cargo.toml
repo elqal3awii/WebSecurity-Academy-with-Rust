@@ -7,5 +7,6 @@ members = [
     'Web cache poisoning via an unkeyed query string',
     'Web cache poisoning via an unkeyed query parameter',
     'Parameter cloaking',
-    'Web cache poisoning via a fat GET request'
+    'Web cache poisoning via a fat GET request',
+    'URL normalization'
 ]

@@ -86,10 +86,7 @@ fn query_user(payload: &str) -> Response {
         .header("Content-Type", "application/json")
         .body(body_json)
         .send()
-        .expect(&format!(
-            "{}",
-            "⦗!⦘ Failed to fetch the geolocate.js file with the injected payload".red()
-        ))
+        .expect(&format!("{}", "⦗!⦘ Failed to query hte user".red()))
 }
 
 fn capture_pattern_from_text(pattern: &str, text: &str) -> String {

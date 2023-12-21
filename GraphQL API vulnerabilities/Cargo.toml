@@ -1,5 +1,5 @@
 [workspace]
 members = [
     'Accessing private GraphQL posts',
-
+    'Accidental exposure of private GraphQL fields'
 ]

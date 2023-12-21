@@ -29,15 +29,14 @@ lazy_static! {
 }
 
 fn main() {
+    print!("⦗1⦘ Querying the hidden post.. ");
+    flush_terminal();
+
     let payload = r###"query getBlogSummaries {
                             getBlogPost(id: 3) {
                                 postPassword
                             }
                         }"###;
-
-    print!("⦗1⦘ Querying the hidden post.. ");
-    flush_terminal();
-
     let query = query_hidden_post(payload);
 
     println!("{}", "OK".green());

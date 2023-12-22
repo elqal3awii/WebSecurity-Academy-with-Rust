@@ -1,6 +1,7 @@
 /******************************************************
 *
 * Lab: Accidental exposure of private GraphQL fields
+*
 * Hack Steps:
 *      1. Query the hidden post
 *      2. Extract administrator's password

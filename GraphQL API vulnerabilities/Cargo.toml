@@ -2,5 +2,6 @@
 members = [
     'Accessing private GraphQL posts',
     'Accidental exposure of private GraphQL fields',
-    'Finding a hidden GraphQL endpoint'
+    'Finding a hidden GraphQL endpoint',
+    'Bypassing GraphQL brute force protections'
 ]

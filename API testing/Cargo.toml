@@ -1,0 +1,4 @@
+[workspace]
+members = [
+    'Exploiting an API endpoint using documentation',
+]

@@ -154,6 +154,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "exploiting_a_mass_assignment_vulnerability"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "regex",
+ "reqwest",
+ "select",
+ "text-colorizer",
+]
+
+[[package]]
 name = "exploiting_an_api_endpoint_using_documentation"
 version = "0.1.0"
 dependencies = [

@@ -1,5 +1,6 @@
 [workspace]
 members = [
     'Exploiting an API endpoint using documentation',
-    'Finding and exploiting an unused API endpoint'
+    'Finding and exploiting an unused API endpoint',
+    'Exploiting a mass assignment vulnerability'
 ]

@@ -187,6 +187,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "exploiting_server_side_parameter_pollution_in_a_rest_url"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "regex",
+ "reqwest",
+ "select",
+ "text-colorizer",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

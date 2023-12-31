@@ -2,7 +2,7 @@
 *
 * Lab: Excessive trust in client-side controls
 *
-* Hack Steps: 
+* Hack Steps:
 *      1. Fetch login page
 *      2. Extract the csrf token and session cookie
 *      3. Login as wiener
@@ -70,11 +70,12 @@ fn main() {
     print!("⦗6⦘ Extracting the csrf token needed for placing order.. ");
     flush_terminal();
 
+    csrf_token = get_csrf_token(wiener_cart);
+
     println!("{}", "OK".green());
     print!("⦗7⦘ Placing order.. ",);
     flush_terminal();
 
-    csrf_token = get_csrf_token(wiener_cart);
     place_order(&session, &csrf_token);
 
     println!("{}", "OK".green());

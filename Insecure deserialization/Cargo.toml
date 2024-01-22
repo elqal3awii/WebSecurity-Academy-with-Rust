@@ -1,2 +1,2 @@
 [workspace]
-members = ['Modifying serialized objects']
+members = ['Modifying serialized objects', 'Modifying serialized data types']

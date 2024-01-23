@@ -1,2 +1,6 @@
 [workspace]
-members = ['Modifying serialized objects', 'Modifying serialized data types']
+members = [
+    'Modifying serialized objects',
+    'Modifying serialized data types',
+    'Arbitrary object injection in PHP'
+]

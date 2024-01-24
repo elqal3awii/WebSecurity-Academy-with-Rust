@@ -144,6 +144,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "exploiting_java_deserialization_with_apache_commons"
+version = "0.1.0"
+dependencies = [
+ "percent-encoding",
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

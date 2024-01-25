@@ -3,5 +3,6 @@ members = [
     'Modifying serialized objects',
     'Modifying serialized data types',
     'Arbitrary object injection in PHP',
-    'Exploiting Java deserialization with Apache Commons'
+    'Exploiting Java deserialization with Apache Commons',
+    'Exploiting PHP deserialization with a pre-built gadget chain'
 ]

@@ -4,5 +4,6 @@ members = [
     'Modifying serialized data types',
     'Arbitrary object injection in PHP',
     'Exploiting Java deserialization with Apache Commons',
-    'Exploiting PHP deserialization with a pre-built gadget chain'
+    'Exploiting PHP deserialization with a pre-built gadget chain',
+    'Exploiting Ruby deserialization using a documented gadget chain'
 ]

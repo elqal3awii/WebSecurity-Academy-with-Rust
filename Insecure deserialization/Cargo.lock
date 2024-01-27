@@ -233,6 +233,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "exploiting_ruby_deserialization_using_a_documented_gadget_chain"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "text-colorizer",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1359,6 +1367,18 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+]
+
+[[package]]
+name = "using_application_functionality_to_exploit_insecure_deserialization"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "lazy_static",
+ "percent-encoding",
+ "regex",
+ "reqwest",
+ "text-colorizer",
 ]
 
 [[package]]

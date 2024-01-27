@@ -5,5 +5,6 @@ members = [
     'Arbitrary object injection in PHP',
     'Exploiting Java deserialization with Apache Commons',
     'Exploiting PHP deserialization with a pre-built gadget chain',
-    'Exploiting Ruby deserialization using a documented gadget chain'
+    'Exploiting Ruby deserialization using a documented gadget chain',
+    'Using application functionality to exploit insecure deserialization'
 ]

